@@ -1,0 +1,20 @@
+{
+  "input": {
+    "filename": "random-notes.md",
+    "content": "AWS Lambda\n\nserverless function\n\ncold start problem\n\nuse provisioned concurrency to avoid\n\nalso consider:\n- memory settings affect CPU\n- timeout max 15min\n- /tmp storage 512MB default"
+  },
+  "output": {
+    "genre": "エンジニア",
+    "confidence": 0.90,
+    "is_dust": false,
+    "dust_reason": null,
+    "related_keywords": ["AWS", "Lambda", "サーバーレス", "クラウド"],
+    "frontmatter": {
+      "title": "AWS Lambda のコールドスタート対策と設定ポイント",
+      "tags": ["aws", "lambda", "serverless", "クラウド"],
+      "created": ""
+    },
+    "normalized_content": "## AWS Lambda 概要\n\nAWS Lambdaはサーバーレスなファンクション実行環境である。\n\n## コールドスタート問題\n\n初回起動時やスケールアウト時にレイテンシが発生する「コールドスタート」が課題となる。\n\n### 対策\n\n- Provisioned Concurrencyを使用して事前にインスタンスを確保する\n\n## 設定上の注意点\n\n- メモリ設定はCPU割り当てにも影響する\n- タイムアウトは最大15分\n- /tmpストレージはデフォルト512MB",
+    "improvements_made": ["断片的な英語メモを日本語文章に変換", "見出し構造を追加（概要、問題、対策、注意点）", "箇条書きを文脈に合わせて整理"]
+  }
+}

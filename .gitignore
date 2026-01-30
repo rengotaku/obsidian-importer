@@ -205,3 +205,31 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ═══════════════════════════════════════════════════
+# Project-specific
+# ═══════════════════════════════════════════════════
+
+# Staging data
+.staging/
+
+# Serena MCP
+.serena/
+
+# RAG data (Qdrant persistence)
+data/qdrant/
+!data/qdrant/.gitkeep
+
+# OS
+.DS_Store
+.Trash/
+
+# Node
+node_modules/
+
+# Backup files
+*.py.backup**
+
+# Obsidian workspace (changes frequently)
+**/.obsidian/workspace.json
+**/.obsidian/graph.json

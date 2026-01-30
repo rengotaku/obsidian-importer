@@ -1,0 +1,7 @@
+usage: etl status [-h] [--session SESSION] [--all] [--json]
+
+options:
+  -h, --help         show this help message and exit
+  --session SESSION  Show specific session
+  --all              Show all sessions
+  --json             Output as JSON

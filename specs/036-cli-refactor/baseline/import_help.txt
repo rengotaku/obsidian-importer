@@ -1,0 +1,17 @@
+usage: etl import [-h] --input INPUT [--provider {claude,openai,github}]
+                  [--session SESSION] [--debug] [--dry-run] [--limit LIMIT]
+                  [--no-fetch-titles] [--chunk]
+
+options:
+  -h, --help            show this help message and exit
+  --input INPUT         Input directory or ZIP file (Claude export or ChatGPT
+                        export)
+  --provider {claude,openai,github}
+                        Source provider (default: claude)
+  --session SESSION     Reuse existing session ID
+  --debug               Enable debug mode
+  --dry-run             Preview without processing
+  --limit LIMIT         Process first N items
+  --no-fetch-titles     Disable URL title fetching (default: enabled)
+  --chunk               Enable chunking for large files (>25000 chars).
+                        Default: skip with too_large frontmatter

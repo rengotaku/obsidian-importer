@@ -1,0 +1,11 @@
+usage: etl trace [-h] --session SESSION [--target {ALL,ERROR}] [--item ITEM]
+                 [--show-content] [--show-error-details]
+
+options:
+  -h, --help            show this help message and exit
+  --session SESSION     Session ID to trace
+  --target {ALL,ERROR}  Target items to trace (default: ALL)
+  --item ITEM           Item ID to trace (required when target=ALL)
+  --show-content        Show content diffs between steps
+  --show-error-details  Show error details (backtrace, metadata) from
+                        error_details.jsonl

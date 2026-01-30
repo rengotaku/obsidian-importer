@@ -1,0 +1,20 @@
+{
+  "input": {
+    "filename": "2022-10-17-Online-DDL-of-mysql.md",
+    "content": "# Online DDL\n\nMySQLでALTER TABLEするときの話。\n\n大きなテーブルだとロックがかかって困る\n\npt-online-schema-changeを使うと良い\n\n## 使い方\n\n```\npt-online-schema-change --alter \"ADD COLUMN new_col INT\" D=mydb,t=mytable\n```\n\n参考: https://docs.percona.com/"
+  },
+  "output": {
+    "genre": "エンジニア",
+    "confidence": 0.92,
+    "is_dust": false,
+    "dust_reason": null,
+    "related_keywords": ["MySQL", "DDL", "pt-online-schema-change", "データベース"],
+    "frontmatter": {
+      "title": "MySQL Online DDL の仕組みと注意点",
+      "tags": ["mysql", "database", "ddl", "percona-toolkit"],
+      "created": "2022-10-17"
+    },
+    "normalized_content": "## Online DDL\n\nMySQLでALTER TABLEを実行する際、大きなテーブルではロックが発生し、サービスに影響を与える可能性がある。\n\nこの問題を回避するために、Percona Toolkitの`pt-online-schema-change`を使用する方法がある。\n\n## 使い方\n\n```bash\npt-online-schema-change --alter \"ADD COLUMN new_col INT\" D=mydb,t=mytable\n```\n\n## 参考\n\n- [Percona Toolkit Documentation](https://docs.percona.com/)",
+    "improvements_made": ["不完全な文を補完（「大きなテーブルだとロックがかかって困る」→「ロックが発生し、サービスに影響を与える可能性がある」）", "見出しレベルを##に調整", "URLをMarkdownリンク形式に変換"]
+  }
+}

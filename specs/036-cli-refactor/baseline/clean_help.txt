@@ -1,0 +1,7 @@
+usage: etl clean [-h] [--days DAYS] [--dry-run] [--force]
+
+options:
+  -h, --help   show this help message and exit
+  --days DAYS  Clean sessions older than N days (default: 7)
+  --dry-run    Preview without deleting
+  --force      Skip confirmation

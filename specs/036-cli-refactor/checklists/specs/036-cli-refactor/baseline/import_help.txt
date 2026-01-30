@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/path/to/project/specs/036-cli-refactor/checklists/src/etl/__main__.py", line 8, in <module>
+    from src.etl.cli import main
+  File "/path/to/project/specs/036-cli-refactor/checklists/src/etl/cli.py", line 20, in <module>
+    from src.etl.core.phase import PhaseManager
+ModuleNotFoundError: No module named 'src.etl.core'

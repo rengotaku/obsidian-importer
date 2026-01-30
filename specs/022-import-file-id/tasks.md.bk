@@ -1,0 +1,189 @@
+# Tasks: LLMインポートでのfile_id付与
+
+**Input**: Design documents from `/specs/022-import-file-id/`
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md
+
+**Tests**: 既存コードベースにテストがあるため、変更に対応するテストを含める。
+
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2)
+- Include exact file paths in descriptions
+
+## Path Conventions
+
+```text
+development/scripts/llm_import/
+├── common/
+│   ├── file_id.py              # 新規
+│   ├── knowledge_extractor.py  # 変更
+│   └── state.py                # 変更
+├── tests/
+│   ├── test_file_id.py         # 新規
+│   └── test_cli.py             # 変更
+└── cli.py                      # 変更
+```
+
+---
+
+## Phase 1: Setup
+
+**Purpose**: 新規モジュール作成
+
+- [ ] T001 Create file_id.py module with generate_file_id() in development/scripts/llm_import/common/file_id.py
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**Purpose**: file_id生成の基盤テスト
+
+**⚠️ CRITICAL**: US1/US2 は file_id 生成ロジックに依存
+
+- [ ] T002 [P] Create test_file_id.py with unit tests in development/scripts/llm_import/tests/test_file_id.py
+- [ ] T003 Run make test to verify file_id generation tests pass
+
+**Checkpoint**: file_id 生成ロジック確認完了
+
+---
+
+## Phase 3: User Story 1 - インポート時のfile_id自動付与 (Priority: P1) 🎯 MVP
+
+**Goal**: 生成されるナレッジファイルのfrontmatterにfile_idを自動付与
+
+**Independent Test**: `make llm-import LIMIT=1` 実行 → 生成ファイルのfrontmatterに`file_id: [12文字16進数]`確認
+
+### Implementation for User Story 1
+
+- [ ] T004 [US1] Add file_id field to KnowledgeDocument dataclass in development/scripts/llm_import/common/knowledge_extractor.py
+- [ ] T005 [US1] Update to_markdown() to output file_id in frontmatter in development/scripts/llm_import/common/knowledge_extractor.py
+- [ ] T006 [US1] Import generate_file_id and integrate file_id generation in cli.py's process_conversation() in development/scripts/llm_import/cli.py
+- [ ] T007 [US1] Handle chunked conversations - each chunk gets unique file_id in development/scripts/llm_import/cli.py
+- [ ] T008 [P] [US1] Add test for file_id in frontmatter output in development/scripts/llm_import/tests/test_cli.py
+- [ ] T009 [US1] Run make test to verify US1 implementation
+
+**Checkpoint**: US1完了 - frontmatterにfile_id出力を確認
+
+---
+
+## Phase 4: User Story 2 - state.jsonでのfile_id記録 (Priority: P2)
+
+**Goal**: state.jsonのprocessedエントリにfile_idを記録
+
+**Independent Test**: インポート後にstate.json確認 → processedエントリにfile_id含まれる
+
+### Implementation for User Story 2
+
+- [ ] T010 [US2] Add file_id field to ProcessedEntry dataclass in development/scripts/llm_import/common/state.py
+- [ ] T011 [US2] Update ProcessedEntry.from_dict() to handle optional file_id in development/scripts/llm_import/common/state.py
+- [ ] T012 [US2] Update ProcessedEntry.to_dict() to include file_id in development/scripts/llm_import/common/state.py
+- [ ] T013 [US2] Update StateManager.add_entry() to accept file_id parameter in development/scripts/llm_import/common/state.py
+- [ ] T014 [US2] Pass file_id to add_entry() in cli.py after successful processing in development/scripts/llm_import/cli.py
+- [ ] T015 [P] [US2] Add test for file_id in state.json output in development/scripts/llm_import/tests/test_cli.py
+- [ ] T016 [US2] Run make test to verify US2 implementation
+
+**Checkpoint**: US2完了 - state.jsonにfile_id記録を確認
+
+---
+
+## Phase 5: Polish & Verification
+
+**Purpose**: 統合テストと最終確認
+
+- [ ] T017 Run full integration test with make llm-import ACTION=preview
+- [ ] T018 Verify edge cases: empty content, Japanese titles, long content
+- [ ] T019 Run make test to verify all tests pass
+- [ ] T020 Update quickstart.md with actual test results if needed
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: No dependencies
+- **Foundational (Phase 2)**: Depends on Phase 1
+- **US1 (Phase 3)**: Depends on Phase 2
+- **US2 (Phase 4)**: Depends on Phase 2 (can run parallel with US1 if desired)
+- **Polish (Phase 5)**: Depends on Phase 3, 4
+
+### User Story Dependencies
+
+- **US1 (P1)**: file_id.py → KnowledgeDocument → cli.py 統合
+- **US2 (P2)**: file_id.py → ProcessedEntry → StateManager → cli.py 統合
+
+### Within Each User Story
+
+- Models before integration
+- Integration before tests
+- Tests verify functionality
+
+### Parallel Opportunities
+
+- T002 (test_file_id.py) can run parallel with foundational setup
+- T008 (US1 test) can run parallel after T007
+- T015 (US2 test) can run parallel after T014
+- US1 and US2 can be worked on in parallel after Phase 2
+
+---
+
+## Parallel Example: Phase 3 (US1)
+
+```bash
+# After T003 completes, these can start:
+Task: T004 [US1] Add file_id field to KnowledgeDocument
+Task: T010 [US2] Add file_id field to ProcessedEntry  # Can start in parallel!
+
+# Within US1, sequential flow:
+T004 → T005 → T006 → T007 → T008 → T009
+```
+
+---
+
+## Implementation Strategy
+
+### MVP First (User Story 1 Only)
+
+1. Complete Phase 1: Setup (T001)
+2. Complete Phase 2: Foundational (T002-T003)
+3. Complete Phase 3: User Story 1 (T004-T009)
+4. **STOP and VALIDATE**: `make llm-import LIMIT=1` で frontmatter 確認
+5. Deploy if ready
+
+### Incremental Delivery
+
+1. Setup + Foundational → file_id 生成基盤完了
+2. Add User Story 1 → frontmatter 出力完了 (MVP!)
+3. Add User Story 2 → state.json 記録完了
+4. Polish → 統合テスト完了
+
+---
+
+## Test Coverage Rules
+
+**境界テストの原則**: データ変換が発生する境界でテスト
+
+```
+[コンテンツ] → [file_id生成] → [KnowledgeDocument] → [to_markdown()] → [ファイル書込]
+     ↓              ↓                 ↓                  ↓              ↓
+  入力検証    test_file_id.py    フィールド確認    frontmatter出力    統合テスト
+```
+
+**チェックリスト**:
+- [x] file_id 生成ロジックのテスト (T002)
+- [x] frontmatter 出力のテスト (T008)
+- [x] state.json 出力のテスト (T015)
+- [x] End-to-End テスト (T017)
+
+---
+
+## Notes
+
+- [P] tasks = different files, no dependencies
+- [Story] label maps task to specific user story
+- Each user story is independently completable and testable
+- Commit after each task or logical group
+- 既存 state.json との後方互換性を維持（Optional フィールド）

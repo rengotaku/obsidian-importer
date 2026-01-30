@@ -1,0 +1,10 @@
+usage: etl organize [-h] --input INPUT [--session SESSION] [--debug]
+                    [--dry-run] [--limit LIMIT]
+
+options:
+  -h, --help         show this help message and exit
+  --input INPUT      Input directory (files to organize)
+  --session SESSION  Reuse existing session ID
+  --debug            Enable debug mode
+  --dry-run          Preview without processing
+  --limit LIMIT      Process first N items

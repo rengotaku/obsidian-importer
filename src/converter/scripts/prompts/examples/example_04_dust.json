@@ -1,0 +1,20 @@
+{
+  "input": {
+    "filename": "test.md",
+    "content": "asdfasdf\n\ntest\n\n123"
+  },
+  "output": {
+    "genre": "dust",
+    "confidence": 0.95,
+    "is_dust": true,
+    "dust_reason": "テスト投稿または意味のない文字列",
+    "related_keywords": [],
+    "frontmatter": {
+      "title": "テスト投稿",
+      "tags": [],
+      "created": ""
+    },
+    "normalized_content": "",
+    "improvements_made": []
+  }
+}

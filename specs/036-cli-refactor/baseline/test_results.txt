@@ -1,0 +1,872 @@
+═══════════════════════════════════════════════════════════
+  ETL Pipeline Tests (Unit + Mocked)
+═══════════════════════════════════════════════════════════
+test_chatgpt_import_empty_conversations (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTCompatibility.test_chatgpt_import_empty_conversations)
+Empty conversations.json should raise RuntimeError in ParseConversationsStep (T046). ... ok
+test_chatgpt_import_min_messages_skip (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTCompatibility.test_chatgpt_import_min_messages_skip)
+Conversations below MIN_MESSAGES should be skipped (T047). ... ok
+test_chatgpt_import_output_matches_baseline (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTCompatibility.test_chatgpt_import_output_matches_baseline)
+ChatGPT import output should match pre-refactor baseline (T045). ... ok
+test_chatgpt_item_has_claude_compatible_structure (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTTransformCompatibility.test_chatgpt_item_has_claude_compatible_structure)
+ChatGPT ProcessingItem has same structure as Claude format. ... ok
+test_extract_knowledge_step_processes_chatgpt_data (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTTransformCompatibility.test_extract_knowledge_step_processes_chatgpt_data)
+ExtractKnowledgeStep can process ChatGPT conversation data (T019). ... ok
+test_format_markdown_step_generates_valid_frontmatter (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTTransformCompatibility.test_format_markdown_step_generates_valid_frontmatter)
+FormatMarkdownStep generates frontmatter with all required fields (T020). ... ok
+test_full_transform_pipeline_for_chatgpt_data (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTTransformCompatibility.test_full_transform_pipeline_for_chatgpt_data)
+Full Transform pipeline processes ChatGPT data end-to-end (T020). ... ok
+test_generate_metadata_step_includes_source_provider (src.etl.tests.test_chatgpt_transform_integration.TestChatGPTTransformCompatibility.test_generate_metadata_step_includes_source_provider)
+GenerateMetadataStep preserves source_provider from metadata (T019). ... ok
+test_chatgpt_extractor_implements_abstract_methods (src.etl.tests.test_chunking_integration.TestAllExtractorsAbstractMethods.test_chatgpt_extractor_implements_abstract_methods)
+ChatGPTExtractor が抽象メソッドを実装していることを確認 ... ok
+test_claude_extractor_implements_abstract_methods (src.etl.tests.test_chunking_integration.TestAllExtractorsAbstractMethods.test_claude_extractor_implements_abstract_methods)
+ClaudeExtractor が抽象メソッドを実装していることを確認 ... ok
+test_github_extractor_implements_abstract_methods (src.etl.tests.test_chunking_integration.TestAllExtractorsAbstractMethods.test_github_extractor_implements_abstract_methods)
+GitHubExtractor が抽象メソッドを実装していることを確認 ... ok
+test_incomplete_extractor_raises_typeerror (src.etl.tests.test_chunking_integration.TestAllExtractorsAbstractMethods.test_incomplete_extractor_raises_typeerror)
+抽象メソッド未実装の Extractor が TypeError を発生させることを確認 ... ok
+test_chatgpt_chunk_content_structure (src.etl.tests.test_chunking_integration.TestChatGPTChunking.test_chatgpt_chunk_content_structure)
+チャンク分割された ChatGPT アイテムのコンテンツ構造が正しいことを確認 ... ok
+test_chatgpt_chunk_metadata_present (src.etl.tests.test_chunking_integration.TestChatGPTChunking.test_chatgpt_chunk_metadata_present)
+チャンク分割された ChatGPT アイテムに正しいメタデータが含まれることを確認 ... ok
+test_chatgpt_chunk_overlap_messages (src.etl.tests.test_chunking_integration.TestChatGPTChunking.test_chatgpt_chunk_overlap_messages)
+ChatGPT チャンクにオーバーラップメッセージが含まれることを確認 ... ok
+test_chatgpt_chunks_sequential_indices (src.etl.tests.test_chunking_integration.TestChatGPTChunking.test_chatgpt_chunks_sequential_indices)
+ChatGPT チャンクのインデックスが連番であることを確認 ... ok
+test_chatgpt_large_conversation_chunked (src.etl.tests.test_chunking_integration.TestChatGPTChunking.test_chatgpt_large_conversation_chunked)
+大規模な ChatGPT 会話がチャンク分割されることを確認 ... ok
+test_chatgpt_small_conversation_not_chunked (src.etl.tests.test_chunking_integration.TestChatGPTChunking.test_chatgpt_small_conversation_not_chunked)
+小規模な ChatGPT 会話がチャンク分割されないことを確認 ... ok
+test_chunk_metadata_in_extract_stage (src.etl.tests.test_chunking_integration.TestChunkingMetadataFlow.test_chunk_metadata_in_extract_stage)
+Extract Stage でチャンクメタデータが設定されることを確認 ... ok
+test_chunk_metadata_in_load_stage (src.etl.tests.test_chunking_integration.TestChunkingMetadataFlow.test_chunk_metadata_in_load_stage)
+Load Stage でチャンクメタデータが出力ファイルに反映されることを確認 ... ok
+test_chunk_metadata_in_pipeline_stages_jsonl (src.etl.tests.test_chunking_integration.TestChunkingMetadataFlow.test_chunk_metadata_in_pipeline_stages_jsonl)
+pipeline_stages.jsonl にチャンクメタデータが記録されることを確認 ... ok
+test_chunk_metadata_in_transform_stage (src.etl.tests.test_chunking_integration.TestChunkingMetadataFlow.test_chunk_metadata_in_transform_stage)
+Transform Stage でチャンクメタデータが保持されることを確認 ... ok
+test_conversation_at_chunk_threshold (src.etl.tests.test_chunking_integration.TestEdgeCases.test_conversation_at_chunk_threshold)
+チャンクサイズ閾値ちょうどの会話が正しく処理されることを確認 ... ok
+test_empty_conversation_handling (src.etl.tests.test_chunking_integration.TestEdgeCases.test_empty_conversation_handling)
+空の会話が正しく処理されることを確認 ... ok
+test_single_message_exceeds_chunk_size (src.etl.tests.test_chunking_integration.TestEdgeCases.test_single_message_exceeds_chunk_size)
+単一メッセージがチャンクサイズを超える場合の処理を確認 ... ok
+test_unicode_content_chunking (src.etl.tests.test_chunking_integration.TestEdgeCases.test_unicode_content_chunking)
+Unicode 文字列を含む会話がチャンク処理されることを確認 ... ok
+test_claude_extractor_implements_build_conversation_for_chunking (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorAbstractMethods.test_claude_extractor_implements_build_conversation_for_chunking)
+ClaudeExtractor implements _build_conversation_for_chunking abstract method. ... ok
+test_claude_extractor_implements_discover_raw_items (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorAbstractMethods.test_claude_extractor_implements_discover_raw_items)
+ClaudeExtractor implements _discover_raw_items abstract method. ... ok
+test_discover_raw_items_does_not_chunk (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorAbstractMethods.test_discover_raw_items_does_not_chunk)
+_discover_raw_items does not perform chunking (delegates to BaseStage). ... ok
+test_discover_raw_items_returns_iterator (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorAbstractMethods.test_discover_raw_items_returns_iterator)
+_discover_raw_items returns Iterator[ProcessingItem]. ... ok
+test_discover_items_backward_compatible (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorBehaviorMaintained.test_discover_items_backward_compatible)
+discover_items() method still works as template method. ... ok
+test_existing_tests_still_pass (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorBehaviorMaintained.test_existing_tests_still_pass)
+All existing ClaudeExtractor tests pass after refactoring. ... ok
+test_same_output_for_same_input (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorBehaviorMaintained.test_same_output_for_same_input)
+Refactored extractor produces same output as before. ... ok
+test_chunk_overlap_messages_included (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorChunking.test_chunk_overlap_messages_included)
+Chunked conversations include overlap messages for context. ... ok
+test_chunked_items_have_correct_metadata (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorChunking.test_chunked_items_have_correct_metadata)
+Chunked items have is_chunked, parent_item_id, chunk_index metadata. ... 単一メッセージが chunk_size (25000) を超過: 30000 chars
+ok
+test_large_conversation_chunked (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorChunking.test_large_conversation_chunked)
+Large conversations (> 25,000 chars) with multiple messages are chunked. ... ok
+test_small_conversation_not_chunked (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorChunking.test_small_conversation_not_chunked)
+Small conversations (< 25,000 chars) are not chunked. ... ok
+test_conversation_at_chunk_threshold (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorEdgeCases.test_conversation_at_chunk_threshold)
+Conversation at exactly 25,000 chars is marked as chunked (Chunker uses >=). ... 単一メッセージが chunk_size (25000) を超過: 25000 chars
+ok
+test_empty_conversations_json (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorEdgeCases.test_empty_conversations_json)
+Empty conversations.json is handled gracefully. ... ok
+test_missing_conversations_json (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorEdgeCases.test_missing_conversations_json)
+Missing conversations.json is handled gracefully. ... ok
+test_single_message_large_conversation (src.etl.tests.test_claude_extractor_refactoring.TestClaudeExtractorEdgeCases.test_single_message_large_conversation)
+Large conversation with single message creates 1 chunk (cannot split within message). ... 単一メッセージが chunk_size (25000) を超過: 50000 chars
+ok
+test_clean_command_defaults (src.etl.tests.test_cli.TestCLIArgumentParsing.test_clean_command_defaults)
+Clean command has sensible defaults. ... ok
+test_clean_command_with_options (src.etl.tests.test_cli.TestCLIArgumentParsing.test_clean_command_with_options)
+Clean command accepts all options. ... ok
+test_import_command_requires_input (src.etl.tests.test_cli.TestCLIArgumentParsing.test_import_command_requires_input)
+Import command requires --input argument. ... ok
+test_import_command_with_input (src.etl.tests.test_cli.TestCLIArgumentParsing.test_import_command_with_input)
+Import command accepts --input argument. ... ok
+test_import_command_with_options (src.etl.tests.test_cli.TestCLIArgumentParsing.test_import_command_with_options)
+Import command accepts all optional arguments. ... ok
+test_no_command_shows_help (src.etl.tests.test_cli.TestCLIArgumentParsing.test_no_command_shows_help)
+No command shows help and exits with error. ... ok
+test_organize_command_requires_input (src.etl.tests.test_cli.TestCLIArgumentParsing.test_organize_command_requires_input)
+Organize command requires --input argument. ... ok
+test_organize_command_with_input (src.etl.tests.test_cli.TestCLIArgumentParsing.test_organize_command_with_input)
+Organize command accepts --input argument. ... ok
+test_organize_command_with_options (src.etl.tests.test_cli.TestCLIArgumentParsing.test_organize_command_with_options)
+Organize command accepts all optional arguments. ... ok
+test_retry_command_requires_session (src.etl.tests.test_cli.TestCLIArgumentParsing.test_retry_command_requires_session)
+Retry command requires --session argument. ... ok
+test_retry_command_with_phase (src.etl.tests.test_cli.TestCLIArgumentParsing.test_retry_command_with_phase)
+Retry command accepts --phase argument. ... ok
+test_retry_command_with_session (src.etl.tests.test_cli.TestCLIArgumentParsing.test_retry_command_with_session)
+Retry command accepts --session argument. ... ok
+test_status_command_no_args (src.etl.tests.test_cli.TestCLIArgumentParsing.test_status_command_no_args)
+Status command works without arguments. ... ok
+test_status_command_with_all (src.etl.tests.test_cli.TestCLIArgumentParsing.test_status_command_with_all)
+Status command accepts --all argument. ... ok
+test_status_command_with_json (src.etl.tests.test_cli.TestCLIArgumentParsing.test_status_command_with_json)
+Status command accepts --json argument. ... ok
+test_status_command_with_session (src.etl.tests.test_cli.TestCLIArgumentParsing.test_status_command_with_session)
+Status command accepts --session argument. ... ok
+test_clean_dry_run_does_not_delete (src.etl.tests.test_cli.TestCLICleanCommand.test_clean_dry_run_does_not_delete)
+Clean --dry-run does not delete sessions. ... ok
+test_exit_code_all_failed (src.etl.tests.test_cli.TestCLIExitCodes.test_exit_code_all_failed)
+Exit code 5 for all items failed. ... ok
+test_exit_code_error (src.etl.tests.test_cli.TestCLIExitCodes.test_exit_code_error)
+Exit code 1 for general error. ... ok
+test_exit_code_input_not_found (src.etl.tests.test_cli.TestCLIExitCodes.test_exit_code_input_not_found)
+Exit code 2 for input directory not found. ... ok
+test_exit_code_ollama_error (src.etl.tests.test_cli.TestCLIExitCodes.test_exit_code_ollama_error)
+Exit code 3 for Ollama connection error. ... ok
+test_exit_code_partial (src.etl.tests.test_cli.TestCLIExitCodes.test_exit_code_partial)
+Exit code 4 for partial success. ... ok
+test_exit_code_success (src.etl.tests.test_cli.TestCLIExitCodes.test_exit_code_success)
+Exit code 0 for success. ... ok
+test_import_empty_input_returns_success (src.etl.tests.test_cli.TestCLIExitCodes.test_import_empty_input_returns_success)
+Import with empty input directory returns exit code 0. ... ok
+test_import_nonexistent_input_returns_code_2 (src.etl.tests.test_cli.TestCLIExitCodes.test_import_nonexistent_input_returns_code_2)
+Import with nonexistent input directory returns exit code 2. ... [Error] Input path not found: /nonexistent/path
+ok
+test_organize_nonexistent_input_returns_code_2 (src.etl.tests.test_cli.TestCLIExitCodes.test_organize_nonexistent_input_returns_code_2)
+Organize with nonexistent input directory returns exit code 2. ... [Error] Input directory not found: /nonexistent/path
+ok
+test_retry_nonexistent_session_returns_code_2 (src.etl.tests.test_cli.TestCLIExitCodes.test_retry_nonexistent_session_returns_code_2)
+Retry with nonexistent session returns exit code 2. ... [Error] Session not found: 99991231_235959
+ok
+test_status_no_sessions_returns_code_1 (src.etl.tests.test_cli.TestCLIExitCodes.test_status_no_sessions_returns_code_1)
+Status with no sessions returns exit code 1. ... ok
+test_import_creates_session (src.etl.tests.test_cli.TestCLIImportCommand.test_import_creates_session)
+Import command creates a new session. ... ok
+test_import_dry_run_does_not_modify (src.etl.tests.test_cli.TestCLIImportCommand.test_import_dry_run_does_not_modify)
+Import with --dry-run does not create output files. ... ok
+test_main_exists (src.etl.tests.test_cli.TestCLIMain.test_main_exists)
+Main function exists. ... ok
+test_organize_creates_session (src.etl.tests.test_cli.TestCLIOrganizeCommand.test_organize_creates_session)
+Organize command creates a new session. ... ok
+test_cli_import_crashed_records_error (src.etl.tests.test_cli.TestCLIPhaseStats.test_cli_import_crashed_records_error)
+Import command records crashed status on unhandled exception. ... [Error] Phase import crashed: RuntimeError: Simulated crash
+ok
+test_cli_import_records_phase_stats (src.etl.tests.test_cli.TestCLIPhaseStats.test_cli_import_records_phase_stats)
+Import command records PhaseStats with success/error counts. ... ok
+test_status_all_lists_sessions (src.etl.tests.test_cli.TestCLIStatusCommand.test_status_all_lists_sessions)
+Status --all lists all sessions. ... ok
+test_status_shows_session (src.etl.tests.test_cli.TestCLIStatusCommand.test_status_shows_session)
+Status command shows session info. ... ok
+test_chatgpt_extract_generates_steps_jsonl (src.etl.tests.test_debug_step_output.TestChatGPTExtractStepsJsonl.test_chatgpt_extract_generates_steps_jsonl)
+ChatGPT Extract stage generates steps.jsonl in debug mode. ... ok
+test_debug_output_for_1to1_processing (src.etl.tests.test_debug_step_output.TestDebugStepOutput.test_debug_output_for_1to1_processing)
+T015: Verify debug output for 1:1 processing includes correct metadata. ... ok
+test_debug_output_for_chunked_items (src.etl.tests.test_debug_step_output.TestDebugStepOutput.test_debug_output_for_chunked_items)
+T026: Verify debug output for chunked items includes chunk metadata. ... ok
+test_debug_step_output_disabled (src.etl.tests.test_debug_step_output.TestDebugStepOutput.test_debug_step_output_disabled)
+T014: Step-level debug output is NOT written when debug_mode=False. ... ok
+test_debug_step_output_enabled (src.etl.tests.test_debug_step_output.TestDebugStepOutput.test_debug_step_output_enabled)
+T013: Step-level debug output is written when debug_mode=True. ... ok
+test_debug_step_output_on_failure (src.etl.tests.test_debug_step_output.TestDebugStepOutput.test_debug_step_output_on_failure)
+T015: Step-level debug output is written when step fails and debug_mode=True. ... ok
+test_multiple_items_append_to_single_file (src.etl.tests.test_debug_step_output.TestDebugStepOutput.test_multiple_items_append_to_single_file)
+Verify multiple items are appended to the same consolidated debug file. ... ok
+test_step_returns_empty_list_raises (src.etl.tests.test_expanding_step.TestExpandingStep.test_step_returns_empty_list_raises)
+Step returning empty list raises RuntimeError (T019). ... ok
+test_step_returns_list_expands_items (src.etl.tests.test_expanding_step.TestExpandingStep.test_step_returns_list_expands_items)
+Step returning list expands 1 item to N items (T018). ... ok
+test_step_returns_single_item_unchanged (src.etl.tests.test_expanding_step.TestExpandingStep.test_step_returns_single_item_unchanged)
+Step returning single item works as 1:1 processing (T020). ... ok
+test_discover_items_invalid_url (src.etl.tests.test_github_extractor.TestGitHubExtractorDiscovery.test_discover_items_invalid_url)
+Test discovery with invalid URL. ... ok
+test_discover_items_valid_url (src.etl.tests.test_github_extractor.TestGitHubExtractorDiscovery.test_discover_items_valid_url)
+Test discovery with valid GitHub URL. ... Failed to read /tmp/repo/_posts/2024-01-01-post1.md: '/tmp/repo/_posts/2024-01-01-post1.md' is not in the subpath of "<MagicMock name='clone_repo()' spec='Path' id='124855015975504'>"
+Failed to read /tmp/repo/_posts/2024-01-02-post2.md: '/tmp/repo/_posts/2024-01-02-post2.md' is not in the subpath of "<MagicMock name='clone_repo()' spec='Path' id='124855015975504'>"
+FAIL
+test_consistent_file_id (src.etl.tests.test_github_extractor.TestGitHubExtractorFileIdGeneration.test_consistent_file_id)
+Test that same content produces same file_id. ... ok
+test_file_id_in_metadata (src.etl.tests.test_github_extractor.TestGitHubExtractorFileIdGeneration.test_file_id_in_metadata)
+Test that file_id is generated and stored in metadata. ... ok
+test_full_extraction_flow (src.etl.tests.test_github_extractor.TestGitHubExtractorIntegration.test_full_extraction_flow)
+Test full extraction flow with all steps. ... Failed to read /tmp/repo/_posts/2024-01-01-test.md: '/tmp/repo/_posts/2024-01-01-test.md' is not in the subpath of "<MagicMock name='clone_repo()' spec='Path' id='124855002564992'>"
+FAIL
+test_resume_mode_skip_processed (src.etl.tests.test_github_extractor.TestGitHubExtractorResumeMode.test_resume_mode_skip_processed)
+Test that resume mode skips already processed items. ... Failed to read /tmp/repo/_posts/2024-01-01-post1.md: '/tmp/repo/_posts/2024-01-01-post1.md' is not in the subpath of "<MagicMock name='clone_repo()' spec='Path' id='124854999708544'>"
+Failed to read /tmp/repo/_posts/2024-01-02-post2.md: '/tmp/repo/_posts/2024-01-02-post2.md' is not in the subpath of "<MagicMock name='clone_repo()' spec='Path' id='124854999708544'>"
+FAIL
+test_clone_repo_success (src.etl.tests.test_github_url.TestCloneRepo.test_clone_repo_success)
+Test successful repository cloning. ... ok
+test_basic_conversion (src.etl.tests.test_github_url.TestConvertFrontmatter.test_basic_conversion)
+Test basic Jekyll to Obsidian conversion. ... ok
+test_file_id_generation (src.etl.tests.test_github_url.TestConvertFrontmatter.test_file_id_generation)
+Test consistent file_id generation. ... ok
+test_merge_tags_categories_keywords (src.etl.tests.test_github_url.TestConvertFrontmatter.test_merge_tags_categories_keywords)
+Test merging tags, categories, and keywords. ... ok
+test_title_fallback (src.etl.tests.test_github_url.TestConvertFrontmatter.test_title_fallback)
+Test title fallback to filename. ... ok
+test_date_patterns (src.etl.tests.test_github_url.TestExtractDate.test_date_patterns)
+Test various date patterns. ... ok
+test_extract_from_body (src.etl.tests.test_github_url.TestExtractDate.test_extract_from_body)
+Test date extraction from body. ... ok
+test_extract_from_filename (src.etl.tests.test_github_url.TestExtractDate.test_extract_from_filename)
+Test date extraction from Jekyll filename. ... ok
+test_extract_from_frontmatter (src.etl.tests.test_github_url.TestExtractDate.test_extract_from_frontmatter)
+Test date extraction from frontmatter. ... ok
+test_extract_from_title (src.etl.tests.test_github_url.TestExtractDate.test_extract_from_title)
+Test date extraction from title. ... ok
+test_fallback_current_date (src.etl.tests.test_github_url.TestExtractDate.test_fallback_current_date)
+Test fallback to current date. ... ok
+test_extract_from_body_hashtags (src.etl.tests.test_github_url.TestExtractTags.test_extract_from_body_hashtags)
+Test hashtag extraction from body. ... ok
+test_extract_from_categories (src.etl.tests.test_github_url.TestExtractTags.test_extract_from_categories)
+Test tag extraction from categories. ... ok
+test_extract_from_frontmatter_tags (src.etl.tests.test_github_url.TestExtractTags.test_extract_from_frontmatter_tags)
+Test tag extraction from frontmatter.tags. ... ok
+test_extract_from_keywords (src.etl.tests.test_github_url.TestExtractTags.test_extract_from_keywords)
+Test tag extraction from keywords. ... ok
+test_ignore_invalid_hashtags (src.etl.tests.test_github_url.TestExtractTags.test_ignore_invalid_hashtags)
+Test that invalid hashtags are ignored. ... ok
+test_merge_and_deduplicate (src.etl.tests.test_github_url.TestExtractTags.test_merge_and_deduplicate)
+Test merging tags from multiple sources and deduplication. ... ok
+test_invalid_yaml (src.etl.tests.test_github_url.TestParseFrontmatter.test_invalid_yaml)
+Test content with invalid YAML. ... ok
+test_no_frontmatter (src.etl.tests.test_github_url.TestParseFrontmatter.test_no_frontmatter)
+Test content without frontmatter. ... ok
+test_valid_frontmatter (src.etl.tests.test_github_url.TestParseFrontmatter.test_valid_frontmatter)
+Test parsing valid YAML frontmatter. ... ok
+test_invalid_url_format (src.etl.tests.test_github_url.TestParseGitHubUrl.test_invalid_url_format)
+Test invalid URL returns None. ... ok
+test_repo_info_properties (src.etl.tests.test_github_url.TestParseGitHubUrl.test_repo_info_properties)
+Test GitHubRepoInfo derived properties. ... ok
+test_url_with_nested_path (src.etl.tests.test_github_url.TestParseGitHubUrl.test_url_with_nested_path)
+Test URL with nested path. ... ok
+test_valid_url (src.etl.tests.test_github_url.TestParseGitHubUrl.test_valid_url)
+Test parsing valid GitHub URL. ... ok
+test_1to1_processing_maintains_single_output (src.etl.tests.test_import_phase.Test1to1Processing.test_1to1_processing_maintains_single_output)
+T014: Verify 1:1 processing produces single output without chunking. ... ok
+test_import_with_chunk_option_enables_chunking (src.etl.tests.test_import_phase.TestChunkOptionBehavior.test_import_with_chunk_option_enables_chunking)
+T058: --chunk option enables chunking for large files. ... ok
+test_import_without_chunk_skips_large_files (src.etl.tests.test_import_phase.TestChunkOptionBehavior.test_import_without_chunk_skips_large_files)
+T059: Default (no --chunk) skips large files with too_large frontmatter. ... ok
+test_chunk_metadata_propagation (src.etl.tests.test_import_phase.TestChunkedProcessing.test_chunk_metadata_propagation)
+T025: Verify chunk metadata propagates through pipeline stages. ... ok
+test_discover_items_chunks_large_conversation (src.etl.tests.test_import_phase.TestChunkedProcessing.test_discover_items_chunks_large_conversation)
+T024: Verify discover_items() chunks large conversations. ... ok
+setUpClass (src.etl.tests.test_import_phase.TestEndToEndIntegration) ... skipped "Integration tests disabled. Set RUN_INTEGRATION_TESTS=1 or use 'make test-fixtures' to enable."
+test_detect_existing_file_by_file_id (src.etl.tests.test_import_phase.TestFileIdSkipLogic.test_detect_existing_file_by_file_id)
+Existing file with same item_id should be detected. ... ok
+test_no_match_for_different_file_id (src.etl.tests.test_import_phase.TestFileIdSkipLogic.test_no_match_for_different_file_id)
+No match should be found for different item_id. ... ok
+test_skip_already_processed_conversation (src.etl.tests.test_import_phase.TestFileIdSkipLogic.test_skip_already_processed_conversation)
+Conversation with existing item_id should be detected for skip. ... ok
+test_import_phase_creates_stages (src.etl.tests.test_import_phase.TestImportPhaseCreation.test_import_phase_creates_stages)
+ImportPhase creates all three stages. ... ok
+test_import_phase_type (src.etl.tests.test_import_phase.TestImportPhaseCreation.test_import_phase_type)
+ImportPhase has correct phase_type. ... ok
+test_debug_mode_enabled (src.etl.tests.test_import_phase.TestImportPhaseDebugMode.test_debug_mode_enabled)
+Debug mode produces additional logging. ... ok
+test_discover_items_finds_json_files (src.etl.tests.test_import_phase.TestImportPhaseDiscoverItems.test_discover_items_finds_json_files)
+Discovers JSON files in input directory. ... ok
+test_discover_items_from_empty_dir (src.etl.tests.test_import_phase.TestImportPhaseDiscoverItems.test_discover_items_from_empty_dir)
+Empty directory yields no items. ... ok
+test_discover_items_ignores_non_json (src.etl.tests.test_import_phase.TestImportPhaseDiscoverItems.test_discover_items_ignores_non_json)
+Ignores non-JSON files. ... skipped 'TODO: Fix non-JSON file discovery logic'
+test_etl_flow_with_single_item (src.etl.tests.test_import_phase.TestImportPhaseETLFlow.test_etl_flow_with_single_item)
+Single item flows through all stages (requires Ollama). ... skipped 'Requires Ollama - integration test'
+test_run_creates_phase_result (src.etl.tests.test_import_phase.TestImportPhaseRun.test_run_creates_phase_result)
+Run returns PhaseResult. ... ok
+test_run_with_empty_input (src.etl.tests.test_import_phase.TestImportPhaseRun.test_run_with_empty_input)
+Run with empty input completes. ... ok
+test_extract_stage_is_claude_extractor (src.etl.tests.test_import_phase.TestImportPhaseStages.test_extract_stage_is_claude_extractor)
+Extract stage is ClaudeExtractor. ... ok
+test_load_stage_is_session_loader (src.etl.tests.test_import_phase.TestImportPhaseStages.test_load_stage_is_session_loader)
+Load stage is SessionLoader. ... ok
+test_transform_stage_is_knowledge_transformer (src.etl.tests.test_import_phase.TestImportPhaseStages.test_transform_stage_is_knowledge_transformer)
+Transform stage is KnowledgeTransformer. ... ok
+test_empty_input_no_error (src.etl.tests.test_import_phase.TestIntegrationAndEdgeCases.test_empty_input_no_error)
+T040: Edge case - empty input produces no error. ... ok
+test_end_to_end_mixed_1to1_and_1toN (src.etl.tests.test_import_phase.TestIntegrationAndEdgeCases.test_end_to_end_mixed_1to1_and_1toN)
+T039: Integration test with both 1:1 and 1:N conversations. ... ok
+test_partial_chunk_failure (src.etl.tests.test_import_phase.TestIntegrationAndEdgeCases.test_partial_chunk_failure)
+T042: Edge case - partial chunk failure handling. ... ok
+test_single_message_exceeds_threshold (src.etl.tests.test_import_phase.TestIntegrationAndEdgeCases.test_single_message_exceeds_threshold)
+T041: Edge case - single message exceeds chunk threshold. ... ok
+test_process_conversation_with_three_or_more_messages (src.etl.tests.test_import_phase.TestMinMessagesSkipLogic.test_process_conversation_with_three_or_more_messages)
+Conversations with 3+ messages should be processed. ... ok
+test_skip_conversation_with_one_message (src.etl.tests.test_import_phase.TestMinMessagesSkipLogic.test_skip_conversation_with_one_message)
+Conversations with 1 message should be skipped. ... ok
+test_skip_conversation_with_two_messages (src.etl.tests.test_import_phase.TestMinMessagesSkipLogic.test_skip_conversation_with_two_messages)
+Conversations with 2 messages should be skipped. ... ok
+test_chunk_items_have_unique_ids (src.etl.tests.test_knowledge_transformer.TestChunkSplittingMultipleOutputs.test_chunk_items_have_unique_ids)
+Each chunk item has a unique item_id. ... skipped '_handle_chunked_conversation() method removed - chunking now at ImportPhase level'
+test_chunked_conversation_produces_multiple_items (src.etl.tests.test_knowledge_transformer.TestChunkSplittingMultipleOutputs.test_chunked_conversation_produces_multiple_items)
+Chunked conversation produces multiple ProcessingItems. ... skipped '_handle_chunked_conversation() method removed - chunking now at ImportPhase level'
+test_extract_knowledge_calls_extractor (src.etl.tests.test_knowledge_transformer.TestExtractKnowledgeStepWithMockedOllama.test_extract_knowledge_calls_extractor)
+ExtractKnowledgeStep calls KnowledgeExtractor.extract(). ... ok
+test_extract_knowledge_handles_extraction_failure (src.etl.tests.test_knowledge_transformer.TestExtractKnowledgeStepWithMockedOllama.test_extract_knowledge_handles_extraction_failure)
+ExtractKnowledgeStep handles extraction failure gracefully. ... ok
+test_extract_knowledge_sets_metadata_keys (src.etl.tests.test_knowledge_transformer.TestExtractKnowledgeStepWithMockedOllama.test_extract_knowledge_sets_metadata_keys)
+ExtractKnowledgeStep sets knowledge_extracted and item_id in metadata. ... ok
+test_format_markdown_fallback_for_non_conversation (src.etl.tests.test_knowledge_transformer.TestFormatMarkdownStepOutput.test_format_markdown_fallback_for_non_conversation)
+FormatMarkdownStep handles non-conversation items. ... ok
+test_format_markdown_includes_code_snippets (src.etl.tests.test_knowledge_transformer.TestFormatMarkdownStepOutput.test_format_markdown_includes_code_snippets)
+FormatMarkdownStep includes code within summary_content. ... ok
+test_format_markdown_uses_knowledge_document (src.etl.tests.test_knowledge_transformer.TestFormatMarkdownStepOutput.test_format_markdown_uses_knowledge_document)
+FormatMarkdownStep uses KnowledgeDocument.to_markdown(). ... ok
+test_item_id_deterministic (src.etl.tests.test_knowledge_transformer.TestGenerateMetadataStepFileId.test_item_id_deterministic)
+item_id is deterministic for same content and path. ... ok
+test_item_id_different_for_different_content (src.etl.tests.test_knowledge_transformer.TestGenerateMetadataStepFileId.test_item_id_different_for_different_content)
+item_id differs for different content. ... ok
+test_item_id_generated_for_conversation (src.etl.tests.test_knowledge_transformer.TestGenerateMetadataStepFileId.test_item_id_generated_for_conversation)
+GenerateMetadataStep generates item_id for conversation. ... ok
+test_detects_english_summary_with_conversation_overview (src.etl.tests.test_knowledge_transformer.TestIsEnglishSummaryDetection.test_detects_english_summary_with_conversation_overview)
+is_english_summary() detects English with 'Conversation Overview' pattern. ... ok
+test_detects_english_summary_with_high_ascii_ratio (src.etl.tests.test_knowledge_transformer.TestIsEnglishSummaryDetection.test_detects_english_summary_with_high_ascii_ratio)
+is_english_summary() detects English with high ASCII ratio. ... ok
+test_returns_false_for_empty_summary (src.etl.tests.test_knowledge_transformer.TestIsEnglishSummaryDetection.test_returns_false_for_empty_summary)
+is_english_summary() returns False for empty string. ... ok
+test_returns_false_for_japanese_summary (src.etl.tests.test_knowledge_transformer.TestIsEnglishSummaryDetection.test_returns_false_for_japanese_summary)
+is_english_summary() returns False for Japanese summary. ... ok
+test_returns_false_for_none_summary (src.etl.tests.test_knowledge_transformer.TestIsEnglishSummaryDetection.test_returns_false_for_none_summary)
+is_english_summary() returns False for None. ... ok
+test_knowledge_transformer_has_correct_steps (src.etl.tests.test_knowledge_transformer.TestKnowledgeTransformerStage.test_knowledge_transformer_has_correct_steps)
+KnowledgeTransformer has the expected steps. ... ok
+test_all_chunks_fail_returns_failed_items (src.etl.tests.test_knowledge_transformer.TestPartialChunkFailureHandling.test_all_chunks_fail_returns_failed_items)
+All chunks failing returns all failed items. ... skipped '_handle_chunked_conversation() method removed - chunking now at ImportPhase level'
+test_partial_failure_returns_successful_chunks (src.etl.tests.test_knowledge_transformer.TestPartialChunkFailureHandling.test_partial_failure_returns_successful_chunks)
+Partial chunk failure returns successful chunks. ... skipped '_handle_chunked_conversation() method removed - chunking now at ImportPhase level'
+test_should_chunk_returns_false_for_non_conversation (src.etl.tests.test_knowledge_transformer.TestShouldChunk.test_should_chunk_returns_false_for_non_conversation)
+_should_chunk() returns False for non-conversation items. ... skipped '_should_chunk() method removed - chunking now at ImportPhase level'
+test_should_chunk_returns_false_for_small_conversation (src.etl.tests.test_knowledge_transformer.TestShouldChunk.test_should_chunk_returns_false_for_small_conversation)
+_should_chunk() returns False for conversation under threshold. ... skipped '_should_chunk() method removed - chunking now at ImportPhase level'
+test_should_chunk_returns_true_for_large_conversation (src.etl.tests.test_knowledge_transformer.TestShouldChunk.test_should_chunk_returns_true_for_large_conversation)
+_should_chunk() returns True for conversation exceeding threshold. ... skipped '_should_chunk() method removed - chunking now at ImportPhase level'
+test_too_large_frontmatter_added_to_skipped_files (src.etl.tests.test_knowledge_transformer.TestTooLargeFrontmatterAddition.test_too_large_frontmatter_added_to_skipped_files)
+T060: Verify too_large: true is added to frontmatter for threshold-exceeding files. ... ok
+test_too_large_frontmatter_not_added_for_small_files (src.etl.tests.test_knowledge_transformer.TestTooLargeFrontmatterAddition.test_too_large_frontmatter_not_added_for_small_files)
+Verify too_large is not added for files below threshold. ... ok
+test_too_large_frontmatter_not_added_when_chunk_enabled (src.etl.tests.test_knowledge_transformer.TestTooLargeFrontmatterAddition.test_too_large_frontmatter_not_added_when_chunk_enabled)
+Verify too_large is not added when --chunk is enabled. ... ok
+test_translate_summary_calls_ollama (src.etl.tests.test_knowledge_transformer.TestTranslateSummaryWithMockedOllama.test_translate_summary_calls_ollama)
+translate_summary() calls Ollama and returns translated text. ... ok
+test_translate_summary_handles_json_parse_error (src.etl.tests.test_knowledge_transformer.TestTranslateSummaryWithMockedOllama.test_translate_summary_handles_json_parse_error)
+translate_summary() handles JSON parse error gracefully. ... ok
+test_translate_summary_handles_ollama_error (src.etl.tests.test_knowledge_transformer.TestTranslateSummaryWithMockedOllama.test_translate_summary_handles_ollama_error)
+translate_summary() handles Ollama error gracefully. ... ok
+test_successful_translation_sets_metadata (src.etl.tests.test_knowledge_transformer.TestTranslationErrorFallback.test_successful_translation_sets_metadata)
+Successful translation sets summary_translated and original_summary metadata. ... ok
+test_translation_failure_uses_original_english (src.etl.tests.test_knowledge_transformer.TestTranslationErrorFallback.test_translation_failure_uses_original_english)
+Translation failure should use original English summary. ... Summary translation failed for test-uuid: Ollama error. Using original English summary.
+ok
+test_chunk_filename_is_optional (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunk_filename_is_optional)
+chunk_filename is optional and should not affect validation. ... ok
+test_chunk_index_boundary_last_valid_index (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunk_index_boundary_last_valid_index)
+chunk_index = total_chunks - 1 should pass validation. ... ok
+test_chunk_index_exceeds_total_fails (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunk_index_exceeds_total_fails)
+chunk_index >= total_chunks should fail validation. ... ok
+test_chunk_index_negative_fails (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunk_index_negative_fails)
+chunk_index < 0 should fail validation. ... ok
+test_chunk_index_non_integer_fails (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunk_index_non_integer_fails)
+chunk_index as string should fail validation. ... ok
+test_chunked_missing_chunk_index_fails (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunked_missing_chunk_index_fails)
+Chunked item missing chunk_index should fail validation. ... ok
+test_chunked_missing_parent_item_id_fails (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunked_missing_parent_item_id_fails)
+Chunked item missing parent_item_id should fail validation. ... ok
+test_chunked_missing_total_chunks_fails (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunked_missing_total_chunks_fails)
+Chunked item missing total_chunks should fail validation. ... ok
+test_chunked_with_all_required_fields_is_valid (src.etl.tests.test_models.TestChunkMetadataValidation.test_chunked_with_all_required_fields_is_valid)
+Chunked items with all required fields should pass validation. ... ok
+test_non_chunked_explicit_false_is_valid (src.etl.tests.test_models.TestChunkMetadataValidation.test_non_chunked_explicit_false_is_valid)
+Items with is_chunked=False should pass validation. ... ok
+test_non_chunked_item_is_valid (src.etl.tests.test_models.TestChunkMetadataValidation.test_non_chunked_item_is_valid)
+Non-chunked items should pass validation. ... ok
+test_total_chunks_zero_fails (src.etl.tests.test_models.TestChunkMetadataValidation.test_total_chunks_zero_fails)
+total_chunks = 0 should fail validation. ... ok
+test_calculate_50_percent_reduction (src.etl.tests.test_models.TestContentMetrics.test_calculate_50_percent_reduction)
+Verify delta is -0.5 for 50% reduction. ... ok
+test_calculate_complete_deletion (src.etl.tests.test_models.TestContentMetrics.test_calculate_complete_deletion)
+Verify delta is -1.0 for complete deletion (0 output). ... ok
+test_calculate_custom_unit (src.etl.tests.test_models.TestContentMetrics.test_calculate_custom_unit)
+Verify custom unit is preserved. ... ok
+test_calculate_double_size (src.etl.tests.test_models.TestContentMetrics.test_calculate_double_size)
+Verify delta is 1.0 for doubling (100% increase). ... ok
+test_calculate_from_zero_input (src.etl.tests.test_models.TestContentMetrics.test_calculate_from_zero_input)
+Verify handling of zero input size. ... ok
+test_calculate_more_than_triple (src.etl.tests.test_models.TestContentMetrics.test_calculate_more_than_triple)
+Verify delta > 2.0 triggers review_required. ... ok
+test_calculate_no_change (src.etl.tests.test_models.TestContentMetrics.test_calculate_no_change)
+Verify delta is 0 when sizes are equal. ... ok
+test_calculate_triple_size (src.etl.tests.test_models.TestContentMetrics.test_calculate_triple_size)
+Verify delta is 2.0 for tripling (200% increase) -> review required. ... ok
+test_direct_construction (src.etl.tests.test_models.TestContentMetrics.test_direct_construction)
+Verify direct construction with all fields. ... ok
+test_review_required_threshold_boundary (src.etl.tests.test_models.TestContentMetrics.test_review_required_threshold_boundary)
+Verify exact boundary conditions for review_required. ... ok
+test_to_dict (src.etl.tests.test_models.TestContentMetrics.test_to_dict)
+Verify to_dict serialization. ... ok
+test_member_count (src.etl.tests.test_models.TestItemStatus.test_member_count)
+Verify exactly 5 members. ... ok
+test_values (src.etl.tests.test_models.TestItemStatus.test_values)
+Verify all expected values exist. ... ok
+test_member_count (src.etl.tests.test_models.TestPhaseStatus.test_member_count)
+Verify exactly 5 members. ... ok
+test_values (src.etl.tests.test_models.TestPhaseStatus.test_values)
+Verify all expected values exist. ... ok
+test_member_count (src.etl.tests.test_models.TestPhaseType.test_member_count)
+Verify exactly 2 members. ... ok
+test_values (src.etl.tests.test_models.TestPhaseType.test_values)
+Verify all expected values exist. ... ok
+test_all_fields (src.etl.tests.test_models.TestProcessingItem.test_all_fields)
+Verify all fields can be set. ... ok
+test_creation_with_required_fields (src.etl.tests.test_models.TestProcessingItem.test_creation_with_required_fields)
+Verify item can be created with required fields. ... ok
+test_mutable_metadata (src.etl.tests.test_models.TestProcessingItem.test_mutable_metadata)
+Verify metadata can be modified after creation. ... ok
+test_optional_fields_default_to_none (src.etl.tests.test_models.TestProcessingItem.test_optional_fields_default_to_none)
+Verify optional fields default to None. ... ok
+test_custom_values (src.etl.tests.test_models.TestRetryConfig.test_custom_values)
+Verify custom configuration values. ... ok
+test_default_values (src.etl.tests.test_models.TestRetryConfig.test_default_values)
+Verify default configuration values. ... ok
+test_exception_tuple_is_mutable_default (src.etl.tests.test_models.TestRetryConfig.test_exception_tuple_is_mutable_default)
+Verify default retry_exceptions is isolated per instance. ... ok
+test_partial_override (src.etl.tests.test_models.TestRetryConfig.test_partial_override)
+Verify partial configuration override. ... ok
+test_from_value (src.etl.tests.test_models.TestSessionStatus.test_from_value)
+Verify enum can be created from string value. ... ok
+test_member_count (src.etl.tests.test_models.TestSessionStatus.test_member_count)
+Verify exactly 5 members. ... ok
+test_values (src.etl.tests.test_models.TestSessionStatus.test_values)
+Verify all expected values exist. ... ok
+test_creation_with_required_fields (src.etl.tests.test_models.TestStageLogRecord.test_creation_with_required_fields)
+Verify record can be created with required fields only. ... ok
+test_multiple_chunks_with_different_indices (src.etl.tests.test_models.TestStageLogRecord.test_multiple_chunks_with_different_indices)
+Verify chunk_index can vary for different records. ... ok
+test_non_chunked_record_excludes_chunk_fields (src.etl.tests.test_models.TestStageLogRecord.test_non_chunked_record_excludes_chunk_fields)
+Verify non-chunked records exclude chunk fields from to_dict. ... ok
+test_optional_fields_default_to_none (src.etl.tests.test_models.TestStageLogRecord.test_optional_fields_default_to_none)
+Verify optional fields default to None. ... ok
+test_to_dict_excludes_none_values (src.etl.tests.test_models.TestStageLogRecord.test_to_dict_excludes_none_values)
+Verify to_dict excludes None optional fields. ... ok
+test_to_dict_includes_chunk_fields_when_set (src.etl.tests.test_models.TestStageLogRecord.test_to_dict_includes_chunk_fields_when_set)
+Verify to_dict includes chunk tracking fields when set. ... ok
+test_member_count (src.etl.tests.test_models.TestStageStatus.test_member_count)
+Verify exactly 4 members (no PARTIAL). ... ok
+test_values (src.etl.tests.test_models.TestStageStatus.test_values)
+Verify all expected values exist. ... ok
+test_member_count (src.etl.tests.test_models.TestStageType.test_member_count)
+Verify exactly 3 members (ETL pattern). ... ok
+test_values (src.etl.tests.test_models.TestStageType.test_values)
+Verify ETL pattern stages. ... ok
+test_failed_result (src.etl.tests.test_models.TestStepResult.test_failed_result)
+Verify failed step result. ... ok
+test_partial_success (src.etl.tests.test_models.TestStepResult.test_partial_success)
+Verify partial success (some items failed). ... ok
+test_success_result (src.etl.tests.test_models.TestStepResult.test_success_result)
+Verify successful step result. ... ok
+test_member_count (src.etl.tests.test_models.TestStepStatus.test_member_count)
+Verify exactly 5 members. ... ok
+test_values (src.etl.tests.test_models.TestStepStatus.test_values)
+Verify all expected values exist. ... ok
+test_organize_phase_creates_stages (src.etl.tests.test_organize_phase.TestOrganizePhaseCreation.test_organize_phase_creates_stages)
+OrganizePhase creates all three stages. ... ok
+test_organize_phase_type (src.etl.tests.test_organize_phase.TestOrganizePhaseCreation.test_organize_phase_type)
+OrganizePhase has correct phase_type. ... ok
+test_debug_mode_enabled (src.etl.tests.test_organize_phase.TestOrganizePhaseDebugMode.test_debug_mode_enabled)
+Debug mode produces additional logging. ... ok
+test_discover_items_finds_markdown_files (src.etl.tests.test_organize_phase.TestOrganizePhaseDiscoverItems.test_discover_items_finds_markdown_files)
+Discovers Markdown files in input directory. ... ok
+test_discover_items_from_empty_dir (src.etl.tests.test_organize_phase.TestOrganizePhaseDiscoverItems.test_discover_items_from_empty_dir)
+Empty directory yields no items. ... ok
+test_discover_items_ignores_non_markdown (src.etl.tests.test_organize_phase.TestOrganizePhaseDiscoverItems.test_discover_items_ignores_non_markdown)
+Ignores non-Markdown files. ... ok
+test_discover_items_recursive (src.etl.tests.test_organize_phase.TestOrganizePhaseDiscoverItems.test_discover_items_recursive)
+Discovers files in subdirectories. ... ok
+test_etl_flow_with_single_item (src.etl.tests.test_organize_phase.TestOrganizePhaseETLFlow.test_etl_flow_with_single_item)
+Single item flows through all stages. ... ok
+test_etl_flow_with_unnormalized_file (src.etl.tests.test_organize_phase.TestOrganizePhaseETLFlow.test_etl_flow_with_unnormalized_file)
+Unnormalized file gets normalized. ... ok
+test_run_creates_phase_result (src.etl.tests.test_organize_phase.TestOrganizePhaseRun.test_run_creates_phase_result)
+Run returns PhaseResult. ... ok
+test_run_with_empty_input (src.etl.tests.test_organize_phase.TestOrganizePhaseRun.test_run_with_empty_input)
+Run with empty input completes. ... ok
+test_extract_stage_is_file_extractor (src.etl.tests.test_organize_phase.TestOrganizePhaseStages.test_extract_stage_is_file_extractor)
+Extract stage is FileExtractor. ... ok
+test_load_stage_is_vault_loader (src.etl.tests.test_organize_phase.TestOrganizePhaseStages.test_load_stage_is_vault_loader)
+Load stage is VaultLoader. ... ok
+test_transform_stage_is_normalizer_transformer (src.etl.tests.test_organize_phase.TestOrganizePhaseStages.test_transform_stage_is_normalizer_transformer)
+Transform stage is NormalizerTransformer. ... ok
+test_vault_loader_determines_destination (src.etl.tests.test_organize_phase.TestOrganizePhaseVaultMapping.test_vault_loader_determines_destination)
+VaultLoader determines correct destination vault. ... ok
+test_phase_creation_with_defaults (src.etl.tests.test_phase.TestPhaseDataclass.test_phase_creation_with_defaults)
+Phase can be created with minimal arguments. ... ok
+test_phase_status_file_path (src.etl.tests.test_phase.TestPhaseDataclass.test_phase_status_file_path)
+Phase.status_file returns correct path. ... ok
+test_phase_to_dict (src.etl.tests.test_phase.TestPhaseDataclass.test_phase_to_dict)
+Phase.to_dict() returns correct dictionary. ... ok
+test_phase_folder_created (src.etl.tests.test_phase.TestPhaseFolderCreation.test_phase_folder_created)
+PhaseManager.create() creates phase folder. ... ok
+test_phase_folder_name_matches_type (src.etl.tests.test_phase.TestPhaseFolderCreation.test_phase_folder_name_matches_type)
+Phase folder name matches PhaseType value. ... ok
+test_phase_has_status_file_path (src.etl.tests.test_phase.TestPhaseFolderCreation.test_phase_has_status_file_path)
+Phase has correct status_file path. ... ok
+test_phase_json_contains_required_fields (src.etl.tests.test_phase.TestPhaseJsonStatusTracking.test_phase_json_contains_required_fields)
+phase.json contains all required fields. ... ok
+test_phase_json_created_on_save (src.etl.tests.test_phase.TestPhaseJsonStatusTracking.test_phase_json_created_on_save)
+PhaseManager.save() creates phase.json. ... ok
+test_phase_json_tracks_step_status (src.etl.tests.test_phase.TestPhaseJsonStatusTracking.test_phase_json_tracks_step_status)
+phase.json tracks step-level status. ... ok
+test_phase_load_from_json (src.etl.tests.test_phase.TestPhaseJsonStatusTracking.test_phase_load_from_json)
+PhaseManager.load() reads phase from phase.json. ... ok
+test_phase_status_update_persists (src.etl.tests.test_phase.TestPhaseJsonStatusTracking.test_phase_status_update_persists)
+Phase status changes are persisted to phase.json. ... ok
+test_stage_creation (src.etl.tests.test_phase.TestStageDataclass.test_stage_creation)
+Stage can be created with required arguments. ... ok
+test_stage_paths (src.etl.tests.test_phase.TestStageDataclass.test_stage_paths)
+Stage has correct input/output paths. ... ok
+test_extract_stage_has_input_output (src.etl.tests.test_phase.TestStageFolderCreation.test_extract_stage_has_input_output)
+Extract stage has both input/ and output/ folders. ... ok
+test_load_stage_has_output_only (src.etl.tests.test_phase.TestStageFolderCreation.test_load_stage_has_output_only)
+Load stage has output/ folder only. ... ok
+test_stage_folders_created (src.etl.tests.test_phase.TestStageFolderCreation.test_stage_folders_created)
+PhaseManager.create() creates all stage folders. ... ok
+test_transform_stage_has_output_only (src.etl.tests.test_phase.TestStageFolderCreation.test_transform_stage_has_output_only)
+Transform stage has output/ folder only. ... ok
+test_step_creation_with_defaults (src.etl.tests.test_phase.TestStepDataclass.test_step_creation_with_defaults)
+Step can be created with minimal arguments. ... ok
+test_step_to_dict (src.etl.tests.test_phase.TestStepDataclass.test_step_to_dict)
+Step.to_dict() returns correct dictionary. ... ok
+test_step_tracker_complete_success (src.etl.tests.test_phase.TestStepTracker.test_step_tracker_complete_success)
+StepTracker.complete() sets completed_at and duration. ... ok
+test_step_tracker_fail (src.etl.tests.test_phase.TestStepTracker.test_step_tracker_fail)
+StepTracker.fail() sets error and status. ... ok
+test_step_tracker_start (src.etl.tests.test_phase.TestStepTracker.test_step_tracker_start)
+StepTracker.start() sets started_at and status. ... ok
+test_creates_working_decorator (src.etl.tests.test_retry.TestCreateRetryDecorator.test_creates_working_decorator)
+Verify create_retry_decorator returns a working decorator. ... ok
+test_none_config_uses_default (src.etl.tests.test_retry.TestCreateRetryDecorator.test_none_config_uses_default)
+Verify None config uses DEFAULT_RETRY_CONFIG. ... ok
+test_empty_exceptions_tuple_retries_nothing (src.etl.tests.test_retry.TestExceptionSpecificRetry.test_empty_exceptions_tuple_retries_nothing)
+Verify empty exceptions tuple means no retries. ... ok
+test_multiple_exception_types (src.etl.tests.test_retry.TestExceptionSpecificRetry.test_multiple_exception_types)
+Verify retry on multiple exception types. ... ok
+test_single_exception_type (src.etl.tests.test_retry.TestExceptionSpecificRetry.test_single_exception_type)
+Verify retry on single exception type. ... ok
+test_subclass_exception_is_retried (src.etl.tests.test_retry.TestExceptionSpecificRetry.test_subclass_exception_is_retried)
+Verify subclass of configured exception triggers retry. ... ok
+test_exponential_without_jitter (src.etl.tests.test_retry.TestExponentialBackoffJitter.test_exponential_without_jitter)
+Verify exponential backoff without jitter uses wait_exponential. ... ok
+test_jitter_produces_variable_waits (src.etl.tests.test_retry.TestExponentialBackoffJitter.test_jitter_produces_variable_waits)
+Verify jitter produces variable wait times for same attempt. ... ok
+test_wait_time_within_bounds (src.etl.tests.test_retry.TestExponentialBackoffJitter.test_wait_time_within_bounds)
+Verify wait times are within min/max bounds. ... ok
+test_custom_max_attempts (src.etl.tests.test_retry.TestRetryConfigConversion.test_custom_max_attempts)
+Verify max_attempts maps to stop_after_attempt. ... ok
+test_custom_retry_exceptions (src.etl.tests.test_retry.TestRetryConfigConversion.test_custom_retry_exceptions)
+Verify custom exceptions map to retry_if_exception_type. ... ok
+test_custom_wait_times (src.etl.tests.test_retry.TestRetryConfigConversion.test_custom_wait_times)
+Verify wait times map to wait_random_exponential. ... ok
+test_default_config_to_tenacity_kwargs (src.etl.tests.test_retry.TestRetryConfigConversion.test_default_config_to_tenacity_kwargs)
+Verify default config converts to proper tenacity kwargs. ... ok
+test_default_retry_config_constant (src.etl.tests.test_retry.TestRetryConfigConversion.test_default_retry_config_constant)
+Verify DEFAULT_RETRY_CONFIG is a valid RetryConfig. ... ok
+test_jitter_disabled (src.etl.tests.test_retry.TestRetryConfigConversion.test_jitter_disabled)
+Verify jitter=False uses exponential without random. ... ok
+test_after_retry_callback_is_called (src.etl.tests.test_retry.TestRetryLoggingCallbacks.test_after_retry_callback_is_called)
+Verify after callback is called after each retry attempt. ... Starting call to 'src.etl.tests.test_retry.TestRetryLoggingCallbacks.test_after_retry_callback_is_called.<locals>.failing_func', this is the 1st time calling it.
+Finished call to 'src.etl.tests.test_retry.TestRetryLoggingCallbacks.test_after_retry_callback_is_called.<locals>.failing_func' after 0.000(s), this was the 1st time calling it.
+Starting call to 'src.etl.tests.test_retry.TestRetryLoggingCallbacks.test_after_retry_callback_is_called.<locals>.failing_func', this is the 2nd time calling it.
+ok
+test_before_retry_callback_is_called (src.etl.tests.test_retry.TestRetryLoggingCallbacks.test_before_retry_callback_is_called)
+Verify before callback is called before each retry. ... ok
+test_decorator_with_custom_config (src.etl.tests.test_retry.TestWithRetryDecorator.test_decorator_with_custom_config)
+Verify @with_retry(config=...) uses custom config. ... ok
+test_decorator_without_args_uses_default_config (src.etl.tests.test_retry.TestWithRetryDecorator.test_decorator_without_args_uses_default_config)
+Verify @with_retry() uses default config. ... ok
+test_does_not_retry_on_non_configured_exception (src.etl.tests.test_retry.TestWithRetryDecorator.test_does_not_retry_on_non_configured_exception)
+Verify decorator does not retry on non-configured exceptions. ... ok
+test_max_attempts_exceeded (src.etl.tests.test_retry.TestWithRetryDecorator.test_max_attempts_exceeded)
+Verify exception is raised after max attempts exceeded. ... ok
+test_preserves_function_metadata (src.etl.tests.test_retry.TestWithRetryDecorator.test_preserves_function_metadata)
+Verify decorator preserves function name and docstring. ... ok
+test_retries_on_configured_exception (src.etl.tests.test_retry.TestWithRetryDecorator.test_retries_on_configured_exception)
+Verify decorator retries on configured exceptions. ... ok
+test_phase_stats_creation (src.etl.tests.test_session.TestPhaseStats.test_phase_stats_creation)
+PhaseStats can be created with all fields. ... ok
+test_phase_stats_from_dict (src.etl.tests.test_session.TestPhaseStats.test_phase_stats_from_dict)
+PhaseStats.from_dict() deserializes correctly. ... ok
+test_phase_stats_to_dict (src.etl.tests.test_session.TestPhaseStats.test_phase_stats_to_dict)
+PhaseStats.to_dict() serializes correctly. ... ok
+test_phase_stats_to_dict_with_error (src.etl.tests.test_session.TestPhaseStats.test_phase_stats_to_dict_with_error)
+PhaseStats.to_dict() includes error if set. ... ok
+test_phase_stats_with_error (src.etl.tests.test_session.TestPhaseStats.test_phase_stats_with_error)
+PhaseStats can include error message. ... ok
+test_session_from_dict_new_dict_format (src.etl.tests.test_session.TestSessionBackwardCompatibility.test_session_from_dict_new_dict_format)
+Session.from_dict() handles new dict format. ... ok
+test_session_from_dict_old_list_format (src.etl.tests.test_session.TestSessionBackwardCompatibility.test_session_from_dict_old_list_format)
+Session.from_dict() handles old list format. ... ok
+test_session_base_path_is_path_object (src.etl.tests.test_session.TestSessionCreation.test_session_base_path_is_path_object)
+Session base_path should be a Path object. ... ok
+test_session_creation_with_all_fields (src.etl.tests.test_session.TestSessionCreation.test_session_creation_with_all_fields)
+Session can be created with all fields specified. ... ok
+test_session_creation_with_defaults (src.etl.tests.test_session.TestSessionCreation.test_session_creation_with_defaults)
+Session can be created with minimal arguments. ... ok
+test_generate_session_id_contains_valid_date (src.etl.tests.test_session.TestSessionIdFormat.test_generate_session_id_contains_valid_date)
+Generated session_id contains a valid datetime. ... ok
+test_generate_session_id_format (src.etl.tests.test_session.TestSessionIdFormat.test_generate_session_id_format)
+Generated session_id follows YYYYMMDD_HHMMSS format. ... ok
+test_validate_session_id_invalid (src.etl.tests.test_session.TestSessionIdFormat.test_validate_session_id_invalid)
+validate_session_id returns False for invalid formats. ... ok
+test_validate_session_id_invalid_datetime (src.etl.tests.test_session.TestSessionIdFormat.test_validate_session_id_invalid_datetime)
+validate_session_id returns False for invalid datetime values. ... ok
+test_validate_session_id_valid (src.etl.tests.test_session.TestSessionIdFormat.test_validate_session_id_valid)
+validate_session_id returns True for valid format. ... ok
+test_session_json_crashed_phase_format (src.etl.tests.test_session.TestSessionJsonPhasesFormat.test_session_json_crashed_phase_format)
+session.json records crashed phase with error field. ... ok
+test_session_json_phases_format (src.etl.tests.test_session.TestSessionJsonPhasesFormat.test_session_json_phases_format)
+session.json contains phases as dict with PhaseStats. ... ok
+test_session_from_dict (src.etl.tests.test_session.TestSessionJsonSerialization.test_session_from_dict)
+Session.from_dict() creates Session from dictionary (new format). ... ok
+test_session_json_roundtrip (src.etl.tests.test_session.TestSessionJsonSerialization.test_session_json_roundtrip)
+Session serialization/deserialization is lossless. ... ok
+test_session_to_dict (src.etl.tests.test_session.TestSessionJsonSerialization.test_session_to_dict)
+Session.to_dict() returns correct dictionary. ... ok
+test_session_manager_create (src.etl.tests.test_session.TestSessionManager.test_session_manager_create)
+SessionManager.create() creates a new session with folder. ... ok
+test_session_manager_create_with_debug (src.etl.tests.test_session.TestSessionManager.test_session_manager_create_with_debug)
+SessionManager.create() respects debug_mode. ... ok
+test_session_manager_list_sessions (src.etl.tests.test_session.TestSessionManager.test_session_manager_list_sessions)
+SessionManager.list_sessions() returns all session IDs. ... ok
+test_session_manager_load (src.etl.tests.test_session.TestSessionManager.test_session_manager_load)
+SessionManager.load() reads session from session.json. ... ok
+test_session_manager_load_nonexistent (src.etl.tests.test_session.TestSessionManager.test_session_manager_load_nonexistent)
+SessionManager.load() raises error for nonexistent session. ... ok
+test_session_manager_save (src.etl.tests.test_session.TestSessionManager.test_session_manager_save)
+SessionManager.save() writes session.json. ... ok
+test_session_phases_dict_format (src.etl.tests.test_session.TestSessionPhasesDictFormat.test_session_phases_dict_format)
+Session.phases can be dict of PhaseStats. ... ok
+test_session_to_dict_with_phases_dict (src.etl.tests.test_session.TestSessionPhasesDictFormat.test_session_to_dict_with_phases_dict)
+Session.to_dict() serializes phases as dict. ... ok
+test_error_file_contains_all_required_fields (src.etl.tests.test_session_loader.TestErrorDetailFields.test_error_file_contains_all_required_fields)
+Error detail file contains all required fields from ErrorDetail. ... ok
+test_error_file_handles_optional_fields (src.etl.tests.test_session_loader.TestErrorDetailFields.test_error_file_handles_optional_fields)
+Error detail file handles optional fields (None values). ... ok
+test_error_file_markdown_structure (src.etl.tests.test_session_loader.TestErrorDetailFields.test_error_file_markdown_structure)
+Error detail file has correct Markdown structure. ... ok
+test_error_detail_file_created_in_errors_folder (src.etl.tests.test_session_loader.TestErrorDetailFileCreation.test_error_detail_file_created_in_errors_folder)
+BaseStage._handle_error creates error detail file in errors/ folder. ... ok
+test_error_file_with_timestamp_in_filename (src.etl.tests.test_session_loader.TestErrorDetailFileCreation.test_error_file_with_timestamp_in_filename)
+Error detail file uses conversation_id as filename. ... ok
+test_session_loader_default_steps (src.etl.tests.test_session_loader.TestSessionLoaderIntegration.test_session_loader_default_steps)
+SessionLoader has default steps: WriteToSession, UpdateIndex. ... ok
+test_session_loader_runs_both_steps (src.etl.tests.test_session_loader.TestSessionLoaderIntegration.test_session_loader_runs_both_steps)
+SessionLoader runs WriteToSession then UpdateIndex. ... ok
+test_session_loader_with_index_path (src.etl.tests.test_session_loader.TestSessionLoaderIntegration.test_session_loader_with_index_path)
+SessionLoader can be configured with index_path. ... ok
+test_creates_new_file_for_different_item_id (src.etl.tests.test_session_loader.TestUpdateIndexStepDuplicateDetection.test_creates_new_file_for_different_item_id)
+UpdateIndexStep creates new file in @index when item_id differs. ... ok
+test_detects_item_id_in_frontmatter (src.etl.tests.test_session_loader.TestUpdateIndexStepDuplicateDetection.test_detects_item_id_in_frontmatter)
+UpdateIndexStep correctly detects item_id from YAML frontmatter. ... ok
+test_handles_malformed_frontmatter (src.etl.tests.test_session_loader.TestUpdateIndexStepDuplicateDetection.test_handles_malformed_frontmatter)
+UpdateIndexStep handles files with malformed frontmatter gracefully. ... ok
+test_overwrites_existing_file_with_same_item_id (src.etl.tests.test_session_loader.TestUpdateIndexStepDuplicateDetection.test_overwrites_existing_file_with_same_item_id)
+UpdateIndexStep overwrites file in @index if same item_id exists. ... ok
+test_copies_file_to_index_directory (src.etl.tests.test_session_loader.TestUpdateIndexStepFileCopy.test_copies_file_to_index_directory)
+UpdateIndexStep copies processed file to @index directory. ... ok
+test_creates_index_directory_if_not_exists (src.etl.tests.test_session_loader.TestUpdateIndexStepFileCopy.test_creates_index_directory_if_not_exists)
+UpdateIndexStep creates @index directory if it does not exist. ... ok
+test_skips_copy_when_no_index_path_configured (src.etl.tests.test_session_loader.TestUpdateIndexStepFileCopy.test_skips_copy_when_no_index_path_configured)
+UpdateIndexStep skips copy when index_path is None. ... ok
+test_skips_copy_when_no_output_path (src.etl.tests.test_session_loader.TestUpdateIndexStepFileCopy.test_skips_copy_when_no_output_path)
+UpdateIndexStep skips copy when item has no output_path. ... ok
+test_sanitizes_filename (src.etl.tests.test_session_loader.TestWriteToSessionStep.test_sanitizes_filename)
+WriteToSessionStep sanitizes problematic characters in filename. ... ok
+test_uses_item_id_for_untitled_conversation (src.etl.tests.test_session_loader.TestWriteToSessionStep.test_uses_item_id_for_untitled_conversation)
+WriteToSessionStep uses item_id when conversation_name is Untitled. ... ok
+test_writes_transformed_content_to_file (src.etl.tests.test_session_loader.TestWriteToSessionStep.test_writes_transformed_content_to_file)
+WriteToSessionStep writes transformed_content to output file. ... ok
+test_abstract_method_not_implemented_raises_typeerror (src.etl.tests.test_stages.TestBaseExtractorTemplateMethod.test_abstract_method_not_implemented_raises_typeerror)
+BaseExtractor subclass must implement abstract methods or raise TypeError. ... ok
+test_base_stage_is_abstract (src.etl.tests.test_stages.TestBaseStageAbstract.test_base_stage_is_abstract)
+BaseStage cannot be instantiated directly. ... ok
+test_base_stage_requires_stage_type (src.etl.tests.test_stages.TestBaseStageAbstract.test_base_stage_requires_stage_type)
+Subclass must implement stage_type property. ... ok
+test_base_stage_requires_steps (src.etl.tests.test_stages.TestBaseStageAbstract.test_base_stage_requires_steps)
+Subclass must implement steps property. ... ok
+test_stage_has_correct_type (src.etl.tests.test_stages.TestBaseStageImplementation.test_stage_has_correct_type)
+Stage reports correct stage_type. ... ok
+test_stage_has_steps (src.etl.tests.test_stages.TestBaseStageImplementation.test_stage_has_steps)
+Stage has configured steps. ... ok
+test_stage_run_processes_items (src.etl.tests.test_stages.TestBaseStageImplementation.test_stage_run_processes_items)
+Stage.run() processes items through steps. ... ok
+test_base_step_is_abstract (src.etl.tests.test_stages.TestBaseStep.test_base_step_is_abstract)
+BaseStep cannot be instantiated directly. ... ok
+test_step_implementation (src.etl.tests.test_stages.TestBaseStep.test_step_implementation)
+Concrete step implements required methods. ... ok
+test_step_on_error_default (src.etl.tests.test_stages.TestBaseStep.test_step_on_error_default)
+Default on_error returns None. ... ok
+test_step_validate_input_default (src.etl.tests.test_stages.TestBaseStep.test_step_validate_input_default)
+Default validate_input returns True. ... ok
+test_chatgpt_extractor_build_conversation_for_chunking (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_build_conversation_for_chunking)
+ChatGPTExtractor._build_conversation_for_chunking() が実装されていることを確認 ... ok
+test_chatgpt_extractor_build_conversation_returns_conversation_protocol (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_build_conversation_returns_conversation_protocol)
+ChatGPTExtractor._build_conversation_for_chunking() が ConversationProtocol を返すことを確認 ... ok
+test_chatgpt_extractor_converts_mapping_to_conversation_protocol (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_converts_mapping_to_conversation_protocol)
+ChatGPTExtractor が mapping 構造を ConversationProtocol に変換できることを確認 ... ok
+test_chatgpt_extractor_discover_items_no_chunking_in_discovery (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_discover_items_no_chunking_in_discovery)
+ChatGPTExtractor._discover_raw_items() が発見フェーズでチャンク処理をしないことを確認 ... ok
+test_chatgpt_extractor_discover_raw_items (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_discover_raw_items)
+ChatGPTExtractor._discover_raw_items() が実装されていることを確認 ... ok
+test_chatgpt_extractor_discover_raw_items_returns_iterator (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_discover_raw_items_returns_iterator)
+ChatGPTExtractor._discover_raw_items() が Iterator を返すことを確認 ... ok
+test_chatgpt_extractor_handles_invalid_zip (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_handles_invalid_zip)
+ChatGPTExtractor が無効な ZIP ファイルを正しく処理することを確認 ... ok
+test_chatgpt_extractor_handles_missing_conversations_json (src.etl.tests.test_stages.TestChatGPTExtractorAbstractMethods.test_chatgpt_extractor_handles_missing_conversations_json)
+ChatGPTExtractor が conversations.json が欠損している ZIP を正しく処理することを確認 ... ok
+test_chatgpt_extractor_discover_items_minimal (src.etl.tests.test_stages.TestChatGPTExtractorSteps.test_chatgpt_extractor_discover_items_minimal)
+ChatGPTExtractor.discover_items() expands conversations from ZIP. ... ok
+test_convert_format_step (src.etl.tests.test_stages.TestChatGPTExtractorSteps.test_convert_format_step)
+ConvertFormatStep converts ChatGPT mapping to Claude messages. ... ok
+test_parse_conversations_step_expands (src.etl.tests.test_stages.TestChatGPTExtractorSteps.test_parse_conversations_step_expands)
+ParseConversationsStep expands 1 item to N conversations. ... ok
+test_read_zip_step (src.etl.tests.test_stages.TestChatGPTExtractorSteps.test_read_zip_step)
+ReadZipStep reads ZIP and extracts conversations.json. ... ok
+test_validate_min_messages_step_skips (src.etl.tests.test_stages.TestChatGPTExtractorSteps.test_validate_min_messages_step_skips)
+ValidateMinMessagesStep sets status=SKIPPED for short conversations. ... ok
+test_discover_items_expands_conversations (src.etl.tests.test_stages.TestClaudeExtractorDiscovery.test_discover_items_expands_conversations)
+ClaudeExtractor.discover_items() expands conversations into items. ... ok
+test_discover_items_from_empty_directory (src.etl.tests.test_stages.TestClaudeExtractorDiscovery.test_discover_items_from_empty_directory)
+ClaudeExtractor.discover_items() handles empty directory. ... ok
+test_discover_items_nonexistent_path (src.etl.tests.test_stages.TestClaudeExtractorDiscovery.test_discover_items_nonexistent_path)
+ClaudeExtractor.discover_items() handles nonexistent path. ... ok
+test_discover_items_returns_iterator (src.etl.tests.test_stages.TestClaudeExtractorDiscovery.test_discover_items_returns_iterator)
+ClaudeExtractor.discover_items() returns Iterator[ProcessingItem]. ... ok
+test_discover_items_with_chunking (src.etl.tests.test_stages.TestClaudeExtractorDiscovery.test_discover_items_with_chunking)
+ClaudeExtractor.discover_items() chunks large conversations. ... ok
+test_error_details_content (src.etl.tests.test_stages.TestErrorRecording.test_error_details_content)
+error_details.jsonl contains correct error information. ... ok
+test_error_details_jsonl_created (src.etl.tests.test_stages.TestErrorRecording.test_error_details_jsonl_created)
+error_details.jsonl is created when error occurs. ... ok
+test_error_message_in_pipeline_stages_jsonl (src.etl.tests.test_stages.TestErrorRecording.test_error_message_in_pipeline_stages_jsonl)
+Error message is recorded in pipeline_stages.jsonl. ... ok
+test_github_extractor_build_conversation_returns_none (src.etl.tests.test_stages.TestGitHubExtractorAbstractMethods.test_github_extractor_build_conversation_returns_none)
+GitHubExtractor._build_conversation_for_chunking() が None を返すことを確認 ... ok
+test_github_extractor_discover_raw_items (src.etl.tests.test_stages.TestGitHubExtractorAbstractMethods.test_github_extractor_discover_raw_items)
+GitHubExtractor._discover_raw_items() が実装されていることを確認 ... ok
+test_github_extractor_discover_raw_items_returns_iterator (src.etl.tests.test_stages.TestGitHubExtractorAbstractMethods.test_github_extractor_discover_raw_items_returns_iterator)
+GitHubExtractor._discover_raw_items() が Iterator を返すことを確認 ... ok
+test_github_extractor_existing_behavior_preserved (src.etl.tests.test_stages.TestGitHubExtractorAbstractMethods.test_github_extractor_existing_behavior_preserved)
+GitHubExtractor が既存の動作を維持していることを確認 ... ok
+test_github_extractor_instantiation_succeeds (src.etl.tests.test_stages.TestGitHubExtractorAbstractMethods.test_github_extractor_instantiation_succeeds)
+GitHubExtractor が TypeError なしでインスタンス化できることを確認 ... ok
+test_github_extractor_no_chunking_applied (src.etl.tests.test_stages.TestGitHubExtractorAbstractMethods.test_github_extractor_no_chunking_applied)
+GitHubExtractor が大きなファイルでもチャンク処理をしないことを確認 ... ok
+test_stage_context_creation (src.etl.tests.test_stages.TestStageContext.test_stage_context_creation)
+StageContext can be created with required fields. ... ok
+test_stage_context_paths (src.etl.tests.test_stages.TestStageContext.test_stage_context_paths)
+StageContext provides input/output paths. ... ok
+test_debug_output_created_when_enabled (src.etl.tests.test_stages.TestStageDebugOutput.test_debug_output_created_when_enabled)
+Debug output is created when debug_mode is True. ... ok
+test_debug_output_includes_error_on_failure (src.etl.tests.test_stages.TestStageDebugOutput.test_debug_output_includes_error_on_failure)
+Debug output includes error details when processing fails (below threshold). ... ok
+test_debug_output_not_created_when_disabled (src.etl.tests.test_stages.TestStageDebugOutput.test_debug_output_not_created_when_disabled)
+Debug output is NOT created when debug_mode is False. ... ok
+test_step_error_marks_item_failed (src.etl.tests.test_stages.TestStageErrorHandling.test_step_error_marks_item_failed)
+When step raises StepError, item is marked as failed (below threshold). ... ok
+test_step_with_fallback (src.etl.tests.test_stages.TestStageErrorHandling.test_step_with_fallback)
+Step on_error can provide fallback. ... ok
+test_jsonl_log_created_on_success (src.etl.tests.test_stages.TestStageJSONLLog.test_jsonl_log_created_on_success)
+JSONL log file is created with success record. ... ok
+test_jsonl_log_records_content_metrics (src.etl.tests.test_stages.TestStageJSONLLog.test_jsonl_log_records_content_metrics)
+JSONL log includes before/after character counts and diff_ratio. ... ok
+test_jsonl_log_records_failure (src.etl.tests.test_stages.TestStageJSONLLog.test_jsonl_log_records_failure)
+JSONL log records failed items (below threshold). ... ok
+test_pipeline_stages_jsonl_1to1_format (src.etl.tests.test_stages.TestStageLogRecord.test_pipeline_stages_jsonl_1to1_format)
+T016: Verify pipeline_stages.jsonl format for 1:1 processing. ... ok
+test_pipeline_stages_jsonl_chunked_format (src.etl.tests.test_stages.TestStageLogRecord.test_pipeline_stages_jsonl_chunked_format)
+T027: Verify pipeline_stages.jsonl format for chunked items. ... ok
+test_to_dict_excludes_none_optional_fields (src.etl.tests.test_stages.TestStageLogRecord.test_to_dict_excludes_none_optional_fields)
+to_dict excludes None optional fields. ... ok
+test_to_dict_includes_set_optional_fields (src.etl.tests.test_stages.TestStageLogRecord.test_to_dict_includes_set_optional_fields)
+to_dict includes optional fields when set. ... ok
+test_to_dict_required_fields (src.etl.tests.test_stages.TestStageLogRecord.test_to_dict_required_fields)
+to_dict includes all required fields. ... ok
+test_trace_output_to_input_via_parent_item_id (src.etl.tests.test_stages.TestStageLogRecord.test_trace_output_to_input_via_parent_item_id)
+T043: Verify SC-005 - Traceability from output to original input. ... ok
+test_multiple_steps_execute_in_order (src.etl.tests.test_stages.TestStageWithMultipleSteps.test_multiple_steps_execute_in_order)
+Steps execute in order they are defined. ... ok
+
+======================================================================
+FAIL: test_discover_items_valid_url (src.etl.tests.test_github_extractor.TestGitHubExtractorDiscovery.test_discover_items_valid_url)
+Test discovery with valid GitHub URL.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/path/to/.pyenv/versions/3.13.11/lib/python3.13/unittest/mock.py", line 1426, in patched
+    return func(*newargs, **newkeywargs)
+  File "/path/to/project/src/etl/tests/test_github_extractor.py", line 46, in test_discover_items_valid_url
+    self.assertEqual(len(items), 2)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_full_extraction_flow (src.etl.tests.test_github_extractor.TestGitHubExtractorIntegration.test_full_extraction_flow)
+Test full extraction flow with all steps.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/path/to/.pyenv/versions/3.13.11/lib/python3.13/unittest/mock.py", line 1426, in patched
+    return func(*newargs, **newkeywargs)
+  File "/path/to/project/src/etl/tests/test_github_extractor.py", line 102, in test_full_extraction_flow
+    self.assertEqual(len(items), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_resume_mode_skip_processed (src.etl.tests.test_github_extractor.TestGitHubExtractorResumeMode.test_resume_mode_skip_processed)
+Test that resume mode skips already processed items.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/path/to/.pyenv/versions/3.13.11/lib/python3.13/unittest/mock.py", line 1426, in patched
+    return func(*newargs, **newkeywargs)
+  File "/path/to/project/src/etl/tests/test_github_extractor.py", line 158, in test_resume_mode_skip_processed
+    self.assertEqual(len(items), 2)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 2
+
+----------------------------------------------------------------------
+Ran 391 tests in 98.499s
+
+FAILED (failures=3, skipped=10)
+[Clean] Found 1 session(s) older than 0 days
+[Dry-run] Would delete:
+  - 20260126_163533
+[Session] 20260126_163533 created
+[Phase] import started (provider: claude)
+[Phase] import completed (0 success, 0 failed)
+[Info] No sessions found
+[Session] 20260126_163533 created
+[Phase] import started (provider: claude)
+[Phase] import completed (0 success, 0 failed)
+[Session] 20260126_163533 created
+[Dry-run] Preview mode - no changes will be made
+[Dry-run] Found 1 JSON files
+[Session] 20260126_163533 created
+[Phase] organize started
+[Phase] organize completed (1 success, 0 failed)
+[Session] 20260126_163541 created
+[Phase] import started (provider: claude)
+[Session] 20260126_163541 created
+[Phase] import started (provider: claude)
+[Phase] import completed (0 success, 0 failed)
+Sessions:
+  20260126_163541: pending
+Session: 20260126_163541
+Status: pending
+Debug: False
+Created: 2026-01-26T16:35:41.763503
+Phases: none
+make: *** [Makefile:152: test] Error 1
