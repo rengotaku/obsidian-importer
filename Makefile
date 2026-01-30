@@ -130,12 +130,17 @@ endif
 
 # ファイル整理・正規化
 organize:
+ifndef SESSION
 ifndef INPUT
-	@echo "Error: INPUT is required"
+	@echo "Error: INPUT is required for new sessions"
 	@echo "  Example: make organize INPUT=~/.staging/@index/"
+	@echo "  For Resume mode: make organize SESSION=20260119_143052"
 	@exit 1
 endif
-	@cd $(BASE_DIR) && $(PYTHON) -m src.etl organize --input "$(INPUT)" \
+endif
+	@cd $(BASE_DIR) && $(PYTHON) -m src.etl organize \
+		$(if $(INPUT),--input "$(INPUT)",) \
+		$(if $(SESSION),--session $(SESSION),) \
 		$(if $(DEBUG),--debug,) \
 		$(if $(DRY_RUN),--dry-run,) \
 		$(if $(LIMIT),--limit $(LIMIT),)

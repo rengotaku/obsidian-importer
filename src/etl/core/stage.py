@@ -560,10 +560,6 @@ class BaseStage(ABC):
             if processed_item.status == ItemStatus.PENDING:
                 processed_item.status = ItemStatus.COMPLETED
 
-        # Write stage-level debug output ONLY after final step (FR-012: always enabled)
-        for processed_item in current_items:
-            self._write_debug_output(ctx, processed_item)
-
         return current_items
 
     def _handle_error(
@@ -584,9 +580,6 @@ class BaseStage(ABC):
         """
         # T068: Write error detail file
         self._write_error_detail(ctx, item, error)
-
-        # FR-012: Debug mode always enabled - write error details
-        self._write_debug_output(ctx, item, error=error)
 
     def _write_error_detail(
         self,
@@ -870,47 +863,6 @@ class BaseStage(ABC):
             else:
                 result[key] = value
         return result
-
-    def _write_debug_output(
-        self,
-        ctx: StageContext,
-        item: ProcessingItem,
-        error: Exception | None = None,
-    ) -> None:
-        """Write debug output for this item (FR-012: always enabled).
-
-        Writes intermediate processing state to the stage's output folder in JSONL format.
-        Appends item_id and full content (no truncation) for each processing step.
-        Automatically called during processing (debug mode is always on).
-        Step implementers do not need to call this directly.
-
-        Args:
-            ctx: Stage context.
-            item: Item being processed.
-            error: Exception if processing failed (optional).
-        """
-        # FR-012: Debug mode always enabled - no check needed
-
-        # Write to stage folder (parent of output/)
-        stage_folder = ctx.output_path.parent
-
-        # Generate filename with .jsonl extension
-        safe_name = item.source_path.stem.replace("/", "_").replace("\\", "_")
-        debug_file = stage_folder / f"{safe_name}_{self.stage_type.value}.jsonl"
-
-        # Build minimal debug data: item_id and full content only
-        content = item.transformed_content or item.content or ""
-        debug_data = {
-            "item_id": item.item_id,
-            "content": content,
-        }
-
-        # Ensure stage folder exists before writing
-        stage_folder.mkdir(parents=True, exist_ok=True)
-
-        # Append to JSONL file (one JSON object per line)
-        with open(debug_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(debug_data, ensure_ascii=False) + "\n")
 
     def _write_debug_step_output(
         self,

@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.etl.cli.common import ExitCode, get_session_dir
+from src.etl.cli.session_resolver import SessionResolver
 from src.etl.core.phase import PhaseManager
 from src.etl.core.session import CompletedInformation, PhaseStats, SessionManager, SessionStatus
 from src.etl.core.status import PhaseStatus
@@ -32,8 +33,8 @@ def register(subparsers) -> None:
     )
     parser.add_argument(
         "--input",
-        required=True,
-        help="Input directory (files to organize)",
+        required=False,
+        help="Input directory (files to organize). Not required for Resume mode (--session).",
     )
     parser.add_argument(
         "--session",
@@ -65,7 +66,7 @@ def execute(args: argparse.Namespace) -> int:
     Returns:
         Exit code (0 for success, non-zero for errors)
     """
-    input_path = Path(args.input)
+    input_path = Path(args.input) if args.input else None
     session_id = args.session
     debug = args.debug
     dry_run = args.dry_run
@@ -73,29 +74,50 @@ def execute(args: argparse.Namespace) -> int:
     # Allow override for tests via _session_base_dir
     session_base_dir = getattr(args, "_session_base_dir", None) or get_session_dir()
 
-    # Validate input directory
-    if not input_path.exists():
+    # Validate: INPUT required for new sessions
+    if not session_id and not input_path:
+        print("[Error] --input is required for new sessions", file=sys.stderr)
+        print("  For Resume mode, use: --session SESSION_ID", file=sys.stderr)
+        return ExitCode.ERROR
+
+    # Validate input directory (if provided)
+    if input_path and not input_path.exists():
         print(f"[Error] Input directory not found: {input_path}", file=sys.stderr)
         return ExitCode.INPUT_NOT_FOUND
 
-    # Create or load session
-    manager = SessionManager(session_base_dir)
+    # Resolve or create session using SessionResolver
+    resolver = SessionResolver(session_base_dir)
+    try:
+        session, is_resume = resolver.resolve_or_create(session_id, debug_mode=debug)
+    except ValueError as e:
+        print(f"[Error] {e}", file=sys.stderr)
+        return ExitCode.INPUT_NOT_FOUND
+    manager = resolver.manager
 
-    if session_id:
-        if not manager.exists(session_id):
-            print(f"[Error] Session not found: {session_id}", file=sys.stderr)
+    # Resume mode: validate existing input
+    if is_resume:
+        existing_input = resolver.validate_existing_input(session, "organize")
+        if not existing_input:
+            print(
+                f"[Error] No input files found in session: {session_id}",
+                file=sys.stderr,
+            )
             return ExitCode.INPUT_NOT_FOUND
-        session = manager.load(session_id)
+        print(f"[Session] {session.session_id} (resumed)")
+        print(f"[Resume] Using existing input from {existing_input.relative_to(session.base_path)}")
     else:
-        session = manager.create(debug_mode=debug)
-        manager.save(session)
-
-    print(f"[Session] {session.session_id} {'(reused)' if session_id else 'created'}")
+        print(f"[Session] {session.session_id} (created)")
 
     if dry_run:
         print("[Dry-run] Preview mode - no changes will be made")
         # Count input files
-        md_files = list(input_path.rglob("*.md"))
+        if is_resume:
+            # Resume mode: count from existing session input
+            existing_input = resolver.validate_existing_input(session, "organize")
+            md_files = list(existing_input.rglob("*.md")) if existing_input else []
+        else:
+            # New session: count from input_path
+            md_files = list(input_path.rglob("*.md"))
         if limit:
             md_files = md_files[:limit]
         print(f"[Dry-run] Found {len(md_files)} Markdown files")
@@ -105,14 +127,15 @@ def execute(args: argparse.Namespace) -> int:
     phase_manager = PhaseManager(session.base_path)
     phase_data = phase_manager.create(PhaseType.ORGANIZE)
 
-    # Copy input files to extract/input
-    extract_input = phase_data.stages[StageType.EXTRACT].input_path
-    count = 0
-    for md_file in input_path.rglob("*.md"):
-        shutil.copy(md_file, extract_input)
-        count += 1
-        if limit and count >= limit:
-            break
+    # Copy input files to extract/input (only for new sessions)
+    if not is_resume:
+        extract_input = phase_data.stages[StageType.EXTRACT].input_path
+        count = 0
+        for md_file in input_path.rglob("*.md"):
+            shutil.copy(md_file, extract_input)
+            count += 1
+            if limit and count >= limit:
+                break
 
     # Run organize phase
     print("[Phase] organize started")
