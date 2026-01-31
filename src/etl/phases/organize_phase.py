@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from src.etl.core.models import ProcessingItem
+from src.etl.core.models import CompletedItemsCache, ProcessingItem
 from src.etl.core.phase import Phase
 from src.etl.core.phase_orchestrator import BasePhaseOrchestrator
 from src.etl.core.stage import BaseStage, StageContext
@@ -136,13 +136,21 @@ class OrganizePhase(BasePhaseOrchestrator):
         self,
         phase_data: Phase,
         debug_mode: bool = False,
+        limit: int | None = None,
         session_manager: SessionManager | None = None,
     ) -> PhaseResult:
         """Execute the Organize phase.
 
+        Flow (aligned with ImportPhase):
+        1. Extract: Batch — discover items, run Extract, materialize with list()
+        2. Resume detection: Load from extract/output/*.jsonl if available
+        3. Transform: Streaming with CompletedItemsCache for Resume skip
+        4. Load: Streaming with CompletedItemsCache for Resume skip
+
         Args:
             phase_data: Phase dataclass with folder structure.
             debug_mode: Whether to enable debug logging.
+            limit: Maximum number of items to process in Transform stage.
             session_manager: Optional SessionManager for tracking expected item count.
 
         Returns:
@@ -151,6 +159,7 @@ class OrganizePhase(BasePhaseOrchestrator):
         start_time = datetime.now()
         items_processed = 0
         items_failed = 0
+        items_skipped = 0
 
         # Create stages
         extract_stage = self.create_extract_stage()
@@ -170,19 +179,27 @@ class OrganizePhase(BasePhaseOrchestrator):
 
         input_path = extract_data.input_path
 
-        # Discover items
-        items = self.discover_items(input_path)
+        # Check if Extract output exists (Resume mode)
+        if self._should_load_extract_from_output(phase_data):
+            print("Resume mode: Loading from extract/output/*.jsonl")
+            extracted = list(self._load_extract_items_from_output(phase_data))
+        else:
+            print("Extract output not found, processing from input/")
+            # Discover items
+            items = self.discover_items(input_path)
 
-        # Run Extract stage
-        extract_ctx = StageContext(
-            phase=phase_data,
-            stage=extract_data,
-            debug_mode=debug_mode,
-        )
-        extracted = extract_stage.run(extract_ctx, items)
+            # Run Extract stage
+            extract_ctx = StageContext(
+                phase=phase_data,
+                stage=extract_data,
+                debug_mode=debug_mode,
+            )
+            extracted_iter = extract_stage.run(extract_ctx, items)
+
+            # Materialize Extract results (batch) before proceeding
+            extracted = list(extracted_iter)
 
         # Calculate expected item count after Extract completes
-        # This count represents how many items Transform/Load will process
         if session_manager:
             from src.etl.cli.utils.pipeline_stats import count_extract_items
             from src.etl.core.session import PhaseStats
@@ -190,18 +207,26 @@ class OrganizePhase(BasePhaseOrchestrator):
             expected_count = count_extract_items(phase_data.base_path)
 
             # Load session and update PhaseStats
-            # phase_data.base_path is session_dir/organize/, so parent is session_dir
             session_id = phase_data.base_path.parent.name
             session = session_manager.load(session_id)
 
-            # Update or create PhaseStats for organize phase
             phase_stats = PhaseStats(
                 status="in_progress",
                 expected_total_item_count=expected_count,
-                completed_information=None,  # Not completed yet
+                completed_information=None,
             )
             session.phases["organize"] = phase_stats
             session_manager.save(session)
+
+        # Build CompletedItemsCache for Resume mode
+        pipeline_stages_jsonl = phase_data.base_path / "pipeline_stages.jsonl"
+        transform_cache = None
+        load_cache = None
+        if pipeline_stages_jsonl.exists():
+            transform_cache = CompletedItemsCache.from_jsonl(
+                pipeline_stages_jsonl, StageType.TRANSFORM
+            )
+            load_cache = CompletedItemsCache.from_jsonl(pipeline_stages_jsonl, StageType.LOAD)
 
         # Run Transform stage
         transform_data = phase_data.stages.get(StageType.TRANSFORM)
@@ -210,6 +235,8 @@ class OrganizePhase(BasePhaseOrchestrator):
                 phase=phase_data,
                 stage=transform_data,
                 debug_mode=debug_mode,
+                limit=limit,
+                completed_cache=transform_cache,
             )
             transformed = transform_stage.run(transform_ctx, extracted)
         else:
@@ -218,12 +245,12 @@ class OrganizePhase(BasePhaseOrchestrator):
         # Run Load stage
         load_data = phase_data.stages.get(StageType.LOAD)
         if load_data:
-            # Create vault loader with paths
             load_stage = VaultLoader(vaults_path=self._vaults_path or load_data.output_path)
             load_ctx = StageContext(
                 phase=phase_data,
                 stage=load_data,
                 debug_mode=debug_mode,
+                completed_cache=load_cache,
             )
             loaded = load_stage.run(load_ctx, transformed)
         else:
@@ -235,8 +262,10 @@ class OrganizePhase(BasePhaseOrchestrator):
                 items_processed += 1
             elif item.status == ItemStatus.FAILED:
                 items_failed += 1
+            elif item.status == ItemStatus.FILTERED:
+                items_skipped += 1
             else:
-                items_processed += 1  # Count SKIPPED as processed
+                items_processed += 1
 
         # Calculate duration
         end_time = datetime.now()

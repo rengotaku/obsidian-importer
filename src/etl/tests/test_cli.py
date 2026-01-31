@@ -65,17 +65,15 @@ class TestCLIArgumentParsing(unittest.TestCase):
         self.assertTrue(args.dry_run)
         self.assertEqual(args.limit, 10)
 
-    def test_organize_command_requires_input(self):
-        """Organize command requires --input argument."""
+    def test_organize_command_without_input_or_session(self):
+        """Organize command accepts no --input (validated in execute, not argparse)."""
         from src.etl.cli import create_parser
 
         parser = create_parser()
 
-        with self.assertRaises(SystemExit) as ctx:
-            with patch("sys.stderr", new_callable=io.StringIO):
-                parser.parse_args(["organize"])
-
-        self.assertEqual(ctx.exception.code, 2)
+        # --input is optional at argparse level (validated in execute())
+        args = parser.parse_args(["organize"])
+        self.assertIsNone(args.input)
 
     def test_organize_command_with_input(self):
         """Organize command accepts --input argument."""
