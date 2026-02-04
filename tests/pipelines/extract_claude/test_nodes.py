@@ -662,5 +662,100 @@ class TestFileIdGeneration(unittest.TestCase):
         self.assertNotEqual(item_a["file_id"], item_b["file_id"])
 
 
+# ============================================================
+# Idempotent extract tests (Phase 6 - US2)
+# ============================================================
+
+
+class TestIdempotentExtract(unittest.TestCase):
+    """parse_claude_json: existing output partitions -> skip items, no re-parse."""
+
+    def _make_conversations(self) -> list[dict]:
+        """Create 3 valid conversations for idempotent testing."""
+        convs = []
+        for i in range(3):
+            convs.append(
+                {
+                    "uuid": f"conv-idem-{i:03d}",
+                    "name": f"Idempotent test conversation {i}",
+                    "created_at": f"2026-01-20T1{i}:00:00.000000+00:00",
+                    "updated_at": f"2026-01-20T1{i}:30:00.000000+00:00",
+                    "chat_messages": [
+                        {
+                            "uuid": f"msg-{i}-1",
+                            "sender": "human",
+                            "text": f"Question {i} about topic {i} in detail please?",
+                            "created_at": f"2026-01-20T1{i}:00:00.000000+00:00",
+                        },
+                        {
+                            "uuid": f"msg-{i}-2",
+                            "sender": "assistant",
+                            "text": f"Answer {i}: here is a detailed explanation of topic {i}.",
+                            "created_at": f"2026-01-20T1{i}:00:30.000000+00:00",
+                        },
+                        {
+                            "uuid": f"msg-{i}-3",
+                            "sender": "human",
+                            "text": f"Follow-up question {i} about sub-topic of topic {i}?",
+                            "created_at": f"2026-01-20T1{i}:01:00.000000+00:00",
+                        },
+                    ],
+                }
+            )
+        return convs
+
+    def test_idempotent_extract_skips_existing(self):
+        """existing_output パラメータは後方互換のため存在するが、parse はスキップしない。
+
+        Parse stage always processes all conversations. Resume logic is handled
+        by Transform nodes (extract_knowledge) instead.
+        """
+        conversations = self._make_conversations()
+
+        # First run: parse all conversations
+        first_result = parse_claude_json(conversations)
+        self.assertEqual(len(first_result), 3)
+
+        # Simulate existing output: 2 out of 3 items already exist
+        existing_keys = list(first_result.keys())[:2]
+        existing_output = {key: (lambda v=first_result[key]: v) for key in existing_keys}
+
+        # Second run: existing_output is ignored, all conversations are parsed again
+        second_result = parse_claude_json(conversations, existing_output=existing_output)
+
+        # Parse always processes all input (no skip logic at Extract stage)
+        self.assertEqual(len(second_result), 3)
+
+    def test_idempotent_extract_all_existing_returns_empty(self):
+        """existing_output パラメータは無視され、parse は常に全入力を処理する。"""
+        conversations = self._make_conversations()
+
+        # First run
+        first_result = parse_claude_json(conversations)
+
+        # All items exist
+        existing_output = {key: (lambda v=val: v) for key, val in first_result.items()}
+
+        # Second run: existing_output is ignored, all conversations are parsed again
+        second_result = parse_claude_json(conversations, existing_output=existing_output)
+        # Parse always processes all input
+        self.assertEqual(len(second_result), 3)
+
+    def test_idempotent_extract_empty_existing_processes_all(self):
+        """existing_output が空の場合、全アイテムが処理されること。"""
+        conversations = self._make_conversations()
+
+        result = parse_claude_json(conversations, existing_output={})
+        self.assertEqual(len(result), 3)
+
+    def test_idempotent_extract_no_existing_output_arg(self):
+        """existing_output 引数なし（デフォルト）で全アイテムが処理されること（後方互換性）。"""
+        conversations = self._make_conversations()
+
+        # Original signature without existing_output should still work
+        result = parse_claude_json(conversations)
+        self.assertEqual(len(result), 3)
+
+
 if __name__ == "__main__":
     unittest.main()

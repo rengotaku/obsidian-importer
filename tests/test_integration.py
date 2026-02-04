@@ -24,20 +24,24 @@ from obsidian_etl.pipeline_registry import register_pipelines
 class PartitionedMemoryDataset(AbstractDataset):
     """Memory dataset that mimics PartitionedDataset behavior.
 
-    When saving dict[str, dict], it stores as-is.
+    When saving dict[str, dict], it MERGES with existing data (accumulates across runs).
     When loading, it returns dict[str, Callable] where each callable returns the item.
+    This mimics PartitionedDataset with overwrite=false.
     """
 
     def __init__(self):
-        self._data = None
+        self._data = {}
 
     def _save(self, data: dict[str, dict]) -> None:
-        """Save dictionary data."""
-        self._data = data
+        """Save dictionary data, merging with existing data (accumulate)."""
+        if self._data is None:
+            self._data = {}
+        # Merge new data with existing data (mimics overwrite=false)
+        self._data.update(data)
 
     def _load(self) -> dict[str, callable]:
         """Load data as dict of callables (PartitionedDataset pattern)."""
-        if self._data is None:
+        if self._data is None or len(self._data) == 0:
             return {}
         # Wrap each item in a callable
         return {key: (lambda v=val: v) for key, val in self._data.items()}
@@ -99,14 +103,20 @@ class TestE2EClaudeImport(unittest.TestCase):
 
     def _build_catalog(self) -> DataCatalog:
         """Build a test DataCatalog with MemoryDatasets."""
+        # Create shared instances for resume behavior (Phase 6)
+        transformed_knowledge_ds = PartitionedMemoryDataset()
+        classified_items_ds = PartitionedMemoryDataset()
+
         return DataCatalog(
             datasets={
                 "raw_claude_conversations": MemoryDataset(self.conversations),
                 "parsed_items": PartitionedMemoryDataset(),
-                "transformed_items_with_knowledge": PartitionedMemoryDataset(),
+                "transformed_items_with_knowledge": transformed_knowledge_ds,
+                "existing_transformed_items_with_knowledge": transformed_knowledge_ds,  # Resume support
                 "transformed_items_with_metadata": PartitionedMemoryDataset(),
                 "markdown_notes": PartitionedMemoryDataset(),
-                "classified_items": PartitionedMemoryDataset(),
+                "classified_items": classified_items_ds,
+                "existing_classified_items": classified_items_ds,  # Resume support
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
                 "vault_determined_items": PartitionedMemoryDataset(),
@@ -230,6 +240,136 @@ class TestE2EClaudeImport(unittest.TestCase):
 
         # LLM should be called for each parsed item
         self.assertGreaterEqual(mock_extract.call_count, 2)
+
+
+class TestResumeAfterFailure(unittest.TestCase):
+    """E2E test: first run with partial failure, second run processes only failed items."""
+
+    def setUp(self):
+        """Set up test pipeline, catalog, and runner."""
+        self.pipelines = register_pipelines()
+        self.runner = SequentialRunner()
+        self.tmp_dir = tempfile.mkdtemp()
+
+        # Create 3 conversations
+        self.conversations = [
+            _make_claude_conversation(uuid="conv-resume-001", name="asyncio 解説"),
+            _make_claude_conversation(uuid="conv-resume-002", name="Django REST"),
+            _make_claude_conversation(uuid="conv-resume-003", name="Flask チュートリアル"),
+        ]
+
+    def _build_catalog(self) -> DataCatalog:
+        """Build a test DataCatalog with PartitionedMemoryDatasets."""
+        # Create shared instances for resume behavior
+        parsed_items_ds = PartitionedMemoryDataset()
+        transformed_knowledge_ds = PartitionedMemoryDataset()
+        classified_items_ds = PartitionedMemoryDataset()
+
+        return DataCatalog(
+            datasets={
+                "raw_claude_conversations": MemoryDataset(self.conversations),
+                "parsed_items": parsed_items_ds,
+                "existing_parsed_items": parsed_items_ds,  # Same instance for resume
+                "transformed_items_with_knowledge": transformed_knowledge_ds,
+                "existing_transformed_items_with_knowledge": transformed_knowledge_ds,  # Same instance
+                "transformed_items_with_metadata": PartitionedMemoryDataset(),
+                "markdown_notes": PartitionedMemoryDataset(),
+                "classified_items": classified_items_ds,
+                "existing_classified_items": classified_items_ds,  # Same instance
+                "normalized_items": PartitionedMemoryDataset(),
+                "cleaned_items": PartitionedMemoryDataset(),
+                "vault_determined_items": PartitionedMemoryDataset(),
+                "organized_items": PartitionedMemoryDataset(),
+                "params:import": MemoryDataset(
+                    {
+                        "provider": "claude",
+                        "min_messages": 3,
+                        "chunk_size": 25000,
+                        "chunk_enabled": True,
+                        "ollama": {
+                            "model": "gemma3:12b",
+                            "base_url": "http://localhost:11434",
+                            "timeout": 120,
+                            "temperature": 0.2,
+                            "max_retries": 3,
+                        },
+                    }
+                ),
+                "params:organize": MemoryDataset(
+                    {
+                        "vaults": {
+                            "engineer": "Vaults/エンジニア/",
+                            "business": "Vaults/ビジネス/",
+                            "economy": "Vaults/経済/",
+                            "daily": "Vaults/日常/",
+                            "other": "Vaults/その他/",
+                        },
+                        "genre_keywords": {
+                            "engineer": ["Python", "asyncio", "フレームワーク", "API"],
+                            "business": ["ビジネス", "マネジメント"],
+                            "economy": ["経済", "投資"],
+                            "daily": ["日常", "趣味"],
+                        },
+                        "base_path": self.tmp_dir,
+                    }
+                ),
+            }
+        )
+
+    @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
+    def test_resume_after_failure(self, mock_extract):
+        """1回目で一部失敗、2回目で失敗分のみ再処理されること。"""
+        call_count = [0]
+
+        def first_run_side_effect(*args, **kwargs):
+            """First run: 2 succeed, 1 fails."""
+            call_count[0] += 1
+            if call_count[0] == 2:
+                # Second item fails
+                return (None, "LLM timeout error")
+            title = f"成功アイテム {call_count[0]}"
+            return (_make_mock_ollama_response(title=title), None)
+
+        mock_extract.side_effect = first_run_side_effect
+
+        pipeline = self.pipelines["import_claude"]
+        catalog = self._build_catalog()
+
+        # First run: 3 items parsed, but 1 fails at extract_knowledge
+        self.runner.run(pipeline, catalog)
+
+        # After first run: 2 items succeed through to organized_items
+        first_run_organized = catalog.load("organized_items")
+        self.assertEqual(len(first_run_organized), 2, "First run should produce 2 organized items")
+
+        first_run_llm_calls = mock_extract.call_count
+        self.assertEqual(first_run_llm_calls, 3, "First run should call LLM 3 times")
+
+        # Reset mock for second run: all items succeed
+        mock_extract.reset_mock()
+        mock_extract.return_value = (
+            _make_mock_ollama_response(title="リカバリアイテム"),
+            None,
+        )
+
+        # Second run with same catalog (existing outputs are preserved)
+        # The failed item should be re-processed, succeeded items should be skipped
+        self.runner.run(pipeline, catalog)
+
+        # LLM should only be called for the 1 failed item (not for the 2 that already succeeded)
+        self.assertEqual(
+            mock_extract.call_count,
+            1,
+            "Second run should only call LLM for the 1 failed item",
+        )
+
+        # After second run: all 3 items should be organized
+        second_run_organized = catalog.load("organized_items")
+        self.assertEqual(
+            len(second_run_organized),
+            3,
+            "Second run should produce 3 organized items total",
+        )
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 def extract_knowledge(
     partitioned_input: dict[str, Callable],
     params: dict,
+    existing_output: dict[str, callable] | None = None,
 ) -> dict[str, dict]:
     """Extract knowledge from ParsedItems using LLM.
 
@@ -37,14 +38,25 @@ def extract_knowledge(
     Args:
         partitioned_input: Dict of partition_id -> callable that loads ParsedItem.
         params: Pipeline params including ollama settings.
+        existing_output: Dict of partition_id -> callable (existing transformed items to skip).
+                        If None, all items are processed (backward compatibility).
 
     Returns:
         Dict of partition_id -> item with generated_metadata added.
         Items that fail LLM extraction are excluded (logged).
+        Items already in existing_output are skipped (no LLM call).
     """
+    if existing_output is None:
+        existing_output = {}
+
     output = {}
 
     for partition_id, load_func in partitioned_input.items():
+        # Skip if this partition already exists in output
+        if partition_id in existing_output:
+            logger.debug(f"Skipping existing partition (no LLM call): {partition_id}")
+            continue
+
         item = load_func()
 
         # Extract knowledge via LLM

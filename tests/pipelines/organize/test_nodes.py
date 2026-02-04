@@ -744,5 +744,79 @@ class TestMoveToVault(unittest.TestCase):
             self.assertIn("漢字、ひらがな、カタカナ", written_content)
 
 
+# ============================================================
+# Idempotent organize tests (Phase 6 - US2)
+# ============================================================
+
+
+class TestIdempotentOrganize(unittest.TestCase):
+    """classify_genre: existing output partitions -> skip items, no re-classify."""
+
+    def test_idempotent_organize_skips_existing(self):
+        """existing_output に存在するアイテムはスキップされ、新規のみ分類されること。"""
+        items = {
+            "item-a": _make_markdown_item(
+                item_id="a",
+                title="API設計",
+                tags=["API", "設計"],
+            ),
+            "item-b": _make_markdown_item(
+                item_id="b",
+                title="マネジメント入門",
+                tags=["マネジメント"],
+            ),
+            "item-c": _make_markdown_item(
+                item_id="c",
+                title="投資戦略",
+                tags=["投資"],
+            ),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        # item-a and item-b already classified
+        existing_output = {
+            "item-a": lambda: {**items["item-a"], "genre": "engineer"},
+            "item-b": lambda: {**items["item-b"], "genre": "business"},
+        }
+
+        result = classify_genre(partitioned_input, params, existing_output=existing_output)
+
+        # Only item-c should be returned (new item)
+        self.assertEqual(len(result), 1)
+        self.assertIn("item-c", result)
+        self.assertEqual(result["item-c"]["genre"], "economy")
+
+    def test_idempotent_organize_all_existing_returns_empty(self):
+        """全アイテムが既に分類済みの場合、空 dict が返ること。"""
+        items = {
+            "item-a": _make_markdown_item(item_id="a", tags=["API"]),
+            "item-b": _make_markdown_item(item_id="b", tags=["ビジネス"]),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        existing_output = {
+            "item-a": lambda: {**items["item-a"], "genre": "engineer"},
+            "item-b": lambda: {**items["item-b"], "genre": "business"},
+        }
+
+        result = classify_genre(partitioned_input, params, existing_output=existing_output)
+        self.assertEqual(len(result), 0)
+
+    def test_idempotent_organize_no_existing_output_processes_all(self):
+        """existing_output 引数なしで全アイテムが分類されること（後方互換性）。"""
+        items = {
+            "item-a": _make_markdown_item(item_id="a", tags=["API"]),
+            "item-b": _make_markdown_item(item_id="b", tags=["ビジネス"]),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        self.assertEqual(len(result), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

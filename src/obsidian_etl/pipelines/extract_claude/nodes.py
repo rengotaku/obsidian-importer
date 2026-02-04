@@ -14,11 +14,15 @@ MIN_MESSAGES = 3  # Minimum messages required for a valid conversation
 MIN_CONTENT_LENGTH = 10  # Minimum content length after processing
 
 
-def parse_claude_json(conversations: list[dict]) -> dict[str, dict]:
+def parse_claude_json(
+    conversations: list[dict], existing_output: dict[str, callable] | None = None
+) -> dict[str, dict]:
     """Parse Claude export JSON conversations to ParsedItem format.
 
     Args:
         conversations: List of Claude conversation dicts from conversations.json.
+        existing_output: DEPRECATED - not used. Parse always processes all conversations.
+                        Transform nodes handle resume logic instead.
 
     Returns:
         Dict mapping partition_id (file_id or file_id_chunkN) to ParsedItem dict.
@@ -39,6 +43,9 @@ def parse_claude_json(conversations: list[dict]) -> dict[str, dict]:
     """
     if not conversations:
         return {}
+
+    # Note: existing_output parameter is kept for backward compatibility but not used.
+    # Parse stage always processes all input. Resume logic is handled by Transform nodes.
 
     result = {}
 

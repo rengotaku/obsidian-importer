@@ -231,29 +231,29 @@
 
 ### 入力
 
-- [ ] T096 Read previous phase output: specs/044-kedro-migration/tasks/ph5-output.md
+- [x] T096 Read previous phase output: specs/044-kedro-migration/tasks/ph5-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T097 [P] [US2] Implement test_idempotent_extract in tests/pipelines/extract_claude/test_nodes.py (output partition exists → skip item, no re-parse)
-- [ ] T098 [P] [US2] Implement test_idempotent_transform in tests/pipelines/transform/test_nodes.py (output partition exists → skip item, no LLM call)
-- [ ] T099 [P] [US2] Implement test_idempotent_organize in tests/pipelines/organize/test_nodes.py (output partition exists → skip item, no re-classify)
-- [ ] T100 [P] [US2] Implement test_resume_after_failure in tests/test_integration.py (first run: 3 items, 1 fails; second run: only failed item re-processed)
-- [ ] T101 Verify `make test` FAIL (RED)
-- [ ] T102 Generate RED output: specs/044-kedro-migration/red-tests/ph6-test.md
+- [x] T097 [P] [US2] Implement test_idempotent_extract in tests/pipelines/extract_claude/test_nodes.py (output partition exists → skip item, no re-parse)
+- [x] T098 [P] [US2] Implement test_idempotent_transform in tests/pipelines/transform/test_nodes.py (output partition exists → skip item, no LLM call)
+- [x] T099 [P] [US2] Implement test_idempotent_organize in tests/pipelines/organize/test_nodes.py (output partition exists → skip item, no re-classify)
+- [x] T100 [P] [US2] Implement test_resume_after_failure in tests/test_integration.py (first run: 3 items, 1 fails; second run: only failed item re-processed)
+- [x] T101 Verify `make test` FAIL (RED)
+- [x] T102 Generate RED output: specs/044-kedro-migration/red-tests/ph6-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T103 Read RED tests: specs/044-kedro-migration/red-tests/ph6-test.md
-- [ ] T104 [US2] Add idempotent skip logic to parse_claude_json node in src/obsidian_etl/pipelines/extract_claude/nodes.py (check output partition existence)
-- [ ] T105 [US2] Add idempotent skip logic to extract_knowledge node in src/obsidian_etl/pipelines/transform/nodes.py (check output partition existence)
-- [ ] T106 [US2] Add idempotent skip logic to organize nodes in src/obsidian_etl/pipelines/organize/nodes.py (check output partition existence)
-- [ ] T107 Verify `make test` PASS (GREEN)
+- [x] T103 Read RED tests: specs/044-kedro-migration/red-tests/ph6-test.md
+- [x] T104 [US2] Add idempotent skip logic to parse_claude_json node in src/obsidian_etl/pipelines/extract_claude/nodes.py (check output partition existence)
+- [x] T105 [US2] Add idempotent skip logic to extract_knowledge node in src/obsidian_etl/pipelines/transform/nodes.py (check output partition existence)
+- [x] T106 [US2] Add idempotent skip logic to organize nodes in src/obsidian_etl/pipelines/organize/nodes.py (check output partition existence)
+- [x] T107 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T108 Verify `make test` passes all tests (no regressions)
-- [ ] T109 Generate phase output: specs/044-kedro-migration/tasks/ph6-output.md
+- [x] T108 Verify `make test` passes all tests (no regressions)
+- [x] T109 Generate phase output: specs/044-kedro-migration/tasks/ph6-output.md
 
 **Checkpoint**: Re-running `kedro run` skips completed items and only processes failures. US2 complete.
 

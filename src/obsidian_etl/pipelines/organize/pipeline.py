@@ -34,7 +34,11 @@ def create_pipeline(**kwargs) -> Pipeline:
         [
             node(
                 func=classify_genre,
-                inputs=["markdown_notes", "params:organize"],
+                inputs={
+                    "partitioned_input": "markdown_notes",
+                    "params": "params:organize",
+                    "existing_output": "existing_classified_items",
+                },
                 outputs="classified_items",
                 name="classify_genre",
             ),

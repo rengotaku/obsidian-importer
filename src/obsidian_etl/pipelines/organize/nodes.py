@@ -20,25 +20,40 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
-def classify_genre(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
+def classify_genre(
+    partitioned_input: dict[str, Callable],
+    params: dict,
+    existing_output: dict[str, callable] | None = None,
+) -> dict[str, dict]:
     """Classify items into genres based on keyword matching.
 
     Args:
         partitioned_input: PartitionedDataset-style input (dict of callables)
         params: Parameters dict with genre_keywords mapping
+        existing_output: Dict of partition_id -> callable (existing classified items to skip).
+                        If None, all items are processed (backward compatibility).
 
     Returns:
-        dict[str, dict]: Items with 'genre' field added
+        dict[str, dict]: Items with 'genre' field added.
+        Items already in existing_output are skipped.
 
     Genre classification logic:
     - Check tags and content for genre keywords (from params)
     - First match wins (priority order: engineer, business, economy, daily)
     - No match -> 'other'
     """
+    if existing_output is None:
+        existing_output = {}
+
     genre_keywords = params.get("genre_keywords", {})
     result = {}
 
     for key, load_func in partitioned_input.items():
+        # Skip if this partition already exists in output
+        if key in existing_output:
+            logger.debug(f"Skipping existing partition: {key}")
+            continue
+
         item = load_func()
 
         # Extract tags and content for matching

@@ -620,5 +620,98 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
         self.assertGreater(len(output_key), 0)
 
 
+# ============================================================
+# Idempotent transform tests (Phase 6 - US2)
+# ============================================================
+
+
+class TestIdempotentTransform(unittest.TestCase):
+    """extract_knowledge: existing output partitions -> skip items, no LLM call."""
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_idempotent_transform_skips_existing(self, mock_llm_extract):
+        """existing_output に存在するアイテムは LLM 呼び出しなしでスキップされること。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "新規アイテム",
+                "summary": "新規アイテムの要約。",
+                "summary_content": "新規アイテムの内容。",
+                "tags": ["新規"],
+            },
+            None,
+        )
+
+        # 3 items in input
+        items = {
+            "item-a": _make_parsed_item(item_id="a", file_id="aaa111bbb222"),
+            "item-b": _make_parsed_item(item_id="b", file_id="bbb222ccc333"),
+            "item-c": _make_parsed_item(item_id="c", file_id="ccc333ddd444"),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_params()
+
+        # 2 items already exist in output
+        existing_item_a = {**items["item-a"], "generated_metadata": {"title": "既存A"}}
+        existing_item_b = {**items["item-b"], "generated_metadata": {"title": "既存B"}}
+        existing_output = {
+            "item-a": lambda: existing_item_a,
+            "item-b": lambda: existing_item_b,
+        }
+
+        result = extract_knowledge(partitioned_input, params, existing_output=existing_output)
+
+        # Only 1 new item should be processed
+        self.assertEqual(len(result), 1)
+        self.assertIn("item-c", result)
+
+        # LLM should only be called once (for item-c)
+        self.assertEqual(mock_llm_extract.call_count, 1)
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_idempotent_transform_all_existing_no_llm_call(self, mock_llm_extract):
+        """全アイテムが existing_output にある場合、LLM が一切呼ばれないこと。"""
+        items = {
+            "item-a": _make_parsed_item(item_id="a", file_id="aaa111bbb222"),
+            "item-b": _make_parsed_item(item_id="b", file_id="bbb222ccc333"),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_params()
+
+        # All items exist
+        existing_output = {
+            "item-a": lambda: {**items["item-a"], "generated_metadata": {"title": "既存A"}},
+            "item-b": lambda: {**items["item-b"], "generated_metadata": {"title": "既存B"}},
+        }
+
+        result = extract_knowledge(partitioned_input, params, existing_output=existing_output)
+
+        self.assertEqual(len(result), 0)
+        mock_llm_extract.assert_not_called()
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_idempotent_transform_no_existing_output_processes_all(self, mock_llm_extract):
+        """existing_output 引数なしで全アイテムが LLM 処理されること（後方互換性）。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "テスト",
+                "summary": "テスト要約",
+                "summary_content": "テスト内容",
+            },
+            None,
+        )
+
+        items = {
+            "item-a": _make_parsed_item(item_id="a", file_id="aaa111bbb222"),
+            "item-b": _make_parsed_item(item_id="b", file_id="bbb222ccc333"),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(mock_llm_extract.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
