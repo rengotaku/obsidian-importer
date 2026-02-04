@@ -89,7 +89,7 @@
 
 ### 入力
 
-- [ ] T026 Read previous phase output: specs/046-e2e-output-validation/tasks/ph2-output.md
+- [x] T026 Read previous phase output: specs/046-e2e-output-validation/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
@@ -98,14 +98,14 @@
 
 ### 実装 (GREEN)
 
-- [ ] T027 [US2] Add `test-e2e-update-golden` target in Makefile: Ollama チェック → テストデータ準備 → パイプライン実行 (--to-nodes=format_markdown) → 出力を tests/fixtures/golden/ にコピー → クリーンアップ
-- [ ] T028 [US2] Modify `test-e2e` target in Makefile: 中間チェック (Step 3, Step 4) を削除 → パイプラインを format_markdown まで一括実行 → ゴールデンファイル存在チェック → golden_comparator.py 呼び出し → クリーンアップ
-- [ ] T029 [US2] Add `.PHONY: test-e2e-update-golden` declaration in Makefile
+- [x] T027 [US2] Add `test-e2e-update-golden` target in Makefile: Ollama チェック → テストデータ準備 → パイプライン実行 (--to-nodes=format_markdown) → 出力を tests/fixtures/golden/ にコピー → クリーンアップ
+- [x] T028 [US2] Modify `test-e2e` target in Makefile: 中間チェック (Step 3, Step 4) を削除 → パイプラインを format_markdown まで一括実行 → ゴールデンファイル存在チェック → golden_comparator.py 呼び出し → クリーンアップ
+- [x] T029 [US2] Add `.PHONY: test-e2e-update-golden` declaration in Makefile
 
 ### 検証
 
-- [ ] T030 Verify `make test` passes all tests (no regressions)
-- [ ] T031 Generate phase output: specs/046-e2e-output-validation/tasks/ph3-output.md
+- [x] T030 Verify `make test` passes all tests (no regressions)
+- [x] T031 Generate phase output: specs/046-e2e-output-validation/tasks/ph3-output.md
 
 **Checkpoint**: `make test-e2e-update-golden` と `make test-e2e` が動作する
 
