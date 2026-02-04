@@ -308,35 +308,35 @@
 
 ### 入力
 
-- [ ] T129 Read previous phase output: specs/044-kedro-migration/tasks/ph7-output.md
-- [ ] T130 [US4] Read existing GitHub parser in src/etl/stages/extract/ for Jekyll extraction logic
+- [x] T129 Read previous phase output: specs/044-kedro-migration/tasks/ph7-output.md
+- [x] T130 [US4] Read existing GitHub parser in src/etl/stages/extract/ for Jekyll extraction logic
 
 ### テスト実装 (RED)
 
-- [ ] T131 [P] [US4] Create test fixture: tests/fixtures/github_jekyll_post.md (sample Jekyll post with frontmatter)
-- [ ] T132 [P] [US4] Create test fixture: tests/fixtures/expected_outputs/parsed_github_item.json (expected ParsedItem from Jekyll)
-- [ ] T133 [P] [US4] Implement test_clone_github_repo in tests/pipelines/extract_github/test_nodes.py (URL → sparse-checkout → local files; mock subprocess)
-- [ ] T134 [P] [US4] Implement test_parse_jekyll in tests/pipelines/extract_github/test_nodes.py (Markdown + frontmatter → parsed fields)
-- [ ] T135 [P] [US4] Implement test_parse_jekyll_skip_draft in tests/pipelines/extract_github/test_nodes.py (draft: true → excluded)
-- [ ] T136 [P] [US4] Implement test_convert_frontmatter in tests/pipelines/extract_github/test_nodes.py (Jekyll frontmatter → Obsidian format: date→created, tags/categories/keywords→tags)
-- [ ] T137 [P] [US4] Implement test_date_extraction_priority in tests/pipelines/extract_github/test_nodes.py (frontmatter.date → filename → regex → current datetime)
-- [ ] T138 Verify `make test` FAIL (RED)
-- [ ] T139 Generate RED output: specs/044-kedro-migration/red-tests/ph8-test.md
+- [x] T131 [P] [US4] Create test fixture: tests/fixtures/github_jekyll_post.md (sample Jekyll post with frontmatter)
+- [x] T132 [P] [US4] Create test fixture: tests/fixtures/expected_outputs/parsed_github_item.json (expected ParsedItem from Jekyll)
+- [x] T133 [P] [US4] Implement test_clone_github_repo in tests/pipelines/extract_github/test_nodes.py (URL → sparse-checkout → local files; mock subprocess)
+- [x] T134 [P] [US4] Implement test_parse_jekyll in tests/pipelines/extract_github/test_nodes.py (Markdown + frontmatter → parsed fields)
+- [x] T135 [P] [US4] Implement test_parse_jekyll_skip_draft in tests/pipelines/extract_github/test_nodes.py (draft: true → excluded)
+- [x] T136 [P] [US4] Implement test_convert_frontmatter in tests/pipelines/extract_github/test_nodes.py (Jekyll frontmatter → Obsidian format: date→created, tags/categories/keywords→tags)
+- [x] T137 [P] [US4] Implement test_date_extraction_priority in tests/pipelines/extract_github/test_nodes.py (frontmatter.date → filename → regex → current datetime)
+- [x] T138 Verify `make test` FAIL (RED)
+- [x] T139 Generate RED output: specs/044-kedro-migration/red-tests/ph8-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T140 Read RED tests: specs/044-kedro-migration/red-tests/ph8-test.md
-- [ ] T141 [P] [US4] Implement clone_github_repo node in src/obsidian_etl/pipelines/extract_github/nodes.py (git clone --depth 1 + sparse-checkout)
-- [ ] T142 [P] [US4] Implement parse_jekyll node in src/obsidian_etl/pipelines/extract_github/nodes.py (frontmatter parse, draft/private filter)
-- [ ] T143 [P] [US4] Implement convert_frontmatter node in src/obsidian_etl/pipelines/extract_github/nodes.py (Jekyll → Obsidian format conversion)
-- [ ] T144 [US4] Define GitHub extract pipeline in src/obsidian_etl/pipelines/extract_github/pipeline.py (raw_github_posts → parsed_items)
-- [ ] T145 [US4] Register import_github pipeline in src/obsidian_etl/pipeline_registry.py (extract_github + transform + organize)
-- [ ] T146 Verify `make test` PASS (GREEN)
+- [x] T140 Read RED tests: specs/044-kedro-migration/red-tests/ph8-test.md
+- [x] T141 [P] [US4] Implement clone_github_repo node in src/obsidian_etl/pipelines/extract_github/nodes.py (git clone --depth 1 + sparse-checkout)
+- [x] T142 [P] [US4] Implement parse_jekyll node in src/obsidian_etl/pipelines/extract_github/nodes.py (frontmatter parse, draft/private filter)
+- [x] T143 [P] [US4] Implement convert_frontmatter node in src/obsidian_etl/pipelines/extract_github/nodes.py (Jekyll → Obsidian format conversion)
+- [x] T144 [US4] Define GitHub extract pipeline in src/obsidian_etl/pipelines/extract_github/pipeline.py (raw_github_posts → parsed_items)
+- [x] T145 [US4] Register import_github pipeline in src/obsidian_etl/pipeline_registry.py (extract_github + transform + organize)
+- [x] T146 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T147 Verify `make test` passes all tests (no regressions)
-- [ ] T148 Generate phase output: specs/044-kedro-migration/tasks/ph8-output.md
+- [x] T147 Verify `make test` passes all tests (no regressions)
+- [x] T148 Generate phase output: specs/044-kedro-migration/tasks/ph8-output.md
 
 **Checkpoint**: `kedro run --pipeline=import_github` processes Jekyll blogs. US4 complete.
 

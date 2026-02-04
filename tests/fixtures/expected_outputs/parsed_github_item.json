@@ -1,0 +1,19 @@
+{
+  "_description": "Expected ParsedItem output for a GitHub Jekyll blog post (provider=github)",
+  "item_id": "_computed_file_id_",
+  "source_provider": "github",
+  "source_path": "2022-10-17-Online-DDL-of-mysql.md",
+  "conversation_name": "Online DDL of MySQL",
+  "created_at": "2022-10-17",
+  "messages": [],
+  "content": "## Introduction\n\nOnline DDL (Data Definition Language) in MySQL allows schema changes without blocking concurrent DML operations.\n\n### Key Features\n\n- **ALGORITHM=INPLACE**: Changes metadata without copying the entire table\n- **ALGORITHM=COPY**: Creates a temporary table and copies data\n- **LOCK=NONE**: Allows concurrent reads and writes during DDL\n\n### Example\n\n```sql\nALTER TABLE users ADD COLUMN email VARCHAR(255), ALGORITHM=INPLACE, LOCK=NONE;\n```\n\n### Best Practices\n\n1. Always test DDL changes on a staging environment first\n2. Monitor replication lag during large table alterations\n3. Use pt-online-schema-change for very large tables\n\n#mysql #performance",
+  "file_id": "_computed_at_runtime_",
+  "is_chunked": false,
+  "chunk_index": null,
+  "total_chunks": null,
+  "parent_item_id": null,
+  "_expected_tags": ["database", "ddl", "engineering", "mysql", "performance", "schema-migration"],
+  "_expected_created": "2022-10-17",
+  "_expected_title": "Online DDL of MySQL",
+  "_removed_fields": ["layout", "permalink", "slug", "lastmod"]
+}
