@@ -53,7 +53,7 @@
 
 ### 入力
 
-- [ ] T009 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph1-output.md`
+- [X] T009 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph1-output.md`
 
 ### テスト実装 (RED)
 
@@ -93,7 +93,7 @@
 
 ### 入力
 
-- [ ] T027 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph2-output.md`
+- [X] T027 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph2-output.md`
 
 ### テスト実装 (RED)
 
@@ -127,7 +127,7 @@
 
 ### 入力
 
-- [ ] T039 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph3-output.md`
+- [X] T039 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph3-output.md`
 
 ### テスト実装 (RED)
 
