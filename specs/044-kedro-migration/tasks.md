@@ -267,34 +267,34 @@
 
 ### 入力
 
-- [ ] T110 Read previous phase output: specs/044-kedro-migration/tasks/ph6-output.md
-- [ ] T111 [US3] Read existing ChatGPT parser in src/etl/stages/extract/ for OpenAI extraction logic
+- [x] T110 Read previous phase output: specs/044-kedro-migration/tasks/ph6-output.md
+- [x] T111 [US3] Read existing ChatGPT parser in src/etl/stages/extract/ for OpenAI extraction logic
 
 ### テスト実装 (RED)
 
-- [ ] T112 [P] [US3] Create test fixture: tests/fixtures/openai_input.zip (minimal ChatGPT export with conversations.json)
-- [ ] T113 [P] [US3] Create test fixture: tests/fixtures/expected_outputs/parsed_openai_item.json (expected ParsedItem from ChatGPT)
-- [ ] T114 [P] [US3] Implement test_parse_chatgpt_zip in tests/pipelines/extract_openai/test_nodes.py (ZIP → conversations.json → ParsedItem dict)
-- [ ] T115 [P] [US3] Implement test_chatgpt_tree_traversal in tests/pipelines/extract_openai/test_nodes.py (mapping tree → chronological messages)
-- [ ] T116 [P] [US3] Implement test_chatgpt_multimodal in tests/pipelines/extract_openai/test_nodes.py (image → [Image: id], audio → [Audio: name])
-- [ ] T117 [P] [US3] Implement test_chatgpt_role_conversion in tests/pipelines/extract_openai/test_nodes.py (user→human, system/tool excluded)
-- [ ] T118 [P] [US3] Implement test_chatgpt_chunking in tests/pipelines/extract_openai/test_nodes.py (25000+ chars → chunks)
-- [ ] T119 [P] [US3] Implement test_chatgpt_empty_conversations in tests/pipelines/extract_openai/test_nodes.py (empty conversations.json → warning, no output)
-- [ ] T120 Verify `make test` FAIL (RED)
-- [ ] T121 Generate RED output: specs/044-kedro-migration/red-tests/ph7-test.md
+- [x] T112 [P] [US3] Create test fixture: tests/fixtures/openai_input.zip (minimal ChatGPT export with conversations.json) — ZIP はテスト内で動的生成（io.BytesIO + zipfile）
+- [x] T113 [P] [US3] Create test fixture: tests/fixtures/expected_outputs/parsed_openai_item.json (expected ParsedItem from ChatGPT)
+- [x] T114 [P] [US3] Implement test_parse_chatgpt_zip in tests/pipelines/extract_openai/test_nodes.py (ZIP → conversations.json → ParsedItem dict)
+- [x] T115 [P] [US3] Implement test_chatgpt_tree_traversal in tests/pipelines/extract_openai/test_nodes.py (mapping tree → chronological messages)
+- [x] T116 [P] [US3] Implement test_chatgpt_multimodal in tests/pipelines/extract_openai/test_nodes.py (image → [Image: id], audio → [Audio: name])
+- [x] T117 [P] [US3] Implement test_chatgpt_role_conversion in tests/pipelines/extract_openai/test_nodes.py (user→human, system/tool excluded)
+- [x] T118 [P] [US3] Implement test_chatgpt_chunking in tests/pipelines/extract_openai/test_nodes.py (25000+ chars → chunks)
+- [x] T119 [P] [US3] Implement test_chatgpt_empty_conversations in tests/pipelines/extract_openai/test_nodes.py (empty conversations.json → warning, no output)
+- [x] T120 Verify `make test` FAIL (RED)
+- [x] T121 Generate RED output: specs/044-kedro-migration/red-tests/ph7-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T122 Read RED tests: specs/044-kedro-migration/red-tests/ph7-test.md
-- [ ] T123 [US3] Implement parse_chatgpt_zip node in src/obsidian_etl/pipelines/extract_openai/nodes.py (ZIP extract, tree traversal, multimodal handling, chunking)
-- [ ] T124 [US3] Define OpenAI extract pipeline in src/obsidian_etl/pipelines/extract_openai/pipeline.py (raw_openai_conversations → parsed_items)
-- [ ] T125 [US3] Register import_openai pipeline in src/obsidian_etl/pipeline_registry.py (extract_openai + transform + organize)
-- [ ] T126 Verify `make test` PASS (GREEN)
+- [x] T122 Read RED tests: specs/044-kedro-migration/red-tests/ph7-test.md
+- [x] T123 [US3] Implement parse_chatgpt_zip node in src/obsidian_etl/pipelines/extract_openai/nodes.py (ZIP extract, tree traversal, multimodal handling, chunking)
+- [x] T124 [US3] Define OpenAI extract pipeline in src/obsidian_etl/pipelines/extract_openai/pipeline.py (raw_openai_conversations → parsed_items)
+- [x] T125 [US3] Register import_openai pipeline in src/obsidian_etl/pipeline_registry.py (extract_openai + transform + organize)
+- [x] T126 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T127 Verify `make test` passes all tests (no regressions)
-- [ ] T128 Generate phase output: specs/044-kedro-migration/tasks/ph7-output.md
+- [x] T127 Verify `make test` passes all tests (no regressions)
+- [x] T128 Generate phase output: specs/044-kedro-migration/tasks/ph7-output.md
 
 **Checkpoint**: `kedro run --pipeline=import_openai` processes ChatGPT exports. US3 complete.
 
