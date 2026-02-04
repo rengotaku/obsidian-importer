@@ -48,18 +48,18 @@
 
 ### 入力
 
-- [ ] T007 Read previous phase output: specs/046-e2e-output-validation/tasks/ph1-output.md
+- [x] T007 Read previous phase output: specs/046-e2e-output-validation/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T008 [P] [US1] Implement test_split_frontmatter_and_body (frontmatter と body の分離) in tests/e2e/test_golden_comparator.py
-- [ ] T009 [P] [US1] Implement test_frontmatter_similarity (frontmatter 類似度計算: キー存在、file_id 完全一致、title/tags 類似度) in tests/e2e/test_golden_comparator.py
-- [ ] T010 [P] [US1] Implement test_body_similarity (body テキスト類似度計算: 完全一致→1.0、微差→0.9〜1.0、大差→<0.9) in tests/e2e/test_golden_comparator.py
-- [ ] T011 [P] [US1] Implement test_total_score (総合スコア計算: frontmatter×0.3 + body×0.7) in tests/e2e/test_golden_comparator.py
-- [ ] T012 [P] [US1] Implement test_compare_directories (ディレクトリ比較: ファイル数一致、ファイル数不一致エラー、ゴールデン不在エラー) in tests/e2e/test_golden_comparator.py
-- [ ] T013 [P] [US1] Implement test_comparison_report (失敗時レポート: ファイル名、スコア、missing_keys、diff_summary) in tests/e2e/test_golden_comparator.py
-- [ ] T014 Verify `make test` FAIL (RED)
-- [ ] T015 Generate RED output: specs/046-e2e-output-validation/red-tests/ph2-test.md
+- [x] T008 [P] [US1] Implement test_split_frontmatter_and_body (frontmatter と body の分離) in tests/e2e/test_golden_comparator.py
+- [x] T009 [P] [US1] Implement test_frontmatter_similarity (frontmatter 類似度計算: キー存在、file_id 完全一致、title/tags 類似度) in tests/e2e/test_golden_comparator.py
+- [x] T010 [P] [US1] Implement test_body_similarity (body テキスト類似度計算: 完全一致→1.0、微差→0.9〜1.0、大差→<0.9) in tests/e2e/test_golden_comparator.py
+- [x] T011 [P] [US1] Implement test_total_score (総合スコア計算: frontmatter×0.3 + body×0.7) in tests/e2e/test_golden_comparator.py
+- [x] T012 [P] [US1] Implement test_compare_directories (ディレクトリ比較: ファイル数一致、ファイル数不一致エラー、ゴールデン不在エラー) in tests/e2e/test_golden_comparator.py
+- [x] T013 [P] [US1] Implement test_comparison_report (失敗時レポート: ファイル名、スコア、missing_keys、diff_summary) in tests/e2e/test_golden_comparator.py
+- [x] T014 Verify `make test` FAIL (RED)
+- [x] T015 Generate RED output: specs/046-e2e-output-validation/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
