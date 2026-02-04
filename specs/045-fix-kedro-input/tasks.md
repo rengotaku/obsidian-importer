@@ -57,29 +57,29 @@
 
 ### テスト実装 (RED)
 
-- [ ] T010 [P] [US2] Implement BinaryDataset unit tests in `tests/test_datasets.py` (load ZIP bytes, save, describe)
-- [ ] T011 [P] [US2] Implement `test_parse_claude_zip` tests in `tests/pipelines/extract_claude/test_nodes.py` (ZIP input → parsed_items with required fields: item_id, source_provider, content, file_id, messages, conversation_name, created_at)
-- [ ] T012 [P] [US2] Implement `test_parse_claude_zip_output_count` in `tests/pipelines/extract_claude/test_nodes.py` (claude_test.zip → 3 parsed_items)
-- [ ] T013 [P] [US2] Implement `test_parse_claude_zip_invalid` in `tests/pipelines/extract_claude/test_nodes.py` (broken ZIP → error handling)
-- [ ] T014 [P] [US2] Implement `test_parse_claude_zip_no_conversations` in `tests/pipelines/extract_claude/test_nodes.py` (ZIP without conversations.json → skip with warning)
-- [ ] T015 [P] [US2] Update OpenAI extract tests in `tests/pipelines/extract_openai/test_nodes.py` to use `openai_test.zip` fixture and verify BinaryDataset catalog compatibility
-- [ ] T016 Verify `make test` FAIL (RED)
-- [ ] T017 Generate RED output: `specs/045-fix-kedro-input/red-tests/ph2-test.md`
+- [x] T010 [P] [US2] Implement BinaryDataset unit tests in `tests/test_datasets.py` (load ZIP bytes, save, describe)
+- [x] T011 [P] [US2] Implement `test_parse_claude_zip` tests in `tests/pipelines/extract_claude/test_nodes.py` (ZIP input → parsed_items with required fields: item_id, source_provider, content, file_id, messages, conversation_name, created_at)
+- [x] T012 [P] [US2] Implement `test_parse_claude_zip_output_count` in `tests/pipelines/extract_claude/test_nodes.py` (claude_test.zip → 3 parsed_items)
+- [x] T013 [P] [US2] Implement `test_parse_claude_zip_invalid` in `tests/pipelines/extract_claude/test_nodes.py` (broken ZIP → error handling)
+- [x] T014 [P] [US2] Implement `test_parse_claude_zip_no_conversations` in `tests/pipelines/extract_claude/test_nodes.py` (ZIP without conversations.json → skip with warning)
+- [x] T015 [P] [US2] Update OpenAI extract tests in `tests/pipelines/extract_openai/test_nodes.py` to use `openai_test.zip` fixture and verify BinaryDataset catalog compatibility
+- [x] T016 Verify `make test` FAIL (RED)
+- [x] T017 Generate RED output: `specs/045-fix-kedro-input/red-tests/ph2-test.md`
 
 ### 実装 (GREEN)
 
-- [ ] T018 Read RED tests: `specs/045-fix-kedro-input/red-tests/ph2-test.md`
-- [ ] T019 [US2] Rename `parse_claude_json` → `parse_claude_zip` in `src/obsidian_etl/pipelines/extract_claude/nodes.py` (input: `dict[str, Callable]`, ZIP bytes → conversations.json 抽出 → 既存パースロジック適用)
-- [ ] T020 [US2] Update Claude pipeline inputs in `src/obsidian_etl/pipelines/extract_claude/pipeline.py` (dataset name: `raw_claude_conversations`, node function: `parse_claude_zip`)
-- [ ] T021 [US2] Update `conf/base/catalog.yml` — Claude entry: PartitionedDataset + BinaryDataset + `.zip` suffix
-- [ ] T022 [US2] Update `conf/base/catalog.yml` — OpenAI entry: PartitionedDataset + BinaryDataset + `.zip` suffix
-- [ ] T023 Verify `make test` PASS (GREEN)
+- [x] T018 Read RED tests: `specs/045-fix-kedro-input/red-tests/ph2-test.md`
+- [x] T019 [US2] Rename `parse_claude_json` → `parse_claude_zip` in `src/obsidian_etl/pipelines/extract_claude/nodes.py` (input: `dict[str, Callable]`, ZIP bytes → conversations.json 抽出 → 既存パースロジック適用)
+- [x] T020 [US2] Update Claude pipeline inputs in `src/obsidian_etl/pipelines/extract_claude/pipeline.py` (dataset name: `raw_claude_conversations`, node function: `parse_claude_zip`)
+- [x] T021 [US2] Update `conf/base/catalog.yml` — Claude entry: PartitionedDataset + BinaryDataset + `.zip` suffix
+- [x] T022 [US2] Update `conf/base/catalog.yml` — OpenAI entry: PartitionedDataset + BinaryDataset + `.zip` suffix
+- [x] T023 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T024 Verify `make test` passes all tests (no regressions, 178+ existing tests)
-- [ ] T025 Verify `make coverage` ≥80%
-- [ ] T026 Generate phase output: `specs/045-fix-kedro-input/tasks/ph2-output.md`
+- [x] T024 Verify `make test` passes all tests (no regressions, 178+ existing tests)
+- [x] T025 Verify `make coverage` ≥80%
+- [x] T026 Generate phase output: `specs/045-fix-kedro-input/tasks/ph2-output.md`
 
 **Checkpoint**: Claude/OpenAI Extract ノードが ZIP 入力で正しく動作し、parsed_items が期待どおりに生成される
 

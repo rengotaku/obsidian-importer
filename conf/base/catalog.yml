@@ -9,8 +9,8 @@ raw_claude_conversations:
   type: partitions.PartitionedDataset
   path: data/01_raw/claude
   dataset:
-    type: json.JSONDataset
-  filename_suffix: ".json"
+    type: obsidian_etl.datasets.BinaryDataset
+  filename_suffix: ".zip"
   metadata:
     kedro-viz:
       layer: raw
@@ -19,8 +19,8 @@ raw_openai_conversations:
   type: partitions.PartitionedDataset
   path: data/01_raw/openai
   dataset:
-    type: json.JSONDataset
-  filename_suffix: ".json"
+    type: obsidian_etl.datasets.BinaryDataset
+  filename_suffix: ".zip"
   metadata:
     kedro-viz:
       layer: raw

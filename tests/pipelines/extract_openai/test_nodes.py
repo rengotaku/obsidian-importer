@@ -1102,5 +1102,96 @@ class TestIdempotentExtractOpenai(unittest.TestCase):
         self.assertEqual(len(result), 2)
 
 
+# ============================================================
+# Phase 2 (045-fix-kedro-input) RED tests: BinaryDataset compatibility
+# ============================================================
+
+
+class TestParseChatgptZipFixture(unittest.TestCase):
+    """parse_chatgpt_zip: openai_test.zip fixture -> BinaryDataset compatibility."""
+
+    def setUp(self):
+        """Load the real openai_test.zip fixture via raw bytes (BinaryDataset path)."""
+        zip_path = FIXTURES_DIR / "openai_test.zip"
+        with open(zip_path, "rb") as f:
+            self.zip_bytes = f.read()
+
+        self.partitioned_input = _make_partitioned_input({"openai_test.zip": self.zip_bytes})
+
+    def test_fixture_zip_produces_items(self):
+        """openai_test.zip から parsed_items が生成されること。"""
+        result = parse_chatgpt_zip(self.partitioned_input)
+        self.assertIsInstance(result, dict)
+        self.assertGreater(len(result), 0)
+
+    def test_fixture_zip_output_count(self):
+        """openai_test.zip から 2 件の parsed_items が生成されること（3会話中1件はメッセージ数不足でスキップ）。"""
+        result = parse_chatgpt_zip(self.partitioned_input)
+        self.assertEqual(len(result), 2)
+
+    def test_fixture_zip_all_have_required_fields(self):
+        """全 parsed_items に必須フィールドが存在すること。"""
+        result = parse_chatgpt_zip(self.partitioned_input)
+
+        required_fields = [
+            "item_id",
+            "source_provider",
+            "content",
+            "file_id",
+            "messages",
+            "conversation_name",
+            "created_at",
+        ]
+
+        for item in result.values():
+            for field in required_fields:
+                self.assertIn(field, item, f"Missing field: {field}")
+
+    def test_fixture_zip_all_source_provider_openai(self):
+        """全アイテムの source_provider が 'openai' であること。"""
+        result = parse_chatgpt_zip(self.partitioned_input)
+
+        for item in result.values():
+            self.assertEqual(item["source_provider"], "openai")
+
+    def test_fixture_zip_content_not_empty(self):
+        """全アイテムの content が空でないこと。"""
+        result = parse_chatgpt_zip(self.partitioned_input)
+
+        for item in result.values():
+            self.assertGreater(len(item["content"]), 10)
+
+    def test_fixture_zip_messages_not_empty(self):
+        """全アイテムに少なくとも 3 メッセージがあること。"""
+        result = parse_chatgpt_zip(self.partitioned_input)
+
+        for item in result.values():
+            self.assertGreaterEqual(len(item["messages"]), 3)
+
+    def test_fixture_zip_binary_dataset_load_path(self):
+        """BinaryDataset 経由で ZIP bytes を読み込み、パースできること。"""
+        import shutil
+        import tempfile
+
+        from obsidian_etl.datasets import BinaryDataset
+
+        # Simulate BinaryDataset load: write ZIP then read back
+        tmpdir = tempfile.mkdtemp()
+        try:
+            zip_path = Path(tmpdir) / "openai_test.zip"
+            zip_path.write_bytes(self.zip_bytes)
+
+            ds = BinaryDataset(filepath=str(zip_path))
+            loaded_bytes = ds._load()
+
+            partitioned = _make_partitioned_input({"openai_test.zip": loaded_bytes})
+            result = parse_chatgpt_zip(partitioned)
+
+            self.assertIsInstance(result, dict)
+            self.assertGreater(len(result), 0)
+        finally:
+            shutil.rmtree(tmpdir)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,20 +4,20 @@ from __future__ import annotations
 
 from kedro.pipeline import Pipeline, node
 
-from .nodes import parse_claude_json
+from .nodes import parse_claude_zip
 
 
 def create_pipeline(**kwargs) -> Pipeline:
     """Create Claude Extract pipeline.
 
-    This pipeline transforms raw Claude conversations (JSON format) into
+    This pipeline transforms raw Claude conversations (ZIP format) into
     ParsedItem format, the unified intermediate representation.
 
     Pipeline stages:
-        1. parse_claude_json: Parse, validate, chunk, and generate file_id
+        1. parse_claude_zip: Extract ZIP, parse, validate, chunk, and generate file_id
 
     Inputs:
-        raw_claude_conversations: PartitionedDataset with Claude JSON files
+        raw_claude_conversations: PartitionedDataset with Claude ZIP files
 
     Outputs:
         parsed_items: PartitionedDataset with ParsedItem dicts
@@ -28,10 +28,10 @@ def create_pipeline(**kwargs) -> Pipeline:
     return Pipeline(
         [
             node(
-                func=parse_claude_json,
+                func=parse_claude_zip,
                 inputs="raw_claude_conversations",
                 outputs="parsed_items",
-                name="parse_claude_json",
+                name="parse_claude_zip",
             ),
         ]
     )

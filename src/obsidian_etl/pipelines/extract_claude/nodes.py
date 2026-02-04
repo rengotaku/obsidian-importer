@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import io
+import json
 import logging
+import zipfile
 from pathlib import Path
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
@@ -197,3 +200,95 @@ def _fallback_conversation_name(messages: list[dict]) -> str:
                 return first_message[:50]
 
     return "Untitled"
+
+
+def parse_claude_zip(
+    partitioned_input: dict[str, callable],
+    existing_output: dict[str, callable] | None = None,
+) -> dict[str, dict]:
+    """Parse Claude export ZIP to ParsedItem format.
+
+    Extracts conversations.json from ZIP, parses Claude conversations,
+    and converts to unified ParsedItem format with chunking support.
+
+    Args:
+        partitioned_input: Dict of filename -> Callable returning ZIP bytes.
+        existing_output: DEPRECATED - not used. Parse always processes all conversations.
+                        Transform nodes handle resume logic instead.
+
+    Returns:
+        Dict mapping partition_id (file_id or file_id_chunkN) to ParsedItem dict.
+
+    ParsedItem structure (see data-model.md E-2):
+        - item_id: str (conversation uuid or file_id for chunks)
+        - source_provider: "claude"
+        - source_path: str (ZIP filename)
+        - conversation_name: str | None
+        - created_at: str | None
+        - messages: list[dict] with {role, content}
+        - content: str (formatted conversation text)
+        - file_id: str (SHA256 12-char hash)
+        - is_chunked: bool
+        - chunk_index: int | None
+        - total_chunks: int | None
+        - parent_item_id: str | None
+    """
+    if not partitioned_input:
+        return {}
+
+    # Note: existing_output parameter is kept for backward compatibility but not used.
+    # Parse stage always processes all input. Resume logic is handled by Transform nodes.
+
+    result = {}
+
+    for zip_name, load_func in partitioned_input.items():
+        try:
+            zip_bytes = load_func()
+        except Exception as e:
+            logger.warning(f"Failed to load ZIP {zip_name}: {e}")
+            continue
+
+        # Extract conversations.json from ZIP
+        try:
+            conversations_data = _extract_conversations_from_zip(zip_bytes)
+        except Exception as e:
+            logger.warning(f"Failed to extract conversations from {zip_name}: {e}")
+            continue
+
+        if not conversations_data:
+            logger.debug(f"No conversations found in {zip_name}")
+            continue
+
+        # Use existing parse_claude_json logic to process conversations
+        parsed_from_zip = parse_claude_json(conversations_data, existing_output=None)
+
+        # Merge into result
+        result.update(parsed_from_zip)
+
+    return result
+
+
+def _extract_conversations_from_zip(zip_bytes: bytes) -> list[dict]:
+    """Extract conversations.json from Claude export ZIP.
+
+    Args:
+        zip_bytes: ZIP file content as bytes.
+
+    Returns:
+        List of conversation dicts.
+
+    Raises:
+        ValueError: If conversations.json not found or invalid JSON.
+    """
+    buf = io.BytesIO(zip_bytes)
+    with zipfile.ZipFile(buf, "r") as zf:
+        if "conversations.json" not in zf.namelist():
+            raise ValueError("conversations.json not found in ZIP")
+
+        conversations_json = zf.read("conversations.json")
+        conversations = json.loads(conversations_json)
+
+        if not isinstance(conversations, list):
+            raise ValueError("conversations.json must contain a list")
+
+        return conversations

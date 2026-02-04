@@ -44,13 +44,13 @@ class TestPipelineRegistry(unittest.TestCase):
         self.assertGreater(len(nodes), 0, "import_claude pipeline should have nodes")
 
     def test_import_claude_contains_extract_node(self):
-        """import_claude が parse_claude_json ノードを含むこと。"""
+        """import_claude が parse_claude_zip ノードを含むこと。"""
         pipeline = self.pipelines["import_claude"]
         node_names = {n.name for n in pipeline.nodes}
         self.assertIn(
-            "parse_claude_json",
+            "parse_claude_zip",
             node_names,
-            f"Expected 'parse_claude_json' in node names: {node_names}",
+            f"Expected 'parse_claude_zip' in node names: {node_names}",
         )
 
     def test_import_claude_contains_transform_nodes(self):

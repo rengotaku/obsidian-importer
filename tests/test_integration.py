@@ -9,9 +9,11 @@ These tests verify:
 
 from __future__ import annotations
 
+import io
 import json
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -50,6 +52,35 @@ class PartitionedMemoryDataset(AbstractDataset):
         return {"type": "PartitionedMemoryDataset"}
 
 
+class ZipMemoryDataset(AbstractDataset):
+    """Memory dataset that provides ZIP bytes in PartitionedDataset format.
+
+    Used for integration tests to provide Claude ZIP input.
+    """
+
+    def __init__(self, conversations: list[dict]):
+        """Initialize with a list of conversations.
+
+        Args:
+            conversations: List of Claude conversation dicts.
+        """
+        self._zip_bytes = _make_claude_zip_bytes(conversations)
+
+    def _save(self, data) -> None:
+        """Not used in tests."""
+        pass
+
+    def _load(self) -> dict[str, callable]:
+        """Return dict[str, Callable] that returns ZIP bytes.
+
+        This mimics PartitionedDataset with BinaryDataset.
+        """
+        return {"test_export.zip": lambda: self._zip_bytes}
+
+    def _describe(self) -> dict:
+        return {"type": "ZipMemoryDataset"}
+
+
 def _make_claude_conversation(
     uuid: str = "conv-001-uuid",
     name: str = "Python asyncio 解説",
@@ -86,6 +117,22 @@ def _make_mock_ollama_response(title: str = "Python asyncio の仕組み") -> di
     }
 
 
+def _make_claude_zip_bytes(conversations: list[dict]) -> bytes:
+    """Create a ZIP file containing conversations.json from a list of conversations.
+
+    Args:
+        conversations: List of Claude conversation dicts.
+
+    Returns:
+        ZIP file bytes containing conversations.json.
+    """
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        conversations_json = json.dumps(conversations)
+        zf.writestr("conversations.json", conversations_json)
+    return buf.getvalue()
+
+
 class TestE2EClaudeImport(unittest.TestCase):
     """E2E test: SequentialRunner with Claude import pipeline (mocked Ollama)."""
 
@@ -109,7 +156,7 @@ class TestE2EClaudeImport(unittest.TestCase):
 
         return DataCatalog(
             datasets={
-                "raw_claude_conversations": MemoryDataset(self.conversations),
+                "raw_claude_conversations": ZipMemoryDataset(self.conversations),
                 "parsed_items": PartitionedMemoryDataset(),
                 "transformed_items_with_knowledge": transformed_knowledge_ds,
                 "existing_transformed_items_with_knowledge": transformed_knowledge_ds,  # Resume support
@@ -267,7 +314,7 @@ class TestResumeAfterFailure(unittest.TestCase):
 
         return DataCatalog(
             datasets={
-                "raw_claude_conversations": MemoryDataset(self.conversations),
+                "raw_claude_conversations": ZipMemoryDataset(self.conversations),
                 "parsed_items": parsed_items_ds,
                 "existing_parsed_items": parsed_items_ds,  # Same instance for resume
                 "transformed_items_with_knowledge": transformed_knowledge_ds,
@@ -385,7 +432,7 @@ class TestPipelineNodeNames(unittest.TestCase):
         node_names = {n.name for n in pipeline.nodes}
         expected_names = {
             # Extract
-            "parse_claude_json",
+            "parse_claude_zip",
             # Transform
             "extract_knowledge",
             "generate_metadata",
