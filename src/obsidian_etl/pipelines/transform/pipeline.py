@@ -36,19 +36,19 @@ def create_pipeline(**kwargs) -> Pipeline:
                     "existing_output": "existing_transformed_items_with_knowledge",
                 },
                 outputs="transformed_items_with_knowledge",
-                name="extract_knowledge_node",
+                name="extract_knowledge",
             ),
             node(
                 func=generate_metadata,
                 inputs=["transformed_items_with_knowledge", "params:import"],
                 outputs="transformed_items_with_metadata",
-                name="generate_metadata_node",
+                name="generate_metadata",
             ),
             node(
                 func=format_markdown,
                 inputs="transformed_items_with_metadata",
                 outputs="markdown_notes",
-                name="format_markdown_node",
+                name="format_markdown",
             ),
         ]
     )

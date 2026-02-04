@@ -350,26 +350,26 @@
 
 ### 入力
 
-- [ ] T149 Read previous phase output: specs/044-kedro-migration/tasks/ph8-output.md
+- [x] T149 Read previous phase output: specs/044-kedro-migration/tasks/ph8-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T150 [P] [US5] Implement test_partial_run_from_to in tests/test_integration.py (--from-nodes / --to-nodes で指定ノード範囲のみ実行)
-- [ ] T151 [P] [US5] Implement test_pipeline_node_names in tests/test_integration.py (全ノード名が期待通りに登録されている)
-- [ ] T152 Verify `make test` FAIL (RED)
-- [ ] T153 Generate RED output: specs/044-kedro-migration/red-tests/ph9-test.md
+- [x] T150 [P] [US5] Implement test_partial_run_from_to in tests/test_integration.py (--from-nodes / --to-nodes で指定ノード範囲のみ実行)
+- [x] T151 [P] [US5] Implement test_pipeline_node_names in tests/test_integration.py (全ノード名が期待通りに登録されている)
+- [x] T152 Verify `make test` FAIL (RED)
+- [x] T153 Generate RED output: specs/044-kedro-migration/red-tests/ph9-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T154 Read RED tests: specs/044-kedro-migration/red-tests/ph9-test.md
-- [ ] T155 [US5] Ensure all nodes have unique, meaningful names in pipeline definitions (src/obsidian_etl/pipelines/*/pipeline.py)
-- [ ] T156 [US5] Install kedro-viz and verify `kedro viz` renders DAG correctly
-- [ ] T157 Verify `make test` PASS (GREEN)
+- [x] T154 Read RED tests: specs/044-kedro-migration/red-tests/ph9-test.md
+- [x] T155 [US5] Ensure all nodes have unique, meaningful names in pipeline definitions (src/obsidian_etl/pipelines/*/pipeline.py)
+- [x] T156 [US5] Install kedro-viz and verify `kedro viz` renders DAG correctly
+- [x] T157 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T158 Verify `make test` passes all tests (no regressions)
-- [ ] T159 Generate phase output: specs/044-kedro-migration/tasks/ph9-output.md
+- [x] T158 Verify `make test` passes all tests (no regressions)
+- [x] T159 Generate phase output: specs/044-kedro-migration/tasks/ph9-output.md
 
 **Checkpoint**: Partial execution and DAG visualization work correctly. US5 complete.
 

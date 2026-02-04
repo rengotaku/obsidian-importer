@@ -59,9 +59,9 @@ class TestPipelineRegistry(unittest.TestCase):
         node_names = {n.name for n in pipeline.nodes}
 
         expected_transform_nodes = [
-            "extract_knowledge_node",
-            "generate_metadata_node",
-            "format_markdown_node",
+            "extract_knowledge",
+            "generate_metadata",
+            "format_markdown",
         ]
         for expected in expected_transform_nodes:
             self.assertIn(

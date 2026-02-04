@@ -372,5 +372,288 @@ class TestResumeAfterFailure(unittest.TestCase):
         )
 
 
+class TestPipelineNodeNames(unittest.TestCase):
+    """US5: 全パイプラインのノード名が期待通りに登録されていることを検証する。"""
+
+    def setUp(self):
+        """Set up pipelines from registry."""
+        self.pipelines = register_pipelines()
+
+    def test_import_claude_node_names(self):
+        """import_claude パイプラインのノード名が正しいこと。"""
+        pipeline = self.pipelines["import_claude"]
+        node_names = {n.name for n in pipeline.nodes}
+        expected_names = {
+            # Extract
+            "parse_claude_json",
+            # Transform
+            "extract_knowledge",
+            "generate_metadata",
+            "format_markdown",
+            # Organize
+            "classify_genre",
+            "normalize_frontmatter",
+            "clean_content",
+            "determine_vault_path",
+            "move_to_vault",
+        }
+        self.assertEqual(
+            node_names,
+            expected_names,
+            f"import_claude node names mismatch.\n"
+            f"Expected: {sorted(expected_names)}\n"
+            f"Actual:   {sorted(node_names)}",
+        )
+
+    def test_import_openai_node_names(self):
+        """import_openai パイプラインのノード名が正しいこと。"""
+        pipeline = self.pipelines["import_openai"]
+        node_names = {n.name for n in pipeline.nodes}
+        expected_names = {
+            # Extract
+            "parse_chatgpt_zip",
+            # Transform
+            "extract_knowledge",
+            "generate_metadata",
+            "format_markdown",
+            # Organize
+            "classify_genre",
+            "normalize_frontmatter",
+            "clean_content",
+            "determine_vault_path",
+            "move_to_vault",
+        }
+        self.assertEqual(
+            node_names,
+            expected_names,
+            f"import_openai node names mismatch.\n"
+            f"Expected: {sorted(expected_names)}\n"
+            f"Actual:   {sorted(node_names)}",
+        )
+
+    def test_import_github_node_names(self):
+        """import_github パイプラインのノード名が正しいこと。"""
+        pipeline = self.pipelines["import_github"]
+        node_names = {n.name for n in pipeline.nodes}
+        expected_names = {
+            # Extract
+            "clone_github_repo",
+            "parse_jekyll",
+            "convert_frontmatter",
+            # Transform
+            "extract_knowledge",
+            "generate_metadata",
+            "format_markdown",
+            # Organize
+            "classify_genre",
+            "normalize_frontmatter",
+            "clean_content",
+            "determine_vault_path",
+            "move_to_vault",
+        }
+        self.assertEqual(
+            node_names,
+            expected_names,
+            f"import_github node names mismatch.\n"
+            f"Expected: {sorted(expected_names)}\n"
+            f"Actual:   {sorted(node_names)}",
+        )
+
+    def test_all_node_names_are_unique_within_pipeline(self):
+        """各パイプライン内でノード名が重複しないこと。"""
+        for pipeline_name in ["import_claude", "import_openai", "import_github"]:
+            pipeline = self.pipelines[pipeline_name]
+            node_names = [n.name for n in pipeline.nodes]
+            self.assertEqual(
+                len(node_names),
+                len(set(node_names)),
+                f"Duplicate node names found in {pipeline_name}: {node_names}",
+            )
+
+
+class TestPartialRunFromTo(unittest.TestCase):
+    """US5: from_nodes / to_nodes でノード範囲を指定して部分実行できることを検証する。"""
+
+    def setUp(self):
+        """Set up test pipeline, catalog, and runner."""
+        self.pipelines = register_pipelines()
+        self.runner = SequentialRunner()
+        self.tmp_dir = tempfile.mkdtemp()
+
+    def _build_catalog_with_intermediate_data(self) -> DataCatalog:
+        """Build a test DataCatalog pre-populated with parsed_items (Extract output).
+
+        This simulates running only Transform+Organize by providing
+        pre-existing Extract output.
+        """
+        # Pre-populate parsed_items as if Extract already ran
+        parsed_items_ds = PartitionedMemoryDataset()
+        parsed_items_ds._save(
+            {
+                "conv-partial-001": {
+                    "item_id": "conv-partial-001",
+                    "file_id": "abc123def456",
+                    "title": "Python asyncio 解説",
+                    "content": "## asyncio\n\nasyncio は Python の非同期処理フレームワーク。\n\n### 使い方\n\nawait を使って非同期関数を呼び出す。",
+                    "messages": [
+                        {"role": "human", "content": "asyncio について教えて"},
+                        {"role": "assistant", "content": "asyncio は非同期処理のライブラリです"},
+                        {"role": "human", "content": "もっと詳しく"},
+                        {"role": "assistant", "content": "await キーワードを使います"},
+                    ],
+                    "created_at": "2026-01-15T10:00:00.000000+00:00",
+                    "source_provider": "claude",
+                    "is_chunked": False,
+                    "chunk_index": None,
+                    "total_chunks": None,
+                    "parent_item_id": None,
+                },
+            }
+        )
+
+        transformed_knowledge_ds = PartitionedMemoryDataset()
+        classified_items_ds = PartitionedMemoryDataset()
+
+        return DataCatalog(
+            datasets={
+                "raw_claude_conversations": MemoryDataset([]),
+                "parsed_items": parsed_items_ds,
+                "transformed_items_with_knowledge": transformed_knowledge_ds,
+                "existing_transformed_items_with_knowledge": transformed_knowledge_ds,
+                "transformed_items_with_metadata": PartitionedMemoryDataset(),
+                "markdown_notes": PartitionedMemoryDataset(),
+                "classified_items": classified_items_ds,
+                "existing_classified_items": classified_items_ds,
+                "normalized_items": PartitionedMemoryDataset(),
+                "cleaned_items": PartitionedMemoryDataset(),
+                "vault_determined_items": PartitionedMemoryDataset(),
+                "organized_items": PartitionedMemoryDataset(),
+                "params:import": MemoryDataset(
+                    {
+                        "provider": "claude",
+                        "min_messages": 3,
+                        "chunk_size": 25000,
+                        "chunk_enabled": True,
+                        "ollama": {
+                            "model": "gemma3:12b",
+                            "base_url": "http://localhost:11434",
+                            "timeout": 120,
+                            "temperature": 0.2,
+                            "max_retries": 3,
+                        },
+                    }
+                ),
+                "params:organize": MemoryDataset(
+                    {
+                        "vaults": {
+                            "engineer": "Vaults/エンジニア/",
+                            "business": "Vaults/ビジネス/",
+                            "economy": "Vaults/経済/",
+                            "daily": "Vaults/日常/",
+                            "other": "Vaults/その他/",
+                        },
+                        "genre_keywords": {
+                            "engineer": ["Python", "asyncio", "フレームワーク", "API"],
+                            "business": ["ビジネス", "マネジメント"],
+                            "economy": ["経済", "投資"],
+                            "daily": ["日常", "趣味"],
+                        },
+                        "base_path": self.tmp_dir,
+                    }
+                ),
+            }
+        )
+
+    @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
+    def test_partial_run_transform_only(self, mock_extract):
+        """from_nodes=extract_knowledge, to_nodes=format_markdown で Transform のみ実行されること。"""
+        mock_extract.return_value = (_make_mock_ollama_response(), None)
+
+        full_pipeline = self.pipelines["import_claude"]
+
+        # Use Pipeline.from_nodes() and .to_nodes() for partial execution
+        partial_pipeline = full_pipeline.from_nodes("extract_knowledge").to_nodes("format_markdown")
+
+        catalog = self._build_catalog_with_intermediate_data()
+
+        self.runner.run(partial_pipeline, catalog)
+
+        # Transform should have produced markdown_notes
+        markdown_callables = catalog.load("markdown_notes")
+        self.assertIsInstance(markdown_callables, dict)
+        self.assertGreater(
+            len(markdown_callables), 0, "markdown_notes should be produced by partial run"
+        )
+
+        # Organize should NOT have run (organized_items should be empty)
+        organized_callables = catalog.load("organized_items")
+        self.assertEqual(
+            len(organized_callables),
+            0,
+            "organized_items should be empty when running Transform only",
+        )
+
+    @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
+    def test_partial_run_organize_only(self, mock_extract):
+        """from_nodes=classify_genre で Organize のみ実行されること。"""
+        mock_extract.return_value = (_make_mock_ollama_response(), None)
+
+        full_pipeline = self.pipelines["import_claude"]
+
+        # First run full pipeline to populate intermediate data
+        catalog = self._build_catalog_with_intermediate_data()
+        self.runner.run(full_pipeline, catalog)
+
+        # Now run only Organize part
+        organize_pipeline = full_pipeline.from_nodes("classify_genre")
+        catalog2 = self._build_catalog_with_intermediate_data()
+
+        # Pre-populate markdown_notes from previous run
+        markdown_data = catalog.load("markdown_notes")
+        # Convert callables back to data for saving
+        markdown_ds = PartitionedMemoryDataset()
+        for key, load_func in markdown_data.items():
+            markdown_ds._save({key: load_func()})
+        catalog2._datasets["markdown_notes"] = markdown_ds
+
+        self.runner.run(organize_pipeline, catalog2)
+
+        organized_callables = catalog2.load("organized_items")
+        self.assertIsInstance(organized_callables, dict)
+        self.assertGreater(
+            len(organized_callables),
+            0,
+            "organized_items should be produced by Organize-only partial run",
+        )
+
+    def test_partial_run_invalid_node_raises_error(self):
+        """存在しないノード名を指定した場合にエラーが発生すること。"""
+        full_pipeline = self.pipelines["import_claude"]
+
+        with self.assertRaises(ValueError):
+            full_pipeline.from_nodes("nonexistent_node")
+
+    def test_from_nodes_to_nodes_subset_node_count(self):
+        """from_nodes/to_nodes で取得したパイプラインのノード数が元より少ないこと。"""
+        full_pipeline = self.pipelines["import_claude"]
+        full_node_count = len(full_pipeline.nodes)
+
+        partial_pipeline = full_pipeline.from_nodes("extract_knowledge").to_nodes("format_markdown")
+        partial_node_count = len(partial_pipeline.nodes)
+
+        self.assertLess(
+            partial_node_count,
+            full_node_count,
+            f"Partial pipeline ({partial_node_count} nodes) should have fewer nodes "
+            f"than full pipeline ({full_node_count} nodes)",
+        )
+        # Transform has exactly 3 nodes
+        self.assertEqual(
+            partial_node_count,
+            3,
+            "Transform-only partial pipeline should have exactly 3 nodes",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
