@@ -63,19 +63,19 @@
 
 ### 実装 (GREEN)
 
-- [ ] T016 Read RED tests: specs/046-e2e-output-validation/red-tests/ph2-test.md
-- [ ] T017 [P] [US1] Implement split_frontmatter_and_body() in tests/e2e/golden_comparator.py
-- [ ] T018 [P] [US1] Implement calculate_frontmatter_similarity() in tests/e2e/golden_comparator.py
-- [ ] T019 [P] [US1] Implement calculate_body_similarity() using difflib.SequenceMatcher in tests/e2e/golden_comparator.py
-- [ ] T020 [US1] Implement calculate_total_score() (frontmatter×0.3 + body×0.7) in tests/e2e/golden_comparator.py
-- [ ] T021 [US1] Implement compare_directories() (ファイル列挙、ペアリング、個別比較、レポート生成) in tests/e2e/golden_comparator.py
-- [ ] T022 [US1] Implement CLI entry point (__main__ block with argparse: --actual, --golden, --threshold) in tests/e2e/golden_comparator.py
-- [ ] T023 Verify `make test` PASS (GREEN)
+- [x] T016 Read RED tests: specs/046-e2e-output-validation/red-tests/ph2-test.md
+- [x] T017 [P] [US1] Implement split_frontmatter_and_body() in tests/e2e/golden_comparator.py
+- [x] T018 [P] [US1] Implement calculate_frontmatter_similarity() in tests/e2e/golden_comparator.py
+- [x] T019 [P] [US1] Implement calculate_body_similarity() using difflib.SequenceMatcher in tests/e2e/golden_comparator.py
+- [x] T020 [US1] Implement calculate_total_score() (frontmatter×0.3 + body×0.7) in tests/e2e/golden_comparator.py
+- [x] T021 [US1] Implement compare_directories() (ファイル列挙、ペアリング、個別比較、レポート生成) in tests/e2e/golden_comparator.py
+- [x] T022 [US1] Implement CLI entry point (__main__ block with argparse: --actual, --golden, --threshold) in tests/e2e/golden_comparator.py
+- [x] T023 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T024 Verify `make coverage` ≥80%
-- [ ] T025 Generate phase output: specs/046-e2e-output-validation/tasks/ph2-output.md
+- [x] T024 Verify `make coverage` ≥80%
+- [x] T025 Generate phase output: specs/046-e2e-output-validation/tasks/ph2-output.md
 
 **Checkpoint**: golden_comparator.py が単体で動作し、2つのディレクトリの Markdown ファイルを比較できる
 
