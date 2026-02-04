@@ -30,12 +30,12 @@ HASHTAG_PATTERN = re.compile(r"(?<!\S)#([a-zA-Z][a-zA-Z0-9_-]*)")
 FRONTMATTER_PATTERN = re.compile(r"^---\n(.+?)\n---\n", re.DOTALL)
 
 
-def clone_github_repo(url: str, params: dict) -> dict[str, callable]:
+def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, callable]:
     """Clone GitHub repository and return Markdown files as PartitionedDataset.
 
     Args:
         url: GitHub URL (format: https://github.com/{owner}/{repo}/tree/{branch}/{path}).
-        params: Pipeline parameters (must contain "github_clone_dir" for target directory).
+        github_clone_dir: Target directory for git clone (empty string = use system temp).
 
     Returns:
         Dict of filename -> callable returning Markdown content.
@@ -51,8 +51,11 @@ def clone_github_repo(url: str, params: dict) -> dict[str, callable]:
     branch = match.group("branch")
     path = match.group("path")
 
-    # Get target directory from params
-    target_dir = Path(params.get("github_clone_dir", tempfile.mkdtemp(prefix="github_clone_")))
+    # Get target directory (empty string = use temp dir)
+    if github_clone_dir:
+        target_dir = Path(github_clone_dir)
+    else:
+        target_dir = Path(tempfile.mkdtemp(prefix="github_clone_"))
     clone_dir = target_dir / "repo"
 
     # Clone with sparse-checkout

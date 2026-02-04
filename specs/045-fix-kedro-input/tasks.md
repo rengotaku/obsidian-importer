@@ -97,23 +97,23 @@
 
 ### テスト実装 (RED)
 
-- [ ] T028 [P] [US3] Update GitHub extract tests in `tests/pipelines/extract_github/test_nodes.py` to verify MemoryDataset-based data flow (no catalog entry for raw_github_posts)
-- [ ] T029 [P] [US3] Add test for `github_url` parameter usage in `tests/pipelines/extract_github/test_nodes.py`
-- [ ] T030 Verify `make test` FAIL (RED)
-- [ ] T031 Generate RED output: `specs/045-fix-kedro-input/red-tests/ph3-test.md`
+- [x] T028 [P] [US3] Update GitHub extract tests in `tests/pipelines/extract_github/test_nodes.py` to verify MemoryDataset-based data flow (no catalog entry for raw_github_posts)
+- [x] T029 [P] [US3] Add test for `github_url` parameter usage in `tests/pipelines/extract_github/test_nodes.py`
+- [x] T030 Verify `make test` FAIL (RED)
+- [x] T031 Generate RED output: `specs/045-fix-kedro-input/red-tests/ph3-test.md`
 
 ### 実装 (GREEN)
 
-- [ ] T032 Read RED tests: `specs/045-fix-kedro-input/red-tests/ph3-test.md`
-- [ ] T033 [US3] Remove `raw_github_posts` entry from `conf/base/catalog.yml` (MemoryDataset auto-created)
-- [ ] T034 [US3] Update `conf/base/parameters.yml` — add `github_url` and `github_clone_dir` parameters (flat keys, matching existing node signature)
-- [ ] T035 [US3] Update GitHub pipeline in `src/obsidian_etl/pipelines/extract_github/pipeline.py` — fix catalog connections for MemoryDataset flow
-- [ ] T036 Verify `make test` PASS (GREEN)
+- [x] T032 Read RED tests: `specs/045-fix-kedro-input/red-tests/ph3-test.md`
+- [x] T033 [US3] Remove `raw_github_posts` entry from `conf/base/catalog.yml` (MemoryDataset auto-created)
+- [x] T034 [US3] Update `conf/base/parameters.yml` — add `github_url` and `github_clone_dir` parameters (flat keys, matching existing node signature)
+- [x] T035 [US3] Update GitHub pipeline in `src/obsidian_etl/pipelines/extract_github/pipeline.py` — fix catalog connections for MemoryDataset flow
+- [x] T036 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T037 Verify `make test` passes all tests (no regressions)
-- [ ] T038 Generate phase output: `specs/045-fix-kedro-input/tasks/ph3-output.md`
+- [x] T037 Verify `make test` passes all tests (no regressions)
+- [x] T038 Generate phase output: `specs/045-fix-kedro-input/tasks/ph3-output.md`
 
 **Checkpoint**: GitHub パイプラインが URL パラメータ → git clone → MemoryDataset で正しく動作する
 

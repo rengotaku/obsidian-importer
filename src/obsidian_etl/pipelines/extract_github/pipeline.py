@@ -21,7 +21,7 @@ def create_pipeline(**kwargs) -> Pipeline:
 
     Inputs:
         params:github_url: GitHub URL (format: https://github.com/{owner}/{repo}/tree/{branch}/{path})
-        params:github_clone_dir: Target directory for git clone
+        params:github_clone_dir: Target directory for git clone (empty string = use system temp)
 
     Outputs:
         parsed_items: PartitionedDataset with ParsedItem dicts
@@ -33,7 +33,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         [
             node(
                 func=clone_github_repo,
-                inputs=["params:github_url", "params:parameters"],
+                inputs=["params:github_url", "params:github_clone_dir"],
                 outputs="raw_github_posts",
                 name="clone_github_repo",
             ),

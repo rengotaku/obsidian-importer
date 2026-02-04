@@ -142,9 +142,8 @@ class TestCloneGithubRepo(unittest.TestCase):
             mock_subprocess.run.return_value = MagicMock(returncode=0)
 
             url = "https://github.com/testuser/testblog/tree/master/_posts"
-            params = {"github_clone_dir": tmpdir}
 
-            result = clone_github_repo(url, params)
+            result = clone_github_repo(url, tmpdir)
 
             self.assertIsInstance(result, dict)
             self.assertGreater(len(result), 0)
@@ -162,9 +161,8 @@ class TestCloneGithubRepo(unittest.TestCase):
             mock_subprocess.run.return_value = MagicMock(returncode=0)
 
             url = "https://github.com/testuser/testblog/tree/master/_posts"
-            params = {"github_clone_dir": tmpdir}
 
-            clone_github_repo(url, params)
+            clone_github_repo(url, tmpdir)
 
             # Verify git clone was called with --depth 1
             calls = mock_subprocess.run.call_args_list
@@ -193,9 +191,8 @@ class TestCloneGithubRepo(unittest.TestCase):
             mock_subprocess.run.return_value = MagicMock(returncode=0)
 
             url = "https://github.com/testuser/testblog/tree/master/_posts"
-            params = {"github_clone_dir": tmpdir}
 
-            clone_github_repo(url, params)
+            clone_github_repo(url, tmpdir)
 
             # Check sparse-checkout was called
             calls = mock_subprocess.run.call_args_list
@@ -211,7 +208,7 @@ class TestCloneGithubRepo(unittest.TestCase):
     @patch("obsidian_etl.pipelines.extract_github.nodes.subprocess")
     def test_clone_invalid_url_returns_empty(self, mock_subprocess):
         """無効な URL が空 dict を返すこと。"""
-        result = clone_github_repo("not-a-github-url", {})
+        result = clone_github_repo("not-a-github-url", "")
         self.assertIsInstance(result, dict)
         self.assertEqual(len(result), 0)
 
@@ -228,9 +225,8 @@ class TestCloneGithubRepo(unittest.TestCase):
             mock_subprocess.run.return_value = MagicMock(returncode=0)
 
             url = "https://github.com/testuser/testblog/tree/master/_posts"
-            params = {"github_clone_dir": tmpdir}
 
-            result = clone_github_repo(url, params)
+            result = clone_github_repo(url, tmpdir)
 
             for key, loader in result.items():
                 self.assertTrue(callable(loader))
@@ -850,6 +846,183 @@ class TestEmptyInputGithub(unittest.TestCase):
         self.assertEqual(len(result), 1)
         item = list(result.values())[0]
         self.assertIn("MySQL DDL", item["conversation_name"])
+
+
+# ---------------------------------------------------------------------------
+# TestGitHubMemoryDatasetFlow: raw_github_posts should NOT be in catalog
+# (Phase 3 RED tests - T028)
+# ---------------------------------------------------------------------------
+
+
+class TestGitHubMemoryDatasetFlow(unittest.TestCase):
+    """GitHub パイプラインのデータフローが MemoryDataset ベースであることを検証。
+
+    raw_github_posts はカタログに定義せず、clone_github_repo ノードが
+    dict[str, Callable] を直接メモリで返し、次のノードに渡す設計。
+    カタログに raw_github_posts が定義されていると PartitionedDataset として
+    ファイルシステムへの永続化が試みられ、ノードの出力型と不一致になる。
+    """
+
+    def test_raw_github_posts_not_in_catalog(self):
+        """raw_github_posts がカタログに定義されていないこと。
+
+        clone_github_repo は dict[str, Callable] をメモリで返すため、
+        カタログに PartitionedDataset として定義すると型不一致が起きる。
+        MemoryDataset（自動生成）に任せるべき。
+        """
+        import yaml
+
+        catalog_path = Path(__file__).parent.parent.parent.parent / "conf" / "base" / "catalog.yml"
+        with open(catalog_path, encoding="utf-8") as f:
+            catalog = yaml.safe_load(f)
+
+        self.assertNotIn(
+            "raw_github_posts",
+            catalog,
+            "raw_github_posts should NOT be in catalog.yml. "
+            "clone_github_repo returns dict[str, Callable] in memory, "
+            "so it should use MemoryDataset (auto-created by Kedro).",
+        )
+
+    def test_github_pipeline_outputs_raw_github_posts_as_memory(self):
+        """GitHub パイプラインで raw_github_posts がノード出力として存在すること。
+
+        clone_github_repo ノードが raw_github_posts を出力し、
+        parse_jekyll ノードがそれを入力として受け取る。
+        MemoryDataset として自動的に接続される。
+        """
+        from obsidian_etl.pipelines.extract_github.pipeline import create_pipeline
+
+        pipeline = create_pipeline()
+        node_names = {n.name for n in pipeline.nodes}
+
+        # clone_github_repo ノードが存在すること
+        self.assertIn("clone_github_repo", node_names)
+
+        # ノード間の接続を確認
+        clone_node = [n for n in pipeline.nodes if n.name == "clone_github_repo"][0]
+        parse_node = [n for n in pipeline.nodes if n.name == "parse_jekyll"][0]
+
+        # clone_github_repo の出力が parse_jekyll の入力と接続されていること
+        clone_outputs = set(clone_node.outputs)
+        parse_inputs = set(parse_node.inputs)
+        shared = clone_outputs & parse_inputs
+        self.assertGreater(
+            len(shared),
+            0,
+            "clone_github_repo output should connect to parse_jekyll input",
+        )
+
+    def test_github_pipeline_no_catalog_dependency_for_intermediate(self):
+        """GitHub パイプラインの中間データセットがカタログに依存しないこと。
+
+        raw_github_posts と parsed_github_items はともに MemoryDataset で
+        ノード間を接続する。カタログに定義されていないことを確認。
+        """
+        import yaml
+
+        catalog_path = Path(__file__).parent.parent.parent.parent / "conf" / "base" / "catalog.yml"
+        with open(catalog_path, encoding="utf-8") as f:
+            catalog = yaml.safe_load(f)
+
+        # parsed_github_items もカタログに不要（MemoryDataset で十分）
+        # raw_github_posts がカタログにないことを再確認
+        self.assertNotIn(
+            "raw_github_posts",
+            catalog,
+            "raw_github_posts should be MemoryDataset (not in catalog)",
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestGitHubUrlParameter: github_url parameter usage (Phase 3 RED tests - T029)
+# ---------------------------------------------------------------------------
+
+
+class TestGitHubUrlParameter(unittest.TestCase):
+    """GitHub パイプラインが github_url パラメータを正しく使用することを検証。
+
+    parameters.yml に github_url と github_clone_dir がフラットキーとして
+    定義され、パイプラインが params:github_url で参照する設計。
+    """
+
+    def test_github_url_in_parameters_yml(self):
+        """parameters.yml に github_url がフラットキーとして存在すること。
+
+        GitHub パイプラインは params:github_url で URL を受け取るため、
+        parameters.yml にフラットキーとして定義が必要。
+        """
+        import yaml
+
+        params_path = (
+            Path(__file__).parent.parent.parent.parent / "conf" / "base" / "parameters.yml"
+        )
+        with open(params_path, encoding="utf-8") as f:
+            params = yaml.safe_load(f)
+
+        self.assertIn(
+            "github_url",
+            params,
+            "parameters.yml should have 'github_url' as a flat key "
+            "(not nested under 'import'). The pipeline uses params:github_url.",
+        )
+
+    def test_github_clone_dir_in_parameters_yml(self):
+        """parameters.yml に github_clone_dir がフラットキーとして存在すること。
+
+        clone_github_repo ノードは params dict から github_clone_dir を
+        取得するため、parameters.yml に定義が必要。
+        """
+        import yaml
+
+        params_path = (
+            Path(__file__).parent.parent.parent.parent / "conf" / "base" / "parameters.yml"
+        )
+        with open(params_path, encoding="utf-8") as f:
+            params = yaml.safe_load(f)
+
+        self.assertIn(
+            "github_clone_dir",
+            params,
+            "parameters.yml should have 'github_clone_dir' as a flat key.",
+        )
+
+    def test_pipeline_uses_params_github_url_input(self):
+        """パイプラインの clone_github_repo ノードが params:github_url を入力に持つこと。
+
+        現在は params:parameters を使用しているが、これだと全パラメータが
+        渡されてしまう。params:github_url で明示的に URL を受け取るべき。
+        """
+        from obsidian_etl.pipelines.extract_github.pipeline import create_pipeline
+
+        pipeline = create_pipeline()
+        clone_node = [n for n in pipeline.nodes if n.name == "clone_github_repo"][0]
+
+        inputs = set(clone_node.inputs)
+        self.assertIn(
+            "params:github_url",
+            inputs,
+            f"clone_github_repo should have 'params:github_url' as input, got: {inputs}",
+        )
+
+    def test_pipeline_clone_node_does_not_use_params_parameters(self):
+        """clone_github_repo ノードが params:parameters を入力に使わないこと。
+
+        params:parameters は全パラメータ dict を渡すアンチパターン。
+        明示的なパラメータ参照（params:github_url, params:github_clone_dir）を使うべき。
+        """
+        from obsidian_etl.pipelines.extract_github.pipeline import create_pipeline
+
+        pipeline = create_pipeline()
+        clone_node = [n for n in pipeline.nodes if n.name == "clone_github_repo"][0]
+
+        inputs = set(clone_node.inputs)
+        self.assertNotIn(
+            "params:parameters",
+            inputs,
+            "clone_github_repo should NOT use 'params:parameters'. "
+            "Use explicit params:github_url and params:github_clone_dir instead.",
+        )
 
 
 if __name__ == "__main__":

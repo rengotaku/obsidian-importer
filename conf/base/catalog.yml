@@ -25,15 +25,8 @@ raw_openai_conversations:
     kedro-viz:
       layer: raw
 
-raw_github_posts:
-  type: partitions.PartitionedDataset
-  path: data/01_raw/github
-  dataset:
-    type: text.TextDataset
-  filename_suffix: ".md"
-  metadata:
-    kedro-viz:
-      layer: raw
+# raw_github_posts is NOT defined here - clone_github_repo returns dict[str, Callable]
+# in memory, so Kedro auto-creates a MemoryDataset for it.
 
 # ============================================================
 # Layer 02: Intermediate (Extract output - unified format)
