@@ -74,33 +74,33 @@
 
 ### 入力
 
-- [ ] T027 Read previous phase output: specs/044-kedro-migration/tasks/ph1-output.md
+- [x] T027 Read previous phase output: specs/044-kedro-migration/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T028 [P] [US1] Create test fixture: tests/fixtures/claude_input.json (minimal Claude export with 2-3 conversations)
-- [ ] T029 [P] [US1] Create test fixture: tests/fixtures/expected_outputs/parsed_claude_item.json (expected ParsedItem output)
-- [ ] T030 [P] [US1] Implement test_parse_claude_json_basic in tests/pipelines/extract_claude/test_nodes.py (valid JSON → ParsedItem dict)
-- [ ] T031 [P] [US1] Implement test_parse_claude_json_chunking in tests/pipelines/extract_claude/test_nodes.py (25000+ char conversation → multiple chunks)
-- [ ] T032 [P] [US1] Implement test_parse_claude_json_skip_short in tests/pipelines/extract_claude/test_nodes.py (messages < 3 → excluded from output)
-- [ ] T033 [P] [US1] Implement test_parse_claude_json_missing_name in tests/pipelines/extract_claude/test_nodes.py (name=None → fallback to first user message)
-- [ ] T034 [P] [US1] Implement test_validate_structure in tests/pipelines/extract_claude/test_nodes.py (uuid, chat_messages required)
-- [ ] T035 [P] [US1] Implement test_validate_content in tests/pipelines/extract_claude/test_nodes.py (empty messages excluded)
-- [ ] T036 [P] [US1] Implement test_file_id_generation in tests/pipelines/extract_claude/test_nodes.py (SHA256 file_id matches expected)
-- [ ] T037 Verify `make test` FAIL (RED)
-- [ ] T038 Generate RED output: specs/044-kedro-migration/red-tests/ph2-test.md
+- [x] T028 [P] [US1] Create test fixture: tests/fixtures/claude_input.json (minimal Claude export with 2-3 conversations)
+- [x] T029 [P] [US1] Create test fixture: tests/fixtures/expected_outputs/parsed_claude_item.json (expected ParsedItem output)
+- [x] T030 [P] [US1] Implement test_parse_claude_json_basic in tests/pipelines/extract_claude/test_nodes.py (valid JSON → ParsedItem dict)
+- [x] T031 [P] [US1] Implement test_parse_claude_json_chunking in tests/pipelines/extract_claude/test_nodes.py (25000+ char conversation → multiple chunks)
+- [x] T032 [P] [US1] Implement test_parse_claude_json_skip_short in tests/pipelines/extract_claude/test_nodes.py (messages < 3 → excluded from output)
+- [x] T033 [P] [US1] Implement test_parse_claude_json_missing_name in tests/pipelines/extract_claude/test_nodes.py (name=None → fallback to first user message)
+- [x] T034 [P] [US1] Implement test_validate_structure in tests/pipelines/extract_claude/test_nodes.py (uuid, chat_messages required)
+- [x] T035 [P] [US1] Implement test_validate_content in tests/pipelines/extract_claude/test_nodes.py (empty messages excluded)
+- [x] T036 [P] [US1] Implement test_file_id_generation in tests/pipelines/extract_claude/test_nodes.py (SHA256 file_id matches expected)
+- [x] T037 Verify `make test` FAIL (RED)
+- [x] T038 Generate RED output: specs/044-kedro-migration/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T039 Read RED tests: specs/044-kedro-migration/red-tests/ph2-test.md
-- [ ] T040 [P] [US1] Implement parse_claude_json node in src/obsidian_etl/pipelines/extract_claude/nodes.py (JSON parse, structure/content validation, chunking, file_id generation)
-- [ ] T041 [US1] Define Claude extract pipeline in src/obsidian_etl/pipelines/extract_claude/pipeline.py (raw_claude_conversations → parsed_items)
-- [ ] T042 Verify `make test` PASS (GREEN)
+- [x] T039 Read RED tests: specs/044-kedro-migration/red-tests/ph2-test.md
+- [x] T040 [P] [US1] Implement parse_claude_json node in src/obsidian_etl/pipelines/extract_claude/nodes.py (JSON parse, structure/content validation, chunking, file_id generation)
+- [x] T041 [US1] Define Claude extract pipeline in src/obsidian_etl/pipelines/extract_claude/pipeline.py (raw_claude_conversations → parsed_items)
+- [x] T042 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T043 Verify `make test` passes all tests (no regressions)
-- [ ] T044 Generate phase output: specs/044-kedro-migration/tasks/ph2-output.md
+- [x] T043 Verify `make test` passes all tests (no regressions)
+- [x] T044 Generate phase output: specs/044-kedro-migration/tasks/ph2-output.md
 
 **Checkpoint**: Claude Extract nodes produce correct ParsedItem output
 

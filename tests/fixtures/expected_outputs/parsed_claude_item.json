@@ -1,0 +1,32 @@
+{
+  "_description": "Expected ParsedItem output for the first conversation in claude_input.json (conv-001-uuid-abcdef)",
+  "item_id": "conv-001-uuid-abcdef",
+  "source_provider": "claude",
+  "source_path": "data/01_raw/claude/conversations.json",
+  "conversation_name": "Python asyncio discussion",
+  "created_at": "2026-01-15T10:30:00.000000+00:00",
+  "messages": [
+    {
+      "role": "human",
+      "content": "How does Python asyncio work?"
+    },
+    {
+      "role": "assistant",
+      "content": "Python asyncio is a library for writing concurrent code using the async/await syntax. It provides an event loop that manages coroutines."
+    },
+    {
+      "role": "human",
+      "content": "Can you explain event loops in more detail?"
+    },
+    {
+      "role": "assistant",
+      "content": "An event loop runs async tasks and callbacks, handles I/O events, and manages subprocesses. It is the core of every asyncio application."
+    }
+  ],
+  "content": "Human: How does Python asyncio work?\n\nAssistant: Python asyncio is a library for writing concurrent code using the async/await syntax. It provides an event loop that manages coroutines.\n\nHuman: Can you explain event loops in more detail?\n\nAssistant: An event loop runs async tasks and callbacks, handles I/O events, and manages subprocesses. It is the core of every asyncio application.",
+  "file_id": "_computed_at_runtime_",
+  "is_chunked": false,
+  "chunk_index": null,
+  "total_chunks": null,
+  "parent_item_id": null
+}
