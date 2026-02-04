@@ -28,7 +28,7 @@ tools = ["lint", "test"]
 source_dir = "src"
 
 [tool.coverage.run]
-source = ["src/etl", "src/obsidian_etl"]
+source = ["src/obsidian_etl"]
 omit = ["*/tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]
