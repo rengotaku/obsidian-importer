@@ -654,6 +654,8 @@ make lint      # コード品質チェック (ruff)
 - Qdrant (ローカルファイル永続化 @ `data/qdrant/`) (001-rag-migration-plan)
 - Python 3.11+ + Kedro 1.1.1, kedro-datasets, tenacity 8.x, PyYAML 6.0+, requests 2.28+ (044-kedro-migration)
 - ファイルシステム（JSON, JSONL, Markdown）、Kedro DataCatalog（PartitionedDataset） (044-kedro-migration)
+- Python 3.13 + Kedro 1.1.1 + kedro 1.1.1, kedro-datasets (PartitionedDataset, json, text), tenacity 8.x (045-fix-kedro-input)
+- ファイルシステム（JSON, JSONL, Markdown, ZIP）、Kedro DataCatalog (045-fix-kedro-input)
 
 ## Recent Changes
 - 044-kedro-migration: Migrated from custom ETL pipeline (`src/etl/`) to Kedro 1.1.1. Removed session management, introduced DAG-based pipelines (import_claude, import_openai, import_github), idempotent resume via PartitionedDataset

@@ -1,0 +1,37 @@
+# Target catalog.yml - Kedro 入力フロー修正後
+# conf/base/catalog.yml のあるべき姿
+
+# ============================================================
+# Layer 01: Raw Data (Provider-specific input)
+# ============================================================
+
+# Claude: ZIP files containing conversations.json
+raw_claude_conversations:
+  type: partitions.PartitionedDataset
+  path: data/01_raw/claude
+  dataset:
+    type: obsidian_etl.datasets.BinaryDataset
+  filename_suffix: ".zip"
+  metadata:
+    kedro-viz:
+      layer: raw
+
+# OpenAI: ZIP files containing conversations.json
+raw_openai_conversations:
+  type: partitions.PartitionedDataset
+  path: data/01_raw/openai
+  dataset:
+    type: obsidian_etl.datasets.BinaryDataset
+  filename_suffix: ".zip"
+  metadata:
+    kedro-viz:
+      layer: raw
+
+# GitHub: No catalog entry needed.
+# clone_github_repo node takes URL from params and outputs to MemoryDataset.
+# raw_github_posts and parsed_github_items are auto-created as MemoryDataset.
+
+# ============================================================
+# Layer 02-07: Unchanged from current catalog.yml
+# ============================================================
+# (parsed_items, transformed_items_with_knowledge, etc. remain as-is)
