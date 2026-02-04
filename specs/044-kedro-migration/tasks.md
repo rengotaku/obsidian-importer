@@ -114,33 +114,33 @@
 
 ### 入力
 
-- [ ] T045 Read previous phase output: specs/044-kedro-migration/tasks/ph2-output.md
+- [x] T045 Read previous phase output: specs/044-kedro-migration/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T046 [P] [US1] Create test fixture: tests/fixtures/expected_outputs/transformed_item.json (expected TransformedItem output)
-- [ ] T047 [P] [US1] Implement test_extract_knowledge in tests/pipelines/transform/test_nodes.py (ParsedItem → generated_metadata with title, summary, tags; mock Ollama)
-- [ ] T048 [P] [US1] Implement test_extract_knowledge_english_summary_translation in tests/pipelines/transform/test_nodes.py (English summary → Japanese translation; mock Ollama)
-- [ ] T049 [P] [US1] Implement test_extract_knowledge_error_handling in tests/pipelines/transform/test_nodes.py (LLM failure → item excluded, logged)
-- [ ] T050 [P] [US1] Implement test_generate_metadata in tests/pipelines/transform/test_nodes.py (generated_metadata → metadata dict with file_id, created, normalized=True)
-- [ ] T051 [P] [US1] Implement test_format_markdown in tests/pipelines/transform/test_nodes.py (metadata + content → YAML frontmatter + body)
-- [ ] T052 [P] [US1] Implement test_format_markdown_output_filename in tests/pipelines/transform/test_nodes.py (title → sanitized filename)
-- [ ] T053 Verify `make test` FAIL (RED)
-- [ ] T054 Generate RED output: specs/044-kedro-migration/red-tests/ph3-test.md
+- [x] T046 [P] [US1] Create test fixture: tests/fixtures/expected_outputs/transformed_item.json (expected TransformedItem output)
+- [x] T047 [P] [US1] Implement test_extract_knowledge in tests/pipelines/transform/test_nodes.py (ParsedItem → generated_metadata with title, summary, tags; mock Ollama)
+- [x] T048 [P] [US1] Implement test_extract_knowledge_english_summary_translation in tests/pipelines/transform/test_nodes.py (English summary → Japanese translation; mock Ollama)
+- [x] T049 [P] [US1] Implement test_extract_knowledge_error_handling in tests/pipelines/transform/test_nodes.py (LLM failure → item excluded, logged)
+- [x] T050 [P] [US1] Implement test_generate_metadata in tests/pipelines/transform/test_nodes.py (generated_metadata → metadata dict with file_id, created, normalized=True)
+- [x] T051 [P] [US1] Implement test_format_markdown in tests/pipelines/transform/test_nodes.py (metadata + content → YAML frontmatter + body)
+- [x] T052 [P] [US1] Implement test_format_markdown_output_filename in tests/pipelines/transform/test_nodes.py (title → sanitized filename)
+- [x] T053 Verify `make test` FAIL (RED)
+- [x] T054 Generate RED output: specs/044-kedro-migration/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T055 Read RED tests: specs/044-kedro-migration/red-tests/ph3-test.md
-- [ ] T056 [P] [US1] Implement extract_knowledge node in src/obsidian_etl/pipelines/transform/nodes.py (LLM call with tenacity retry, English→Japanese translation)
-- [ ] T057 [P] [US1] Implement generate_metadata node in src/obsidian_etl/pipelines/transform/nodes.py (file_id, created, tags, normalized flag)
-- [ ] T058 [P] [US1] Implement format_markdown node in src/obsidian_etl/pipelines/transform/nodes.py (YAML frontmatter + Markdown body, filename sanitization)
-- [ ] T059 [US1] Define transform pipeline in src/obsidian_etl/pipelines/transform/pipeline.py (parsed_items → transformed_items → markdown_notes)
-- [ ] T060 Verify `make test` PASS (GREEN)
+- [x] T055 Read RED tests: specs/044-kedro-migration/red-tests/ph3-test.md
+- [x] T056 [P] [US1] Implement extract_knowledge node in src/obsidian_etl/pipelines/transform/nodes.py (LLM call with tenacity retry, English→Japanese translation)
+- [x] T057 [P] [US1] Implement generate_metadata node in src/obsidian_etl/pipelines/transform/nodes.py (file_id, created, tags, normalized flag)
+- [x] T058 [P] [US1] Implement format_markdown node in src/obsidian_etl/pipelines/transform/nodes.py (YAML frontmatter + Markdown body, filename sanitization)
+- [x] T059 [US1] Define transform pipeline in src/obsidian_etl/pipelines/transform/pipeline.py (parsed_items → transformed_items → markdown_notes)
+- [x] T060 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T061 Verify `make test` passes all tests (no regressions)
-- [ ] T062 Generate phase output: specs/044-kedro-migration/tasks/ph3-output.md
+- [x] T061 Verify `make test` passes all tests (no regressions)
+- [x] T062 Generate phase output: specs/044-kedro-migration/tasks/ph3-output.md
 
 **Checkpoint**: Transform pipeline converts ParsedItem → Markdown output correctly
 

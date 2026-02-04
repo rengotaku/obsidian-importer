@@ -1,1 +1,50 @@
-"""Transform pipeline definition."""
+"""Transform pipeline definition.
+
+This pipeline processes ParsedItems from the Extract pipeline:
+1. extract_knowledge: LLM-based knowledge extraction (title, summary, tags)
+2. generate_metadata: Metadata generation (file_id, created, normalized)
+3. format_markdown: Markdown formatting with YAML frontmatter
+
+Pipeline Inputs:
+- parsed_items: PartitionedDataset of ParsedItem dicts (from Extract)
+
+Pipeline Outputs:
+- markdown_notes: PartitionedDataset of Markdown files with frontmatter
+"""
+
+from kedro.pipeline import Pipeline, node, pipeline
+
+from .nodes import extract_knowledge, format_markdown, generate_metadata
+
+
+def create_pipeline(**kwargs) -> Pipeline:
+    """Create the Transform pipeline.
+
+    Args:
+        **kwargs: Additional pipeline parameters.
+
+    Returns:
+        Transform pipeline.
+    """
+    return pipeline(
+        [
+            node(
+                func=extract_knowledge,
+                inputs=["parsed_items", "params:import"],
+                outputs="transformed_items_with_knowledge",
+                name="extract_knowledge_node",
+            ),
+            node(
+                func=generate_metadata,
+                inputs=["transformed_items_with_knowledge", "params:import"],
+                outputs="transformed_items_with_metadata",
+                name="generate_metadata_node",
+            ),
+            node(
+                func=format_markdown,
+                inputs="transformed_items_with_metadata",
+                outputs="markdown_notes",
+                name="format_markdown_node",
+            ),
+        ]
+    )
