@@ -104,9 +104,9 @@ Kedro ベースのパイプライン処理で使用する用語。
 ```
 data/                                # Kedro データレイヤー
 ├── 01_raw/                          # 入力データ（プロバイダー固有形式）
-│   ├── claude/                      # Claude エクスポート JSON
+│   ├── claude/                      # Claude エクスポート ZIP
 │   ├── openai/                      # ChatGPT エクスポート ZIP
-│   └── github/                      # GitHub Jekyll ブログ URL
+│   └── github/                      # GitHub Jekyll ブログ（git clone 自動取得）
 ├── 02_intermediate/                 # Extract 出力（パース済みアイテム）
 │   └── parsed/
 ├── 03_primary/                      # Transform 出力（LLM 処理済み）
@@ -202,15 +202,17 @@ Kedro ベースのパイプラインは `kedro` コマンドまたは `make kedr
 
 #### Claude 会話インポート
 
-Claude エクスポートデータから知識を抽出して Obsidian ノートに変換し、Vault に配置。
+Claude エクスポート ZIP から知識を抽出して Obsidian ノートに変換し、Vault に配置。
 
 ```bash
-# 基本実行
-kedro run --pipeline=import_claude
-make kedro-run PIPELINE=import_claude
+# 1. Claude エクスポート ZIP を配置
+cp ~/Downloads/data-2026-*.zip data/01_raw/claude/
 
-# パラメータ上書き（入力パス指定）
-kedro run --pipeline=import_claude --params='{"import.input_path": "/path/to/export"}'
+# 2. パイプライン実行（デフォルト: claude）
+kedro run
+
+# または明示的に指定
+kedro run --pipeline=import_claude
 
 # 処理件数制限
 kedro run --pipeline=import_claude --params='{"import.limit": 10}'
@@ -222,19 +224,28 @@ kedro run --pipeline=import_claude --from-nodes=extract_knowledge
 kedro run --pipeline=import_claude --to-nodes=format_markdown
 ```
 
+**Claude 特有の処理:**
+
+- **ZIP 読み込み**: `conversations.json` を自動抽出
+- **会話パース**: UUID ベースで会話を識別
+- **チャンク分割**: 25000文字超の会話を複数ファイルに分割
+- **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
+
 #### ChatGPT 会話インポート
 
 ChatGPT エクスポート ZIP から知識を抽出。
 
 ```bash
-# 基本実行
+# 1. ChatGPT エクスポート ZIP を配置
+# ChatGPT 設定 → Data controls → Export data
+# メールで届く ZIP ファイルをダウンロード
+cp ~/Downloads/chatgpt-export-*.zip data/01_raw/openai/
+
+# 2. パイプライン実行
 kedro run --pipeline=import_openai
 
-# ChatGPT エクスポート方法
-# 1. ChatGPT 設定 → Data controls → Export data
-# 2. メールで届く ZIP ファイルをダウンロード
-# 3. data/01_raw/openai/ に配置
-# 4. kedro run --pipeline=import_openai
+# または provider パラメータで指定
+kedro run --params='{"import.provider": "openai"}'
 ```
 
 **ChatGPT 特有の処理:**
@@ -243,17 +254,20 @@ kedro run --pipeline=import_openai
 - **ツリー走査**: ChatGPT の mapping 構造を chronological order に変換
 - **マルチモーダル**: 画像は `[Image: file-id]`, 音声は `[Audio: filename]` プレースホルダー
 - **role 変換**: `user` → `human`, `assistant` → `assistant`, `system`/`tool` は除外
+- **チャンク分割**: 25000文字超の会話を複数ファイルに分割
+- **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
 
 #### GitHub Jekyll ブログインポート
 
 GitHub Jekyll ブログを git clone してインポート。
 
 ```bash
-# 基本実行
-kedro run --pipeline=import_github
+# URL 指定してパイプライン実行
+kedro run --pipeline=import_github \
+  --params='{"github_url": "https://github.com/rengotaku/rengotaku.github.io/tree/master/test_posts"}'
 
-# URL 指定
-kedro run --pipeline=import_github --params='{"github.repo_url": "https://github.com/user/repo", "github.target_path": "_posts"}'
+# または provider パラメータで指定
+kedro run --params='{"import.provider": "github", "github_url": "https://github.com/user/repo/tree/master/_posts"}'
 ```
 
 **GitHub Jekyll 特有の処理:**
@@ -265,13 +279,33 @@ kedro run --pipeline=import_github --params='{"github.repo_url": "https://github
 - **スキップ処理**: `draft: true` または `private: true` のファイルは自動除外
 - **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
 
+#### dispatch 型パイプライン
+
+`import.provider` パラメータ（デフォルト: `claude`）で適切なパイプラインに自動 dispatch。
+
+```bash
+# デフォルト（claude）
+kedro run
+
+# OpenAI パイプラインに dispatch
+kedro run --params='{"import.provider": "openai"}'
+
+# GitHub パイプラインに dispatch
+kedro run --params='{"import.provider": "github", "github_url": "https://github.com/user/repo/tree/master/_posts"}'
+
+# 個別パイプライン名でも実行可能
+kedro run --pipeline=import_claude
+kedro run --pipeline=import_openai
+kedro run --pipeline=import_github
+```
+
 #### Resume（冪等再実行）
 
 同じコマンドの再実行により、完了済みアイテムをスキップして失敗分のみ再処理。
 
 ```bash
 # 前回失敗した処理の再実行（同じコマンド）
-kedro run --pipeline=import_claude
+kedro run
 
 # PartitionedDataset の overwrite=false により:
 # - 出力ファイルが存在するアイテム → スキップ
@@ -329,8 +363,8 @@ make coverage
 **データフロー:**
 
 ```
-data/01_raw/claude/*.json          ← 入力（Claude エクスポート）
-    ↓ [extract_claude pipeline]
+data/01_raw/claude/*.zip           ← 入力（Claude エクスポート ZIP）
+    ↓ [extract_claude pipeline - parse_claude_zip]
 data/02_intermediate/parsed/*.json ← パース済みアイテム
     ↓ [transform pipeline]
 data/03_primary/transformed/*.json ← LLM 処理済みアイテム

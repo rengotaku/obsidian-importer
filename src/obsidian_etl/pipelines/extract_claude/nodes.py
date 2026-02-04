@@ -6,7 +6,6 @@ import io
 import json
 import logging
 import zipfile
-from pathlib import Path
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
 from obsidian_etl.utils.file_id import generate_file_id

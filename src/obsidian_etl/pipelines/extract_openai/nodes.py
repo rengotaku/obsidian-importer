@@ -7,7 +7,6 @@ import json
 import logging
 import zipfile
 from datetime import UTC, datetime
-from pathlib import Path
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
 from obsidian_etl.utils.file_id import generate_file_id
@@ -359,8 +358,5 @@ def _convert_timestamp(ts: float | None) -> str:
     Returns:
         ISO 8601 date string. Falls back to current datetime if ts is None.
     """
-    if ts is None:
-        dt = datetime.now(tz=UTC)
-    else:
-        dt = datetime.fromtimestamp(ts, tz=UTC)
+    dt = datetime.now(tz=UTC) if ts is None else datetime.fromtimestamp(ts, tz=UTC)
     return dt.isoformat()

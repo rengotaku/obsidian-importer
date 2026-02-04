@@ -159,19 +159,19 @@
 
 ### 入力
 
-- [ ] T051 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph4-output.md`
+- [x] T051 Read previous phase output: `specs/045-fix-kedro-input/tasks/ph4-output.md`
 
 ### 実装
 
-- [ ] T052 [P] Update `CLAUDE.md` — reflect new catalog structure, ZIP input documentation, dispatch pipeline usage
-- [ ] T053 [P] Remove any deprecated code or unused imports from modified files
-- [ ] T054 Run quickstart.md validation: verify documented commands match implementation
-- [ ] T055 Run `make lint` to verify code quality
+- [x] T052 [P] Update `CLAUDE.md` — reflect new catalog structure, ZIP input documentation, dispatch pipeline usage
+- [x] T053 [P] Remove any deprecated code or unused imports from modified files
+- [x] T054 Run quickstart.md validation: verify documented commands match implementation
+- [x] T055 Run `make lint` to verify code quality
 
 ### 検証
 
-- [ ] T056 Run `make test` to verify all tests pass after cleanup
-- [ ] T057 Generate phase output: `specs/045-fix-kedro-input/tasks/ph5-output.md`
+- [x] T056 Run `make test` to verify all tests pass after cleanup
+- [x] T057 Generate phase output: `specs/045-fix-kedro-input/tasks/ph5-output.md`
 
 ---
 
