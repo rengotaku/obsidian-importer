@@ -10,6 +10,7 @@ COMMA := ,
 
 .PHONY: help setup setup-dev test coverage check lint clean
 .PHONY: rag-index rag-search rag-ask rag-status
+.PHONY: test-e2e
 .PHONY: kedro-run kedro-test kedro-viz
 
 # ═══════════════════════════════════════════════════════════
@@ -31,6 +32,7 @@ help:
 	@echo "                 [PARAMS='...'] [FROM_NODES=...] [TO_NODES=...]"
 	@echo "  kedro-test     Kedro テスト実行"
 	@echo "  kedro-viz      DAG 可視化"
+	@echo "  test-e2e       E2Eテスト（テスト用フィクスチャで実行）"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test           全テスト実行"
@@ -108,6 +110,54 @@ kedro-test:
 # Kedro DAG 可視化
 kedro-viz:
 	@cd $(BASE_DIR) && $(PYTHON) -m kedro viz
+
+# Kedro E2Eテスト（テスト用フィクスチャで LLM 処理まで実行）
+# 前提: Ollama が起動していること
+TEST_DATA_DIR := data/test
+test-e2e:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  Kedro E2E Test (test environment)"
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "[1/5] Checking Ollama..."
+	@curl -sf http://localhost:11434/api/tags > /dev/null || (echo "❌ Ollama is not running. Start it first."; exit 1)
+	@echo "  ✅ Ollama is running"
+	@echo ""
+	@echo "[2/5] Preparing test data..."
+	@rm -rf $(TEST_DATA_DIR)
+	@mkdir -p $(TEST_DATA_DIR)/01_raw/claude
+	@mkdir -p $(TEST_DATA_DIR)/02_intermediate/parsed
+	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_knowledge
+	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_metadata
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/notes
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/organized
+	@echo '{}' > $(TEST_DATA_DIR)/03_primary/transformed_knowledge/.placeholder.json
+	@cp tests/fixtures/claude_test.zip $(TEST_DATA_DIR)/01_raw/claude/
+	@echo "  ✅ Test data ready"
+	@echo ""
+	@echo "[3/5] Running Extract (ZIP → parsed_items)..."
+	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test --to-nodes=parse_claude_zip
+	@echo ""
+	@echo "  Verifying parsed_items..."
+	@test $$(ls -1 $(TEST_DATA_DIR)/02_intermediate/parsed/*.json 2>/dev/null | wc -l) -eq 3 \
+		|| (echo "❌ Expected 3 parsed_items, got $$(ls -1 $(TEST_DATA_DIR)/02_intermediate/parsed/*.json 2>/dev/null | wc -l)"; exit 1)
+	@echo "  ✅ Extract passed (3 parsed_items)"
+	@echo ""
+	@echo "[4/5] Running Transform (LLM processing)..."
+	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test --from-nodes=extract_knowledge --to-nodes=extract_knowledge
+	@echo ""
+	@echo "  Verifying LLM output..."
+	@TRANSFORMED=$$(ls -1 $(TEST_DATA_DIR)/03_primary/transformed_knowledge/*.json 2>/dev/null | grep -v '.placeholder' | wc -l); \
+		if [ "$$TRANSFORMED" -eq 0 ]; then echo "❌ No items were transformed by LLM"; exit 1; fi; \
+		echo "  ✅ Transform passed ($$TRANSFORMED items with generated_metadata)"
+	@echo ""
+	@echo "[5/5] Cleaning up..."
+	@rm -rf $(TEST_DATA_DIR)
+	@echo "  ✅ Test data cleaned"
+	@echo ""
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  ✅ E2E test complete (Extract + LLM Transform verified)"
+	@echo "═══════════════════════════════════════════════════════════"
 
 # ═══════════════════════════════════════════════════════════
 # Testing

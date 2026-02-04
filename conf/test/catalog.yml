@@ -1,0 +1,88 @@
+# Test environment catalog - uses data/test/ directory
+# Usage: kedro run --env=test
+
+# ═══════════════════════════════════════════════════
+# Extract Layer - Claude (test fixtures)
+# ═══════════════════════════════════════════════════
+
+raw_claude_conversations:
+  type: partitions.PartitionedDataset
+  path: data/test/01_raw/claude
+  dataset:
+    type: obsidian_etl.datasets.BinaryDataset
+  filename_suffix: ".zip"
+  metadata:
+    kedro-viz:
+      layer: raw
+
+# ═══════════════════════════════════════════════════
+# Intermediate Layer
+# ═══════════════════════════════════════════════════
+
+parsed_items:
+  type: partitions.PartitionedDataset
+  path: data/test/02_intermediate/parsed
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  metadata:
+    kedro-viz:
+      layer: intermediate
+
+# ═══════════════════════════════════════════════════
+# Primary Layer
+# ═══════════════════════════════════════════════════
+
+existing_transformed_items_with_knowledge:
+  type: partitions.PartitionedDataset
+  path: data/test/03_primary/transformed_knowledge
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  metadata:
+    kedro-viz:
+      layer: primary
+
+transformed_items_with_knowledge:
+  type: partitions.PartitionedDataset
+  path: data/test/03_primary/transformed_knowledge
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  metadata:
+    kedro-viz:
+      layer: primary
+
+transformed_items_with_metadata:
+  type: partitions.PartitionedDataset
+  path: data/test/03_primary/transformed_metadata
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  metadata:
+    kedro-viz:
+      layer: primary
+
+# ═══════════════════════════════════════════════════
+# Model Output Layer
+# ═══════════════════════════════════════════════════
+
+markdown_notes:
+  type: partitions.PartitionedDataset
+  path: data/test/07_model_output/notes
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+organized_notes:
+  type: partitions.PartitionedDataset
+  path: data/test/07_model_output/organized
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  metadata:
+    kedro-viz:
+      layer: model_output
