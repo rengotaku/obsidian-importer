@@ -220,6 +220,16 @@ __marimo__/
 data/qdrant/
 !data/qdrant/.gitkeep
 
+# Kedro data layers (runtime data)
+data/01_raw/
+data/02_intermediate/
+data/03_primary/
+data/07_model_output/
+logs/
+
+# Kedro local config
+conf/local/
+
 # OS
 .DS_Store
 .Trash/

@@ -1,0 +1,1 @@
+"""Claude Extract pipeline definition."""

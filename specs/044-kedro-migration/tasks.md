@@ -37,32 +37,32 @@
 
 **Purpose**: Kedro プロジェクト生成、設定ファイル配置、ユーティリティ移植
 
-- [ ] T001 Read existing implementation overview in src/etl/ to understand current pipeline structure
-- [ ] T002 [P] Read existing utils in src/etl/utils/ollama.py, src/etl/utils/knowledge_extractor.py, src/etl/utils/chunker.py, src/etl/utils/file_id.py
-- [ ] T003 [P] Read existing prompts in src/etl/prompts/knowledge_extraction.txt, src/etl/prompts/summary_translation.txt
-- [ ] T004 [P] Read existing extract stages in src/etl/stages/extract/ for Claude parser logic
-- [ ] T005 [P] Read existing transform stages in src/etl/stages/transform/ for LLM processing logic
-- [ ] T006 [P] Read existing organize stages in src/etl/stages/ for genre classification and vault placement logic
-- [ ] T007 Run `kedro new --name=obsidian-etl --tools=lint,test --example=n --starter=spaceflights-pandas` in project root to generate Kedro skeleton (adjust starter if needed, or use `--example=n` for blank)
-- [ ] T008 Install dependencies: `pip install kedro==1.1.1 kedro-datasets tenacity>=8.0 PyYAML>=6.0 requests>=2.28`
-- [ ] T009 [P] Create conf/base/catalog.yml per specs/044-kedro-migration/contracts/catalog.yml
-- [ ] T010 [P] Create conf/base/parameters.yml per specs/044-kedro-migration/contracts/parameters.yml
-- [ ] T011 [P] Create conf/base/logging.yml with standard Kedro logging configuration
-- [ ] T012 [P] Migrate src/etl/utils/ollama.py → src/obsidian_etl/utils/ollama.py (refactor to Kedro conventions: remove class-level state, pure function interface)
-- [ ] T013 [P] Migrate src/etl/utils/knowledge_extractor.py → src/obsidian_etl/utils/knowledge_extractor.py (refactor: function-based API, params dict input)
-- [ ] T014 [P] Migrate src/etl/utils/chunker.py → src/obsidian_etl/utils/chunker.py (refactor: pure function, configurable chunk_size via params)
-- [ ] T015 [P] Migrate src/etl/utils/file_id.py → src/obsidian_etl/utils/file_id.py (refactor: pure function)
-- [ ] T016 [P] Copy src/etl/prompts/knowledge_extraction.txt → src/obsidian_etl/utils/prompts/knowledge_extraction.txt
-- [ ] T017 [P] Copy src/etl/prompts/summary_translation.txt → src/obsidian_etl/utils/prompts/summary_translation.txt
-- [ ] T018 Create pipeline skeleton directories: src/obsidian_etl/pipelines/{extract_claude,extract_openai,extract_github,transform,organize}/ with __init__.py, nodes.py, pipeline.py
-- [ ] T019 Create src/obsidian_etl/hooks.py with empty ErrorHandlerHook and LoggingHook classes
-- [ ] T020 Create src/obsidian_etl/pipeline_registry.py with placeholder register_pipelines()
-- [ ] T021 Configure src/obsidian_etl/settings.py with Hook registration
-- [ ] T022 Create data/ directory structure: data/{01_raw/claude,01_raw/openai,01_raw/github,02_intermediate/parsed,03_primary/transformed,07_model_output/notes,07_model_output/organized}/
-- [ ] T023 Create tests/ directory structure: tests/pipelines/{extract_claude,extract_openai,extract_github,transform,organize}/ with empty test_nodes.py files and tests/conftest.py
-- [ ] T024 Update Makefile with Kedro targets: `make kedro-run`, `make kedro-test`, `make kedro-viz`
-- [ ] T025 Verify `kedro info` runs successfully (project recognized)
-- [ ] T026 Generate phase output: specs/044-kedro-migration/tasks/ph1-output.md
+- [X] T001 Read existing implementation overview in src/etl/ to understand current pipeline structure
+- [X] T002 [P] Read existing utils in src/etl/utils/ollama.py, src/etl/utils/knowledge_extractor.py, src/etl/utils/chunker.py, src/etl/utils/file_id.py
+- [X] T003 [P] Read existing prompts in src/etl/prompts/knowledge_extraction.txt, src/etl/prompts/summary_translation.txt
+- [X] T004 [P] Read existing extract stages in src/etl/stages/extract/ for Claude parser logic
+- [X] T005 [P] Read existing transform stages in src/etl/stages/transform/ for LLM processing logic
+- [X] T006 [P] Read existing organize stages in src/etl/stages/ for genre classification and vault placement logic
+- [X] T007 Run `kedro new --name=obsidian-etl --tools=lint,test --example=n --starter=spaceflights-pandas` in project root to generate Kedro skeleton (adjust starter if needed, or use `--example=n` for blank)
+- [X] T008 Install dependencies: `pip install kedro==1.1.1 kedro-datasets tenacity>=8.0 PyYAML>=6.0 requests>=2.28`
+- [X] T009 [P] Create conf/base/catalog.yml per specs/044-kedro-migration/contracts/catalog.yml
+- [X] T010 [P] Create conf/base/parameters.yml per specs/044-kedro-migration/contracts/parameters.yml
+- [X] T011 [P] Create conf/base/logging.yml with standard Kedro logging configuration
+- [X] T012 [P] Migrate src/etl/utils/ollama.py → src/obsidian_etl/utils/ollama.py (refactor to Kedro conventions: remove class-level state, pure function interface)
+- [X] T013 [P] Migrate src/etl/utils/knowledge_extractor.py → src/obsidian_etl/utils/knowledge_extractor.py (refactor: function-based API, params dict input)
+- [X] T014 [P] Migrate src/etl/utils/chunker.py → src/obsidian_etl/utils/chunker.py (refactor: pure function, configurable chunk_size via params)
+- [X] T015 [P] Migrate src/etl/utils/file_id.py → src/obsidian_etl/utils/file_id.py (refactor: pure function)
+- [X] T016 [P] Copy src/etl/prompts/knowledge_extraction.txt → src/obsidian_etl/utils/prompts/knowledge_extraction.txt
+- [X] T017 [P] Copy src/etl/prompts/summary_translation.txt → src/obsidian_etl/utils/prompts/summary_translation.txt
+- [X] T018 Create pipeline skeleton directories: src/obsidian_etl/pipelines/{extract_claude,extract_openai,extract_github,transform,organize}/ with __init__.py, nodes.py, pipeline.py
+- [X] T019 Create src/obsidian_etl/hooks.py with empty ErrorHandlerHook and LoggingHook classes
+- [X] T020 Create src/obsidian_etl/pipeline_registry.py with placeholder register_pipelines()
+- [X] T021 Configure src/obsidian_etl/settings.py with Hook registration
+- [X] T022 Create data/ directory structure: data/{01_raw/claude,01_raw/openai,01_raw/github,02_intermediate/parsed,03_primary/transformed,07_model_output/notes,07_model_output/organized}/
+- [X] T023 Create tests/ directory structure: tests/pipelines/{extract_claude,extract_openai,extract_github,transform,organize}/ with empty test_nodes.py files and tests/conftest.py
+- [X] T024 Update Makefile with Kedro targets: `make kedro-run`, `make kedro-test`, `make kedro-viz`
+- [X] T025 Verify `kedro info` runs successfully (project recognized)
+- [X] T026 Generate phase output: specs/044-kedro-migration/tasks/ph1-output.md
 
 ---
 

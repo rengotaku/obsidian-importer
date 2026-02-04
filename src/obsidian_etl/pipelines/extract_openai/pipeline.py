@@ -1,0 +1,1 @@
+"""OpenAI Extract pipeline definition."""

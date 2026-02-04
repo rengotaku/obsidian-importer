@@ -11,6 +11,7 @@ COMMA := ,
 .PHONY: help setup setup-dev test test-fixtures coverage check lint clean
 .PHONY: import organize status retry session-clean item-trace session-trace export-errors
 .PHONY: rag-index rag-search rag-ask rag-status
+.PHONY: kedro-run kedro-test kedro-viz
 
 # ═══════════════════════════════════════════════════════════
 # Help
@@ -267,6 +268,31 @@ endif
 	echo "  Skipped: $$SKIPPED_COUNT items (.txt + .json)"; \
 	echo "  Failed: $$FAILED_COUNT items (.txt + .json)"; \
 	echo "═══════════════════════════════════════════════════════════"
+
+# ═══════════════════════════════════════════════════════════
+# Kedro Pipeline Commands
+# ═══════════════════════════════════════════════════════════
+
+# Kedro パイプライン実行
+kedro-run:
+	@cd $(BASE_DIR) && $(PYTHON) -m kedro run \
+		$(if $(PIPELINE),--pipeline $(PIPELINE),) \
+		$(if $(PARAMS),--params '$(PARAMS)',) \
+		$(if $(FROM_NODES),--from-nodes $(FROM_NODES),) \
+		$(if $(TO_NODES),--to-nodes $(TO_NODES),)
+
+# Kedro テスト実行（新パッケージ）
+kedro-test:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  Kedro Pipeline Tests"
+	@echo "═══════════════════════════════════════════════════════════"
+	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m unittest discover -s tests -t . -v 2>&1
+	@echo ""
+	@echo "✅ Kedro tests passed"
+
+# Kedro DAG 可視化
+kedro-viz:
+	@cd $(BASE_DIR) && $(PYTHON) -m kedro viz
 
 # ═══════════════════════════════════════════════════════════
 # Testing
