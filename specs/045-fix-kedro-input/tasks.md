@@ -131,23 +131,23 @@
 
 ### テスト実装 (RED)
 
-- [ ] T040 [P] [US1] Update `tests/test_pipeline_registry.py` — test `__default__` pipeline is `import_claude`, test individual pipeline names still work
-- [ ] T041 [P] [US1] Update `tests/test_integration.py` — update integration tests to use ZIP input fixtures instead of raw dict injection
-- [ ] T042 [P] [US1] Add dispatch error test in `tests/test_pipeline_registry.py` — invalid provider → clear error message
-- [ ] T043 Verify `make test` FAIL (RED)
-- [ ] T044 Generate RED output: `specs/045-fix-kedro-input/red-tests/ph4-test.md`
+- [x] T040 [P] [US1] Update `tests/test_pipeline_registry.py` — test `__default__` pipeline is `import_claude`, test individual pipeline names still work
+- [x] T041 [P] [US1] Update `tests/test_integration.py` — update integration tests to use ZIP input fixtures instead of raw dict injection
+- [x] T042 [P] [US1] Add dispatch error test in `tests/test_pipeline_registry.py` — invalid provider → clear error message
+- [x] T043 Verify `make test` FAIL (RED)
+- [x] T044 Generate RED output: `specs/045-fix-kedro-input/red-tests/ph4-test.md`
 
 ### 実装 (GREEN)
 
-- [ ] T045 Read RED tests: `specs/045-fix-kedro-input/red-tests/ph4-test.md`
-- [ ] T046 [US1] Update `src/obsidian_etl/pipeline_registry.py` — dispatch 型設計: read `import.provider` from `conf/base/parameters.yml` via OmegaConf, set `__default__` dynamically to matching pipeline, raise clear error for invalid provider
-- [ ] T047 Verify `make test` PASS (GREEN)
+- [x] T045 Read RED tests: `specs/045-fix-kedro-input/red-tests/ph4-test.md`
+- [x] T046 [US1] Update `src/obsidian_etl/pipeline_registry.py` — dispatch 型設計: read `import.provider` from `conf/base/parameters.yml` via OmegaConf, set `__default__` dynamically to matching pipeline, raise clear error for invalid provider
+- [x] T047 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T048 Verify `make test` passes all tests (full regression)
-- [ ] T049 Verify `make coverage` ≥80%
-- [ ] T050 Generate phase output: `specs/045-fix-kedro-input/tasks/ph4-output.md`
+- [x] T048 Verify `make test` passes all tests (full regression)
+- [x] T049 Verify `make coverage` ≥80%
+- [x] T050 Generate phase output: `specs/045-fix-kedro-input/tasks/ph4-output.md`
 
 **Checkpoint**: `kedro run` が dispatch 型で動作し、全プロバイダーが正しく選択される
 

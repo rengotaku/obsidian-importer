@@ -1,10 +1,13 @@
-"""E2E integration tests for Claude import pipeline.
+"""E2E integration tests for import pipelines.
 
 Phase 5 RED tests: SequentialRunner with test DataCatalog.
+Phase 4 RED tests: OpenAI pipeline E2E with ZIP input.
+
 These tests verify:
 - Full pipeline execution: raw_claude_conversations -> organized_items
 - All intermediate datasets are produced
 - Ollama is mocked (no real LLM calls)
+- [Phase 4] OpenAI pipeline E2E with ZIP input fixtures
 """
 
 from __future__ import annotations
@@ -700,6 +703,211 @@ class TestPartialRunFromTo(unittest.TestCase):
             3,
             "Transform-only partial pipeline should have exactly 3 nodes",
         )
+
+
+def _make_openai_conversation(
+    conv_id: str = "conv-openai-001",
+    title: str = "Python asyncio 解説",
+    messages_count: int = 4,
+) -> dict:
+    """Create a minimal OpenAI/ChatGPT conversation for testing.
+
+    ChatGPT uses a mapping tree structure where each message is a node
+    with parent references, forming a chain.
+    """
+    # Build mapping tree: root -> msg_0 -> msg_1 -> ... -> msg_N
+    mapping = {}
+    previous_node_id = None
+
+    # Root node (no message)
+    root_id = "root-node"
+    mapping[root_id] = {
+        "id": root_id,
+        "parent": None,
+        "children": [],
+        "message": None,
+    }
+    previous_node_id = root_id
+
+    current_node_id = None
+    for i in range(messages_count):
+        node_id = f"node-{i:03d}"
+        role = "user" if i % 2 == 0 else "assistant"
+        mapping[node_id] = {
+            "id": node_id,
+            "parent": previous_node_id,
+            "children": [],
+            "message": {
+                "id": f"msg-{i:03d}",
+                "author": {"role": role},
+                "content": {
+                    "content_type": "text",
+                    "parts": [f"OpenAI message {i} about Python asyncio." * 3],
+                },
+                "create_time": 1706000000 + i * 60,
+            },
+        }
+        mapping[previous_node_id]["children"].append(node_id)
+        previous_node_id = node_id
+        current_node_id = node_id
+
+    return {
+        "id": conv_id,
+        "title": title,
+        "create_time": 1706000000,
+        "mapping": mapping,
+        "current_node": current_node_id,
+    }
+
+
+def _make_openai_zip_bytes(conversations: list[dict]) -> bytes:
+    """Create a ZIP file containing conversations.json from OpenAI conversations."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        conversations_json = json.dumps(conversations)
+        zf.writestr("conversations.json", conversations_json)
+    return buf.getvalue()
+
+
+class OpenAIZipMemoryDataset(AbstractDataset):
+    """Memory dataset that provides OpenAI ZIP bytes in PartitionedDataset format."""
+
+    def __init__(self, conversations: list[dict]):
+        self._zip_bytes = _make_openai_zip_bytes(conversations)
+
+    def _save(self, data) -> None:
+        pass
+
+    def _load(self) -> dict[str, callable]:
+        return {"chatgpt_export.zip": lambda: self._zip_bytes}
+
+    def _describe(self) -> dict:
+        return {"type": "OpenAIZipMemoryDataset"}
+
+
+class TestE2EOpenAIImport(unittest.TestCase):
+    """E2E test: SequentialRunner with OpenAI import pipeline (mocked Ollama).
+
+    Phase 4: OpenAI パイプラインが ZIP 入力から E2E で動作することを検証する。
+    """
+
+    def setUp(self):
+        """Set up test pipeline, catalog, and runner."""
+        self.pipelines = register_pipelines()
+        self.runner = SequentialRunner()
+        self.tmp_dir = tempfile.mkdtemp()
+
+        # Create test OpenAI conversations
+        self.conversations = [
+            _make_openai_conversation(conv_id="openai-conv-001", title="asyncio 解説"),
+            _make_openai_conversation(conv_id="openai-conv-002", title="Django REST framework"),
+        ]
+
+    def _build_catalog(self) -> DataCatalog:
+        """Build a test DataCatalog with MemoryDatasets for OpenAI pipeline."""
+        transformed_knowledge_ds = PartitionedMemoryDataset()
+        classified_items_ds = PartitionedMemoryDataset()
+
+        return DataCatalog(
+            datasets={
+                "raw_openai_conversations": OpenAIZipMemoryDataset(self.conversations),
+                "parsed_items": PartitionedMemoryDataset(),
+                "transformed_items_with_knowledge": transformed_knowledge_ds,
+                "existing_transformed_items_with_knowledge": transformed_knowledge_ds,
+                "transformed_items_with_metadata": PartitionedMemoryDataset(),
+                "markdown_notes": PartitionedMemoryDataset(),
+                "classified_items": classified_items_ds,
+                "existing_classified_items": classified_items_ds,
+                "normalized_items": PartitionedMemoryDataset(),
+                "cleaned_items": PartitionedMemoryDataset(),
+                "vault_determined_items": PartitionedMemoryDataset(),
+                "organized_items": PartitionedMemoryDataset(),
+                "params:import": MemoryDataset(
+                    {
+                        "provider": "openai",
+                        "min_messages": 3,
+                        "chunk_size": 25000,
+                        "chunk_enabled": True,
+                        "ollama": {
+                            "model": "gemma3:12b",
+                            "base_url": "http://localhost:11434",
+                            "timeout": 120,
+                            "temperature": 0.2,
+                            "max_retries": 3,
+                        },
+                    }
+                ),
+                "params:organize": MemoryDataset(
+                    {
+                        "vaults": {
+                            "engineer": "Vaults/エンジニア/",
+                            "business": "Vaults/ビジネス/",
+                            "economy": "Vaults/経済/",
+                            "daily": "Vaults/日常/",
+                            "other": "Vaults/その他/",
+                        },
+                        "genre_keywords": {
+                            "engineer": ["Python", "asyncio", "フレームワーク", "API"],
+                            "business": ["ビジネス", "マネジメント"],
+                            "economy": ["経済", "投資"],
+                            "daily": ["日常", "趣味"],
+                        },
+                        "base_path": self.tmp_dir,
+                    }
+                ),
+            }
+        )
+
+    @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
+    def test_e2e_openai_import_produces_organized_items(self, mock_extract):
+        """OpenAI パイプラインが ZIP 入力から organized_items まで一気通貫で処理されること。"""
+        mock_extract.return_value = (_make_mock_ollama_response(), None)
+
+        pipeline = self.pipelines["import_openai"]
+        catalog = self._build_catalog()
+
+        self.runner.run(pipeline, catalog)
+
+        organized_callables = catalog.load("organized_items")
+        self.assertIsInstance(organized_callables, dict)
+        self.assertGreater(len(organized_callables), 0, "organized_items should not be empty")
+
+    @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
+    def test_e2e_openai_import_all_conversations_processed(self, mock_extract):
+        """OpenAI の全会話が最終出力に含まれること。"""
+        mock_extract.side_effect = [
+            (_make_mock_ollama_response(title="asyncio 解説"), None),
+            (_make_mock_ollama_response(title="Django REST framework"), None),
+        ]
+
+        pipeline = self.pipelines["import_openai"]
+        catalog = self._build_catalog()
+
+        self.runner.run(pipeline, catalog)
+
+        organized_callables = catalog.load("organized_items")
+        self.assertEqual(
+            len(organized_callables), 2, "2 conversations should produce 2 organized items"
+        )
+
+    @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
+    def test_e2e_openai_parsed_items_have_openai_provider(self, mock_extract):
+        """OpenAI パースアイテムの source_provider が 'openai' であること。"""
+        mock_extract.return_value = (_make_mock_ollama_response(), None)
+
+        pipeline = self.pipelines["import_openai"]
+        catalog = self._build_catalog()
+
+        self.runner.run(pipeline, catalog)
+
+        parsed_callables = catalog.load("parsed_items")
+        for partition_id, load_func in parsed_callables.items():
+            item = load_func()
+            self.assertEqual(
+                item["source_provider"],
+                "openai",
+                f"source_provider should be 'openai' for {partition_id}",
+            )
 
 
 if __name__ == "__main__":
