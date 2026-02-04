@@ -60,6 +60,11 @@ help:
 
 # Python venv作成 + 依存関係インストール
 setup: $(VENV_DIR)/bin/activate
+	@echo "Creating Kedro data directories..."
+	@mkdir -p data/01_raw/claude data/01_raw/openai data/01_raw/github
+	@mkdir -p data/02_intermediate/parsed
+	@mkdir -p data/03_primary/transformed data/03_primary/transformed_knowledge
+	@mkdir -p data/07_model_output/notes data/07_model_output/organized
 	@echo "✅ Setup complete. venv: $(VENV_DIR)"
 
 $(VENV_DIR)/bin/activate:

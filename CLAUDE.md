@@ -651,6 +651,24 @@ make item-trace SESSION=20260126_080000 ITEM=conversation_12345
 
 ---
 
+## 初回セットアップ
+
+**重要**: 初回実行前に、必ず `make setup` を実行してください。
+
+```bash
+# Python venv作成 + 依存関係インストール + データディレクトリ作成
+make setup
+```
+
+このコマンドは以下を実行します：
+- Python仮想環境 (`.venv/`) の作成
+- 依存パッケージのインストール
+- **Kedroデータディレクトリの作成** (`data/01_raw/`, `data/02_intermediate/`, `data/03_primary/`, `data/07_model_output/`)
+
+初回セットアップ後、`kedro run` で正常に動作します。
+
+---
+
 ## 開発・テスト
 
 **テストフレームワーク**: Python 標準ライブラリの `unittest` を使用（pytest 不使用）
