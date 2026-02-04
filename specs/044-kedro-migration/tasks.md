@@ -154,33 +154,33 @@
 
 ### 入力
 
-- [ ] T063 Read previous phase output: specs/044-kedro-migration/tasks/ph3-output.md
+- [x] T063 Read previous phase output: specs/044-kedro-migration/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T064 [P] [US1] Implement test_classify_genre in tests/pipelines/organize/test_nodes.py (keyword-based genre detection: engineer, business, economy, daily, other)
-- [ ] T065 [P] [US1] Implement test_classify_genre_default in tests/pipelines/organize/test_nodes.py (no keyword match → "other")
-- [ ] T066 [P] [US1] Implement test_normalize_frontmatter in tests/pipelines/organize/test_nodes.py (add/update normalized=True, clean unnecessary fields)
-- [ ] T067 [P] [US1] Implement test_clean_content in tests/pipelines/organize/test_nodes.py (excess blank lines, formatting cleanup)
-- [ ] T068 [P] [US1] Implement test_determine_vault_path in tests/pipelines/organize/test_nodes.py (genre → vault path mapping from params)
-- [ ] T069 [P] [US1] Implement test_move_to_vault in tests/pipelines/organize/test_nodes.py (file written to correct vault path; mock filesystem)
-- [ ] T070 Verify `make test` FAIL (RED)
-- [ ] T071 Generate RED output: specs/044-kedro-migration/red-tests/ph4-test.md
+- [x] T064 [P] [US1] Implement test_classify_genre in tests/pipelines/organize/test_nodes.py (keyword-based genre detection: engineer, business, economy, daily, other)
+- [x] T065 [P] [US1] Implement test_classify_genre_default in tests/pipelines/organize/test_nodes.py (no keyword match → "other")
+- [x] T066 [P] [US1] Implement test_normalize_frontmatter in tests/pipelines/organize/test_nodes.py (add/update normalized=True, clean unnecessary fields)
+- [x] T067 [P] [US1] Implement test_clean_content in tests/pipelines/organize/test_nodes.py (excess blank lines, formatting cleanup)
+- [x] T068 [P] [US1] Implement test_determine_vault_path in tests/pipelines/organize/test_nodes.py (genre → vault path mapping from params)
+- [x] T069 [P] [US1] Implement test_move_to_vault in tests/pipelines/organize/test_nodes.py (file written to correct vault path; mock filesystem)
+- [x] T070 Verify `make test` FAIL (RED)
+- [x] T071 Generate RED output: specs/044-kedro-migration/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T072 Read RED tests: specs/044-kedro-migration/red-tests/ph4-test.md
-- [ ] T073 [P] [US1] Implement classify_genre node in src/obsidian_etl/pipelines/organize/nodes.py (keyword matching from params)
-- [ ] T074 [P] [US1] Implement normalize_frontmatter node in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T075 [P] [US1] Implement clean_content node in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T076 [P] [US1] Implement determine_vault and move_to_vault nodes in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T077 [US1] Define organize pipeline in src/obsidian_etl/pipelines/organize/pipeline.py (markdown_notes → organized_items + Vault 配置)
-- [ ] T078 Verify `make test` PASS (GREEN)
+- [x] T072 Read RED tests: specs/044-kedro-migration/red-tests/ph4-test.md
+- [x] T073 [P] [US1] Implement classify_genre node in src/obsidian_etl/pipelines/organize/nodes.py (keyword matching from params)
+- [x] T074 [P] [US1] Implement normalize_frontmatter node in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T075 [P] [US1] Implement clean_content node in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T076 [P] [US1] Implement determine_vault and move_to_vault nodes in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T077 [US1] Define organize pipeline in src/obsidian_etl/pipelines/organize/pipeline.py (markdown_notes → organized_items + Vault 配置)
+- [x] T078 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T079 Verify `make test` passes all tests (no regressions)
-- [ ] T080 Generate phase output: specs/044-kedro-migration/tasks/ph4-output.md
+- [x] T079 Verify `make test` passes all tests (no regressions)
+- [x] T080 Generate phase output: specs/044-kedro-migration/tasks/ph4-output.md
 
 **Checkpoint**: Organize pipeline classifies and places files into correct Vaults
 
