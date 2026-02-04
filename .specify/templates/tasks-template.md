@@ -1,6 +1,6 @@
 ---
 
-description: "Task list template for feature implementation"
+description: "Task list template for feature implementation (TDD workflow)"
 ---
 
 # Tasks: [FEATURE NAME]
@@ -8,15 +8,23 @@ description: "Task list template for feature implementation"
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: TDD is MANDATORY for User Story phases. Each phase follows テスト実装 (RED) → 実装 (GREEN) → 検証 workflow.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`
 
-- **[P]**: Can run in parallel (different files, no dependencies)
+- **[P]**: No dependencies (different files, execution order free)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
+
+## User Story Summary
+
+| ID | Title | Priority | FR | Scenario |
+|----|-------|----------|----|----------|
+| US1 | [Story title] | P1 | FR-1,2 | シナリオ1 |
+| US2 | [Story title] | P1 | FR-3 | シナリオ1 |
+| US3 | [Story title] | P2 | FR-4 | シナリオ2 |
 
 ## Path Conventions
 
@@ -25,137 +33,132 @@ description: "Task list template for feature implementation"
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
 - Paths shown below assume single project - adjust based on plan.md structure
 
-<!-- 
+<!--
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
-  
+
   The /speckit.tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
   - Endpoints from contracts/
-  
+
   Tasks MUST be organized by user story so each story can be:
   - Implemented independently
   - Tested independently
   - Delivered as an MVP increment
-  
+
+  Each User Story phase MUST follow the TDD structure:
+  - 入力: Read previous phase output
+  - テスト実装 (RED): Write tests first, verify FAIL
+  - 実装 (GREEN): Implement to pass tests
+  - 検証: Verify all tests pass, generate phase output
+
   DO NOT keep these sample tasks in the generated tasks.md file.
   ============================================================================
 -->
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 1: Setup (Shared Infrastructure) — NO TDD
 
-**Purpose**: Project initialization and basic structure
+**Purpose**: Project initialization, existing code review, and change preparation
 
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
-
----
-
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
-
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
-
-Examples of foundational tasks (adjust based on your project):
-
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
-
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+- [ ] T001 Read current implementation in src/[relevant files]
+- [ ] T002 [P] Read existing tests in src/tests/[relevant test files]
+- [ ] T003 Generate phase output: specs/[###-feature-name]/tasks/ph1-output.md
 
 ---
 
-## Phase 3: User Story 1 - [Title] (Priority: P1) 🎯 MVP
+## Phase 2: User Story 1 - [Title] (Priority: P1) MVP
 
 **Goal**: [Brief description of what this story delivers]
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### 入力
 
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+- [ ] T004 Read previous phase output: specs/[###-feature-name]/tasks/ph1-output.md
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+### テスト実装 (RED)
 
-### Implementation for User Story 1
+- [ ] T005 [P] [US1] Implement test for [behavior] in src/tests/test_[name].py
+- [ ] T006 [P] [US1] Implement test for [edge cases] in src/tests/test_[name].py
+- [ ] T007 [P] [US1] Implement test for [integration] in src/tests/test_[name].py
+- [ ] T008 Verify `make test` FAIL (RED)
+- [ ] T009 Generate RED output: specs/[###-feature-name]/red-tests/ph2-test.md
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+### 実装 (GREEN)
 
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
+- [ ] T010 Read RED tests: specs/[###-feature-name]/red-tests/ph2-test.md
+- [ ] T011 [P] [US1] Implement [component] in src/[location]/[file].py
+- [ ] T012 [P] [US1] Implement [component] in src/[location]/[file].py
+- [ ] T013 [US1] Integrate components (depends on T011, T012)
+- [ ] T014 Verify `make test` PASS (GREEN)
+
+### 検証
+
+- [ ] T015 Verify `make test` passes all tests (no regressions)
+- [ ] T016 Generate phase output: specs/[###-feature-name]/tasks/ph2-output.md
+
+**Checkpoint**: User Story 1 should be fully functional and testable independently
 
 ---
 
-## Phase 4: User Story 2 - [Title] (Priority: P2)
+## Phase 3: User Story 2 - [Title] (Priority: P2)
 
 **Goal**: [Brief description of what this story delivers]
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### 入力
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T017 Read previous phase output: specs/[###-feature-name]/tasks/ph2-output.md
 
-### Implementation for User Story 2
+### テスト実装 (RED)
 
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T018 [P] [US2] Implement test for [behavior] in src/tests/test_[name].py
+- [ ] T019 [P] [US2] Implement test for [edge cases] in src/tests/test_[name].py
+- [ ] T020 Verify `make test` FAIL (RED)
+- [ ] T021 Generate RED output: specs/[###-feature-name]/red-tests/ph3-test.md
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
+### 実装 (GREEN)
 
----
+- [ ] T022 Read RED tests: specs/[###-feature-name]/red-tests/ph3-test.md
+- [ ] T023 [P] [US2] Implement [component] in src/[location]/[file].py
+- [ ] T024 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T025 Verify `make test` PASS (GREEN)
 
-## Phase 5: User Story 3 - [Title] (Priority: P3)
+### 検証
 
-**Goal**: [Brief description of what this story delivers]
+- [ ] T026 Verify `make test` passes all tests (including regressions from US1)
+- [ ] T027 Generate phase output: specs/[###-feature-name]/tasks/ph3-output.md
 
-**Independent Test**: [How to verify this story works on its own]
-
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
-
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
-
-### Implementation for User Story 3
-
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
-
-**Checkpoint**: All user stories should now be independently functional
+**Checkpoint**: User Stories 1 AND 2 should both work independently
 
 ---
 
-[Add more user story phases as needed, following the same pattern]
+[Add more user story phases as needed, following the same TDD pattern]
 
 ---
 
-## Phase N: Polish & Cross-Cutting Concerns
+## Phase N: Polish & Cross-Cutting Concerns — NO TDD
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] TXXX [P] Documentation updates in docs/
+### 入力
+
+- [ ] TXXX Read previous phase output: specs/[###-feature-name]/tasks/ph(N-1)-output.md
+
+### 実装
+
+- [ ] TXXX [P] Remove deprecated code no longer referenced
+- [ ] TXXX [P] Remove obsolete tests no longer needed
 - [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+
+### 検証
+
+- [ ] TXXX Run `make test` to verify all tests pass after cleanup
+- [ ] TXXX Generate phase output: specs/[###-feature-name]/tasks/phN-output.md
 
 ---
 
@@ -163,80 +166,82 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3+)**: All depend on Foundational phase completion
-  - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3)
-- **Polish (Final Phase)**: Depends on all desired user stories being complete
+- **Setup (Phase 1)**: No dependencies - メインエージェント直接実行
+- **User Stories (Phase 2+)**: TDD フロー (tdd-generator → phase-executor)
+  - User stories proceed sequentially in priority order (P1 → P2 → P3)
+- **Polish (Final Phase)**: Depends on all user stories - phase-executor のみ
 
-### User Story Dependencies
+### Within Each User Story Phase (TDD Flow)
 
-- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-- **User Story 2 (P2)**: Can start after Foundational (Phase 2) - May integrate with US1 but should be independently testable
-- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - May integrate with US1/US2 but should be independently testable
+1. **入力**: Read previous phase output (context from prior work)
+2. **テスト実装 (RED)**: Write tests FIRST → verify `make test` FAIL → generate RED output
+3. **実装 (GREEN)**: Read RED tests → implement → verify `make test` PASS
+4. **検証**: Confirm no regressions → generate phase output
 
-### Within Each User Story
+### Agent Delegation
 
-- Tests (if included) MUST be written and FAIL before implementation
-- Models before services
-- Services before endpoints
-- Core implementation before integration
-- Story complete before moving to next priority
+- **Phase 1 (Setup)**: メインエージェント直接実行
+- **Phase 2+ (User Stories)**: tdd-generator (RED) → phase-executor (GREEN + 検証)
+- **Phase N (Polish)**: phase-executor のみ
 
-### Parallel Opportunities
+### [P] マーク（依存関係なし）
 
-- All Setup tasks marked [P] can run in parallel
-- All Foundational tasks marked [P] can run in parallel (within Phase 2)
-- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
-- All tests for a user story marked [P] can run in parallel
-- Models within a story marked [P] can run in parallel
-- Different user stories can be worked on in parallel by different team members
+`[P]` は「他タスクとの依存関係がなく、実行順序が自由」であることを示す。並列実行を保証するものではない。
+
+- Setup タスクの [P]: 異なるファイル・ディレクトリの作成で相互依存なし
+- RED テストの [P]: 異なるテストファイルへの書き込みで相互依存なし
+- GREEN 実装の [P]: 異なるソースファイルへの書き込みで相互依存なし
+- User Story 間: 各 Phase は前 Phase の出力に依存するため [P] 不可
 
 ---
 
-## Parallel Example: User Story 1
+## Phase Output & RED Test Artifacts
 
-```bash
-# Launch all tests for User Story 1 together (if tests requested):
-Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
-Task: "Integration test for [user journey] in tests/integration/test_[name].py"
+### Directory Structure
 
-# Launch all models for User Story 1 together:
-Task: "Create [Entity1] model in src/models/[entity1].py"
-Task: "Create [Entity2] model in src/models/[entity2].py"
 ```
+specs/[###-feature-name]/
+├── tasks.md                    # This file
+├── tasks/
+│   ├── ph1-output.md           # Phase 1 output (Setup results)
+│   ├── ph2-output.md           # Phase 2 output (US1 GREEN results)
+│   ├── ph3-output.md           # Phase 3 output (US2 GREEN results)
+│   └── phN-output.md           # Final phase output
+└── red-tests/
+    ├── ph2-test.md             # Phase 2 RED test results (FAIL confirmation)
+    └── ph3-test.md             # Phase 3 RED test results (FAIL confirmation)
+```
+
+### Phase Output Content
+
+Each `phN-output.md` should contain:
+- Summary of what was done
+- Files created/modified
+- Test results (`make test` output)
+- Any decisions or deviations from the plan
+
+### RED Test Output Content
+
+Each `phN-test.md` should contain:
+- Test code written
+- `make test` output showing FAIL (RED confirmation)
+- Number of failing tests and their names
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### MVP First (Phase 1 + Phase 2)
 
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
-3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Test User Story 1 independently
-5. Deploy/demo if ready
+1. Complete Phase 1: Setup (existing code review)
+2. Complete Phase 2: User Story 1 (RED → GREEN → 検証)
+3. **STOP and VALIDATE**: `make test` で全テスト通過を確認
+4. Verify with manual test if applicable
 
-### Incremental Delivery
+### Full Delivery
 
-1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
-3. Add User Story 2 → Test independently → Deploy/Demo
-4. Add User Story 3 → Test independently → Deploy/Demo
-5. Each story adds value without breaking previous stories
-
-### Parallel Team Strategy
-
-With multiple developers:
-
-1. Team completes Setup + Foundational together
-2. Once Foundational is done:
-   - Developer A: User Story 1
-   - Developer B: User Story 2
-   - Developer C: User Story 3
-3. Stories complete and integrate independently
+1. Phase 1 → Phase 2 → Phase 3 → ... → Phase N
+2. Each phase commits: `feat(phase-N): description`
 
 ---
 
@@ -262,10 +267,11 @@ With multiple developers:
 
 ## Notes
 
-- [P] tasks = different files, no dependencies
+- [P] tasks = no dependencies, execution order free
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
-- Verify tests fail before implementing
-- Commit after each task or logical group
+- TDD: テスト実装 (RED) → FAIL 確認 → 実装 (GREEN) → PASS 確認
+- RED output must be generated BEFORE implementation begins
+- Commit after each phase completion
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

@@ -927,6 +927,8 @@ make lint      # コード品質チェック (ruff)
 - ファイルシステム（JSONL, JSON, Markdown）- セッションフォルダ構造 (040-resume-extract-reuse)
 - Python 3.11+ (pyproject.toml: `requires-python = ">=3.11"`) + tenacity 8.x（リトライ）、ollama（LLM API）、標準ライブラリ（json, pathlib, dataclasses, zipfile） (041-fix-extract-dedup)
 - Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + tenacity 8.x（リトライ）、ollama（LLM API）、標準ライブラリ（re, json, dataclasses） (042-llm-markdown-response)
+- Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + Kedro 1.1.1, kedro-datasets, tenacity 8.x, PyYAML 6.0+, requests 2.28+ (044-kedro-migration)
+- ファイルシステム（JSON, JSONL, Markdown）、Kedro DataCatalog（PartitionedDataset） (044-kedro-migration)
 
 ## Recent Changes
 - 001-rag-migration-plan: Added Python 3.11+ + haystack-ai, ollama-haystack, qdrant-haystack

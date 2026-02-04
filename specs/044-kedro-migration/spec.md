@@ -20,6 +20,16 @@
 - Q: CLI コマンド体系をどうするか？ → A: Kedro CLI にフル移行。`kedro run --pipeline=...` のみ。既存の make コマンドは廃止
 - Q: retry コマンドの扱いは？ → A: 廃止。`kedro run` の再実行が冪等 retry として機能する（成功済みスキップ、失敗分のみ再処理）
 - Q: status / item-trace コマンドの扱いは？ → A: 廃止。Kedro 組み込み機能（ログ、`kedro viz`）に委ねる
+- Q: Provider 固有の Extract 処理を Kedro でどう設計するか？ → A: 単一パイプライン + 条件分岐ノード。1つの extract パイプラインで provider パラメータにより内部で処理を分岐。Dataset 定義は統一的に保つ
+- Q: ProcessingItem の Kedro Dataset 表現は？ → A: PartitionedDataset。アイテム毎に個別ファイルとして保存し、冪等チェックはファイル存在で判定する
+- Q: チャンク分割を Kedro でどう表現するか？ → A: Extract ノード内で一体処理。出力時点で分割済みの PartitionedDataset を生成する。チャンクメタデータ（is_chunked, chunk_index, total_chunks, parent_item_id）はアイテムのプロパティとして保存する
+- Q: Kedro プロジェクト構造は？ → A: `kedro new` を実際に実行してスケルトンを生成し、その上に既存ロジックを移植する（手動模倣ではない）
+- Q: import と organize の関係は？ → A: 単一パイプライン。import → organize を 1つの DAG として定義し、`kedro run` で一気通貫実行する
+- Q: TDD の適用範囲は？ → A: ノードのみ TDD。純粋関数ノードは RED→GREEN サイクルを適用し、インフラ層（Hook, catalog, settings）は実装後テストとする
+- Q: Provider 実装の順序と完了基準は？ → A: Claude で import → organize の一気通貫を完成させてから、OpenAI・GitHub の Extract 分岐を追加する
+- Q: Extract ノードの Provider 分岐粒度は？ → A: ディスパッチャー + Provider 関数。1つの extract ノードが provider パラメータで `extract_claude()` / `extract_openai()` 等を呼び分ける。BaseExtractor テンプレートメソッドパターンは廃止
+- Q: 既存ユーティリティの再利用方針は？ → A: リファクタ込みで移植。コピー時にインターフェースや命名を Kedro 慣習に合わせて整理する
+- Q: ゴールデンデータテストのタイミングは？ → A: ノード単位で比較。各ノードの TDD テスト内でゴールデンデータの部分一致を検証する（ノード入出力レベル）
 
 ## 背景と動機
 
@@ -92,16 +102,18 @@
 - 各処理ノードの入力・出力データが型情報付きで宣言されていること
 - 中間データの永続化先（ファイルパス、形式）が設定ファイルで一元管理されること
 - 中間データの読み書きが処理ロジックから分離されていること
+- 中間データは PartitionedDataset（アイテム毎に個別ファイル）として永続化すること
 
 ### FR-3: CLI インターフェース
 
-- パイプライン全体またはサブパイプラインを指定して実行するコマンドが提供されること
+- `kedro run` で import → organize の一気通貫実行が可能なこと
 - ノード範囲指定（`--from-nodes`, `--to-nodes`）による部分実行が可能なこと
 - 主要なパラメータ（入力パス、プロバイダー種別、処理件数上限等）がコマンドライン引数またはパラメータ設定で指定できること
 
 ### FR-4: 冪等性による Resume
 
 - 各ノードの出力データセットが存在する場合、そのノードの再実行をスキップできること
+- PartitionedDataset のファイル存在チェックにより、アイテム単位の冪等性を実現すること
 - コマンドの再実行が実質的な Resume / Retry として機能すること
 - LLM 呼び出しなど高コストな処理の不要な再実行が回避されること
 
@@ -119,13 +131,15 @@
 ### FR-7: 複数プロバイダー対応
 
 - Claude、ChatGPT、GitHub Jekyll の各プロバイダーからのインポートが動作すること
-- プロバイダー固有の処理（ZIP 展開、ツリー走査、git clone 等）が適切に分離されていること
+- プロバイダー固有の処理（ZIP 展開、ツリー走査、git clone 等）が Provider 別の独立した関数として分離されていること
+- 単一の extract ノードがディスパッチャーとして provider パラメータで `extract_claude()` / `extract_openai()` / `extract_github()` を呼び分けること
+- Dataset 定義は Provider に関わらず統一的に保つこと
 
 ## スコープ
 
 ### スコープ内
 
-- `src/etl/` 配下のパイプライン処理のゼロからの再構築
+- `src/etl/` を Kedro 標準プロジェクト構造（`pipelines/`, `conf/`, etc.）でゼロから再構築
 - CLI の Kedro CLI への移行
 - 冪等ノード設計による Resume 機能の実現
 - 全プロバイダー（Claude、ChatGPT、GitHub Jekyll）の対応
@@ -147,13 +161,13 @@
 
 ## 移行方針
 
-- **一括移行**: 全処理ノードを一度に新基盤へ移行する。旧コードとの互換性は維持しない
-- **テスト全面刷新**: 既存テストは破棄し、新基盤に適したテストをゼロから作成する
+- **一括移行**: 全処理ノードを一度に新基盤へ移行する。旧コードとの互換性は維持しない。実装順序は Claude Provider で全フロー（import → organize）を完成後、OpenAI・GitHub の Extract 分岐を追加する
+- **テスト全面刷新**: 既存テストは破棄し、新基盤に適したテストをゼロから作成する。純粋関数ノードは TDD（RED→GREEN）で作成し、インフラ層（Hook, catalog, settings）は実装後テストとする
 - **旧コード削除**: 移行完了後、旧 `src/etl/` のコードは削除する
 
 ## 成功基準
 
-1. **機能的同等性**: 移行前と移行後で、同一の入力データに対して同一の出力ファイルが生成される（内容一致率 100%）
+1. **機能的同等性**: 各ノードの TDD テスト内でゴールデンデータ（既存パイプラインの入出力）の部分一致を検証する。ノード入出力レベルで同一の結果が得られること
 2. **処理時間**: 移行後のパイプライン処理時間が移行前の 120% 以内に収まる
 3. **ステップ独立実行**: 任意の処理ノードを単独で実行した場合、正しい結果が得られる
 4. **冪等 Resume**: コマンド再実行時に完了済みアイテムが再処理されず、未処理アイテムのみが正しく処理される
@@ -162,7 +176,7 @@
 
 | エンティティ | 説明 | 現在の対応物 |
 |------------|------|------------|
-| パイプライン | 処理ノードの DAG 全体 | Phase（import, organize） |
+| パイプライン | import → organize を含む単一 DAG | Phase（import, organize） |
 | ノード | 単一の処理単位（純粋関数: 入力→出力） | Step（BaseStep サブクラス） |
 | データセット | ノード間で受け渡される型付きデータ | ProcessingItem / JSONL / Markdown |
 | カタログ | データセットの永続化先の宣言的定義 | .staging/ フォルダ構造（暗黙的） |
@@ -205,7 +219,7 @@
 | E | ParseJsonStep | JSON パース・構造解析 | data_engineering | parse_claude_json |
 | E | ValidateStructureStep | 構造バリデーション（uuid, chat_messages 必須） | data_engineering | validate_structure |
 | E | ValidateContentStep | コンテンツ量バリデーション（空メッセージ除外） | data_engineering | validate_content |
-| E | *(BaseExtractor)* | チャンク分割（25000 文字超の会話を分割） | data_engineering | chunk_conversation |
+| E | *(BaseExtractor)* | チャンク分割（25000 文字超の会話を分割）※ extract ノード内で一体処理。チャンクメタデータをプロパティとして保存 | data_engineering | *(parse_claude_json 内)* |
 | T | ExtractKnowledgeStep | LLM 知識抽出（タイトル・要約・タグ）+ 英語 Summary 翻訳 | data_science | extract_knowledge |
 | T | GenerateMetadataStep | メタデータ生成（file_id、created、source_provider 等） | data_science | generate_metadata |
 | T | FormatMarkdownStep | Markdown フォーマット（YAML frontmatter 付き） | data_science | format_markdown |
@@ -216,7 +230,7 @@
 |-----------|-------------------|---------|----------------|------------|
 | E | *(ChatGPTExtractor._discover)* | ZIP 展開・conversations.json 抽出・ツリー走査 | data_engineering | parse_chatgpt_zip |
 | E | ValidateMinMessagesStep | メッセージ数バリデーション + file_id 生成 | data_engineering | validate_min_messages |
-| E | *(BaseExtractor)* | チャンク分割 | data_engineering | chunk_conversation |
+| E | *(BaseExtractor)* | チャンク分割 ※ extract ノード内で一体処理 | data_engineering | *(parse_chatgpt_zip 内)* |
 | T | ExtractKnowledgeStep | LLM 知識抽出（Claude と共通） | data_science | extract_knowledge |
 | T | GenerateMetadataStep | メタデータ生成（Claude と共通） | data_science | generate_metadata |
 | T | FormatMarkdownStep | Markdown フォーマット（Claude と共通） | data_science | format_markdown |
@@ -252,9 +266,9 @@
 | リトライ（tenacity） | ExtractKnowledgeStep 内 | Hook or ノード内 tenacity で維持 |
 | エラー詳細記録 | error_writer.py | Hook（on_node_error）で記録 |
 | JSONL ステップログ | BaseStage._log_step() | Kedro ログ + Hook で代替 |
-| file_id 生成 | file_id.py | ユーティリティ関数として維持 |
-| Ollama API 呼び出し | ollama.py | ユーティリティ関数として維持 |
-| 知識抽出プロンプト | prompts/*.txt | Kedro パラメータまたはファイルとして維持 |
+| file_id 生成 | file_id.py | リファクタ込みで移植（Kedro 慣習に合わせて整理） |
+| Ollama API 呼び出し | ollama.py | リファクタ込みで移植（Kedro 慣習に合わせて整理） |
+| 知識抽出プロンプト | prompts/*.txt | リファクタ込みで移植（Kedro パラメータまたはファイル） |
 
 ### 処理ステップ総数
 

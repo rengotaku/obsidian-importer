@@ -1,0 +1,462 @@
+# Tasks: データパイプラインの構造的再設計（Kedro 移行）
+
+**Input**: Design documents from `specs/044-kedro-migration/`
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/catalog.yml, contracts/parameters.yml, quickstart.md
+
+**Tests**: TDD mandatory for node functions (spec 決定: ノードのみ TDD、インフラ層は実装後テスト)
+
+**Organization**: US1 (Claude Import) → US2 (Organize) → US5 (Error/Resume) → US3 (OpenAI) → US4 (GitHub) → US6 (Viz)
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
+- Include exact file paths in descriptions
+
+## User Story Summary
+
+| ID | Title | Priority | FR | Scenario |
+|----|-------|----------|----|----------|
+| US1 | Claude Import 一気通貫 | P1 | FR-1,2,3 | シナリオ1 |
+| US2 | Organize パイプライン | P1 | FR-1,2,3 | シナリオ1 |
+| US5 | エラーハンドリング・冪等 Resume | P1 | FR-4,5 | シナリオ2 |
+| US3 | OpenAI Provider 追加 | P2 | FR-7 | シナリオ1 |
+| US4 | GitHub Provider 追加 | P2 | FR-7 | シナリオ1 |
+| US6 | DAG 可視化・部分実行 | P3 | FR-6 | シナリオ3,4 |
+
+---
+
+## Phase 1: Setup (Project Initialization)
+
+**Purpose**: Kedro プロジェクトスケルトン生成と基盤構築（NO TDD）
+
+- [ ] T001 Run `kedro new --name=obsidian-etl --tools=lint,test --example=n` to generate project skeleton
+- [ ] T002 Install dependencies: `kedro==1.1.1 kedro-datasets tenacity>=8.0 PyYAML>=6.0 requests>=2.28` in pyproject.toml
+- [ ] T003 [P] Create `conf/base/catalog.yml` from specs/044-kedro-migration/contracts/catalog.yml (7 PartitionedDataset definitions)
+- [ ] T004 [P] Create `conf/base/parameters.yml` from specs/044-kedro-migration/contracts/parameters.yml (import + organize params)
+- [ ] T005 [P] Create `conf/base/logging.yml` with structured logging config
+- [ ] T006 [P] Create data layer directories: `data/01_raw/{claude,openai,github}/`, `data/02_intermediate/parsed/`, `data/03_primary/transformed/`, `data/07_model_output/{notes,organized}/`
+- [ ] T007 [P] Create pipeline module structure: `src/obsidian_etl/pipelines/{extract_claude,extract_openai,extract_github,transform,organize}/` with `__init__.py`
+- [ ] T008 [P] Create `src/obsidian_etl/utils/__init__.py` and `src/obsidian_etl/utils/prompts/` directory
+- [ ] T009 Create `src/obsidian_etl/pipeline_registry.py` with empty pipeline registrations (placeholder structure)
+- [ ] T010 Create `src/obsidian_etl/settings.py` with basic session store config
+- [ ] T011 [P] Create test directory structure: `tests/pipelines/{extract_claude,extract_openai,extract_github,transform,organize}/` with `__init__.py`
+- [ ] T012 [P] Create `tests/conftest.py` with shared test fixtures and helper utilities
+- [ ] T013 Verify `kedro run` executes without error (empty pipeline, no nodes yet)
+- [ ] T014 Generate phase output: specs/044-kedro-migration/tasks/ph1-output.md
+
+---
+
+## Phase 2: Foundational - Utility Migration (Blocking Prerequisites)
+
+**Purpose**: 既存ユーティリティを Kedro 慣習にリファクタ移植。全ノードが依存する共通基盤
+
+**⚠️ CRITICAL**: US1-US6 の全ノード実装はこの Phase 完了が前提
+
+### 入力
+- [ ] T015 Read previous phase output: specs/044-kedro-migration/tasks/ph1-output.md
+
+### テスト実装 (RED)
+- [ ] T016 [P] Implement tests for Ollama API client in tests/test_utils/test_ollama.py (connection, retry, timeout, JSON parse)
+- [ ] T017 [P] Implement tests for knowledge_extractor in tests/test_utils/test_knowledge_extractor.py (prompt template loading, LLM response parse, Japanese summary translation)
+- [ ] T018 [P] Implement tests for chunker in tests/test_utils/test_chunker.py (split at 25000 chars, chunk metadata, no-split under threshold)
+- [ ] T019 [P] Implement tests for file_id in tests/test_utils/test_file_id.py (SHA256 generation, deterministic, empty input)
+- [ ] T020 Verify `make test` FAIL (RED)
+- [ ] T021 Generate RED output: specs/044-kedro-migration/red-tests/ph2-test.md
+
+### 実装 (GREEN)
+- [ ] T022 Read RED tests: specs/044-kedro-migration/red-tests/ph2-test.md
+- [ ] T023 [P] Migrate and refactor `src/etl/utils/ollama.py` → `src/obsidian_etl/utils/ollama.py` (Kedro param-driven config, tenacity retry)
+- [ ] T024 [P] Migrate and refactor `src/etl/utils/knowledge_extractor.py` → `src/obsidian_etl/utils/knowledge_extractor.py` (pure function, param-driven)
+- [ ] T025 [P] Migrate and refactor `src/etl/utils/chunker.py` → `src/obsidian_etl/utils/chunker.py` (pure function, chunk metadata output)
+- [ ] T026 [P] Migrate and refactor `src/etl/utils/file_id.py` → `src/obsidian_etl/utils/file_id.py` (pure function)
+- [ ] T027 [P] Copy prompt templates `src/etl/prompts/*.txt` → `src/obsidian_etl/utils/prompts/` (knowledge_extraction.txt, summary_translation.txt)
+- [ ] T028 Verify `make test` PASS (GREEN)
+
+### 検証
+- [ ] T029 Generate phase output: specs/044-kedro-migration/tasks/ph2-output.md
+
+**Checkpoint**: ユーティリティ基盤完成。ノード実装可能
+
+---
+
+## Phase 3: US1 - Claude Import 一気通貫 (Priority: P1) 🎯 MVP
+
+**Goal**: Claude エクスポート JSON → ParsedItem → TransformedItem → Markdown ファイル出力の一気通貫パイプライン
+
+**Independent Test**: `kedro run --pipeline=import_claude` で `data/01_raw/claude/` の JSON が `data/07_model_output/notes/` の Markdown に変換される
+
+### 入力
+- [ ] T030 Read previous phase output: specs/044-kedro-migration/tasks/ph2-output.md
+
+### テスト実装 (RED) — Extract Nodes
+- [ ] T031 [P] [US1] Implement test for parse_claude_json node in tests/pipelines/extract_claude/test_nodes.py (JSON parse, message extraction, chunk splitting, conversation_name/created_at extraction)
+- [ ] T032 [P] [US1] Implement test for validate_structure in tests/pipelines/extract_claude/test_nodes.py (uuid required, chat_messages required, missing field rejection)
+- [ ] T033 [P] [US1] Implement test for validate_content in tests/pipelines/extract_claude/test_nodes.py (MIN_CONTENT_LENGTH=10, empty message filtering, min_messages=3 skip)
+- [ ] T034 Verify `make test` FAIL (RED)
+- [ ] T035 Generate RED output: specs/044-kedro-migration/red-tests/ph3-test.md
+
+### 実装 (GREEN) — Extract Nodes
+- [ ] T036 Read RED tests: specs/044-kedro-migration/red-tests/ph3-test.md
+- [ ] T037 [US1] Implement parse_claude_json node in src/obsidian_etl/pipelines/extract_claude/nodes.py (JSON parse, message normalization, file_id generation, chunk splitting for >25000 chars)
+- [ ] T038 [US1] Implement validate_structure and validate_content in src/obsidian_etl/pipelines/extract_claude/nodes.py
+- [ ] T039 [US1] Create extract_claude pipeline definition in src/obsidian_etl/pipelines/extract_claude/pipeline.py (raw_claude_conversations → parsed_items)
+- [ ] T040 Verify `make test` PASS (GREEN) for extract_claude tests
+
+### テスト実装 (RED) — Transform Nodes
+- [ ] T041 [P] [US1] Implement test for extract_knowledge node in tests/pipelines/transform/test_nodes.py (LLM call, title/summary/tags extraction, Japanese translation, error handling)
+- [ ] T042 [P] [US1] Implement test for generate_metadata node in tests/pipelines/transform/test_nodes.py (metadata assembly, file_id copy, created date format, normalized=true)
+- [ ] T043 [P] [US1] Implement test for format_markdown node in tests/pipelines/transform/test_nodes.py (YAML frontmatter generation, output_filename sanitization, markdown content assembly)
+- [ ] T044 Verify `make test` FAIL (RED)
+- [ ] T045 Generate RED output: specs/044-kedro-migration/red-tests/ph3b-test.md
+
+### 実装 (GREEN) — Transform Nodes
+- [ ] T046 Read RED tests: specs/044-kedro-migration/red-tests/ph3b-test.md
+- [ ] T047 [US1] Implement extract_knowledge node in src/obsidian_etl/pipelines/transform/nodes.py (Ollama LLM call via utils, tenacity retry, summary translation)
+- [ ] T048 [US1] Implement generate_metadata node in src/obsidian_etl/pipelines/transform/nodes.py (metadata dict assembly per data-model.md E-3)
+- [ ] T049 [US1] Implement format_markdown node in src/obsidian_etl/pipelines/transform/nodes.py (YAML frontmatter + content, filename sanitization)
+- [ ] T050 [US1] Create transform pipeline definition in src/obsidian_etl/pipelines/transform/pipeline.py (parsed_items → transformed_items → markdown_notes)
+- [ ] T051 Verify `make test` PASS (GREEN) for transform tests
+
+### パイプライン統合
+- [ ] T052 [US1] Register import_claude pipeline in src/obsidian_etl/pipeline_registry.py (extract_claude + transform)
+- [ ] T053 [US1] Create golden data fixture in tests/fixtures/claude_input.json (sample Claude export with 2-3 conversations)
+- [ ] T054 [US1] Create golden data expected output in tests/fixtures/expected_outputs/claude_parsed.json
+- [ ] T055 [US1] Implement integration test with SequentialRunner in tests/pipelines/extract_claude/test_integration.py (full pipeline: raw JSON → Markdown output)
+- [ ] T056 Verify `make test` PASS (all extract_claude + transform tests)
+
+### 検証
+- [ ] T057 Generate phase output: specs/044-kedro-migration/tasks/ph3-output.md
+
+**Checkpoint**: `kedro run --pipeline=import_claude` で Claude JSON → Markdown 変換が動作
+
+---
+
+## Phase 4: US2 - Organize パイプライン (Priority: P1)
+
+**Goal**: Transform 出力の Markdown ファイルをジャンル判定し、適切な Vault に配置
+
+**Independent Test**: `data/07_model_output/notes/` の Markdown が `Vaults/{ジャンル}/` に正しく配置される
+
+### 入力
+- [ ] T058 Read previous phase output: specs/044-kedro-migration/tasks/ph3-output.md
+
+### テスト実装 (RED)
+- [ ] T059 [P] [US2] Implement test for classify_genre node in tests/pipelines/organize/test_nodes.py (keyword matching, default to "other", parameters-driven genre_keywords)
+- [ ] T060 [P] [US2] Implement test for normalize_frontmatter node in tests/pipelines/organize/test_nodes.py (frontmatter normalization, tag merging)
+- [ ] T061 [P] [US2] Implement test for clean_content node in tests/pipelines/organize/test_nodes.py (extra blank lines removal, content formatting)
+- [ ] T062 [P] [US2] Implement test for determine_vault node in tests/pipelines/organize/test_nodes.py (genre→vault path mapping per parameters.yml)
+- [ ] T063 [P] [US2] Implement test for move_to_vault node in tests/pipelines/organize/test_nodes.py (file placement, directory creation, conflict handling)
+- [ ] T064 Verify `make test` FAIL (RED)
+- [ ] T065 Generate RED output: specs/044-kedro-migration/red-tests/ph4-test.md
+
+### 実装 (GREEN)
+- [ ] T066 Read RED tests: specs/044-kedro-migration/red-tests/ph4-test.md
+- [ ] T067 [P] [US2] Implement classify_genre node in src/obsidian_etl/pipelines/organize/nodes.py (keyword-based genre classification using params)
+- [ ] T068 [P] [US2] Implement normalize_frontmatter node in src/obsidian_etl/pipelines/organize/nodes.py
+- [ ] T069 [P] [US2] Implement clean_content node in src/obsidian_etl/pipelines/organize/nodes.py
+- [ ] T070 [US2] Implement determine_vault node in src/obsidian_etl/pipelines/organize/nodes.py (genre→vault_path mapping)
+- [ ] T071 [US2] Implement move_to_vault node in src/obsidian_etl/pipelines/organize/nodes.py (file write to Vaults/)
+- [ ] T072 [US2] Create organize pipeline definition in src/obsidian_etl/pipelines/organize/pipeline.py (markdown_notes → organized_items + Vault placement)
+- [ ] T073 Verify `make test` PASS (GREEN) for organize tests
+
+### パイプライン統合
+- [ ] T074 [US2] Update pipeline_registry.py: import_claude = extract_claude + transform + organize
+- [ ] T075 [US2] Implement organize integration test in tests/pipelines/organize/test_integration.py (Markdown input → Vault placement)
+- [ ] T076 Verify `make test` PASS (all tests including organize)
+
+### 検証
+- [ ] T077 Generate phase output: specs/044-kedro-migration/tasks/ph4-output.md
+
+**Checkpoint**: `kedro run --pipeline=import_claude` で Claude JSON → Vault 配置の一気通貫が動作
+
+---
+
+## Phase 5: US5 - エラーハンドリング・冪等 Resume (Priority: P1)
+
+**Goal**: アイテム単位エラーでパイプライン継続、再実行で失敗分のみ再処理
+
+**Independent Test**: 一部アイテムを意図的に失敗させた後、再実行で成功済みスキップ・失敗分のみ再処理
+
+### 入力
+- [ ] T078 Read previous phase output: specs/044-kedro-migration/tasks/ph4-output.md
+
+### テスト実装 (RED)
+- [ ] T079 [P] [US5] Implement test for ErrorHandlerHook in tests/test_hooks.py (on_node_error captures error details, logging format)
+- [ ] T080 [P] [US5] Implement test for idempotent skip logic in tests/pipelines/transform/test_idempotency.py (skip if output partition exists, process if missing)
+- [ ] T081 [P] [US5] Implement test for item-level try/except in tests/pipelines/transform/test_error_handling.py (failed item excluded from output, other items succeed)
+- [ ] T082 Verify `make test` FAIL (RED)
+- [ ] T083 Generate RED output: specs/044-kedro-migration/red-tests/ph5-test.md
+
+### 実装 (GREEN)
+- [ ] T084 Read RED tests: specs/044-kedro-migration/red-tests/ph5-test.md
+- [ ] T085 [US5] Implement ErrorHandlerHook in src/obsidian_etl/hooks.py (on_node_error: log error details with backtrace, continue pipeline)
+- [ ] T086 [US5] Implement LoggingHook in src/obsidian_etl/hooks.py (before_node_run/after_node_run: progress logging)
+- [ ] T087 [US5] Register hooks in src/obsidian_etl/settings.py (HOOKS tuple)
+- [ ] T088 [US5] Add idempotent skip logic to all batch-processing nodes: check output partition existence before processing each item (extract, transform, organize nodes)
+- [ ] T089 [US5] Add item-level try/except to all batch-processing nodes: failed items excluded from output dict, logged with error details
+- [ ] T090 Verify `make test` PASS (GREEN) for error handling + idempotency tests
+
+### 検証
+- [ ] T091 [US5] Implement resume integration test in tests/test_resume_integration.py (run with partial failure → re-run → verify skip + retry behavior)
+- [ ] T092 Verify `make test` PASS (all tests)
+- [ ] T093 Generate phase output: specs/044-kedro-migration/tasks/ph5-output.md
+
+**Checkpoint**: エラー発生時にパイプラインが継続し、再実行で冪等 Resume が動作
+
+---
+
+## Phase 6: US3 - OpenAI Provider 追加 (Priority: P2)
+
+**Goal**: ChatGPT エクスポート ZIP → ParsedItem 変換を追加（Transform/Organize は共有）
+
+**Independent Test**: `kedro run --pipeline=import_openai` で ChatGPT ZIP → Markdown → Vault 配置
+
+### 入力
+- [ ] T094 Read previous phase output: specs/044-kedro-migration/tasks/ph5-output.md
+
+### テスト実装 (RED)
+- [ ] T095 [P] [US3] Implement test for parse_chatgpt_zip node in tests/pipelines/extract_openai/test_nodes.py (ZIP extraction, conversations.json parse, mapping tree DFS traversal, role conversion user→human, multimodal placeholders [Image: id]/[Audio: name])
+- [ ] T096 [P] [US3] Implement test for validate_min_messages in tests/pipelines/extract_openai/test_nodes.py (min_messages=3 skip, file_id generation)
+- [ ] T097 Verify `make test` FAIL (RED)
+- [ ] T098 Generate RED output: specs/044-kedro-migration/red-tests/ph6-test.md
+
+### 実装 (GREEN)
+- [ ] T099 Read RED tests: specs/044-kedro-migration/red-tests/ph6-test.md
+- [ ] T100 [US3] Implement parse_chatgpt_zip node in src/obsidian_etl/pipelines/extract_openai/nodes.py (ZIP→JSON, tree traversal, role mapping, multimodal handling, chunk splitting)
+- [ ] T101 [US3] Implement validate_min_messages node in src/obsidian_etl/pipelines/extract_openai/nodes.py
+- [ ] T102 [US3] Create extract_openai pipeline definition in src/obsidian_etl/pipelines/extract_openai/pipeline.py (raw_openai_conversations → parsed_items)
+- [ ] T103 [US3] Register import_openai pipeline in src/obsidian_etl/pipeline_registry.py (extract_openai + transform + organize)
+- [ ] T104 Verify `make test` PASS (GREEN)
+
+### 検証
+- [ ] T105 [US3] Create OpenAI test fixture in tests/fixtures/openai_input.zip (sample ChatGPT export)
+- [ ] T106 [US3] Implement integration test in tests/pipelines/extract_openai/test_integration.py (ZIP → parsed_items)
+- [ ] T107 Verify `make test` PASS (all tests)
+- [ ] T108 Generate phase output: specs/044-kedro-migration/tasks/ph6-output.md
+
+**Checkpoint**: `kedro run --pipeline=import_openai` で ChatGPT ZIP → Vault 配置が動作
+
+---
+
+## Phase 7: US4 - GitHub Provider 追加 (Priority: P2)
+
+**Goal**: GitHub Jekyll ブログ → ParsedItem 変換を追加（git clone + frontmatter parse）
+
+**Independent Test**: `kedro run --pipeline=import_github` で GitHub URL → Markdown → Vault 配置
+
+### 入力
+- [ ] T109 Read previous phase output: specs/044-kedro-migration/tasks/ph6-output.md
+
+### テスト実装 (RED)
+- [ ] T110 [P] [US4] Implement test for clone_repo node in tests/pipelines/extract_github/test_nodes.py (git clone sparse-checkout, depth=1, URL validation)
+- [ ] T111 [P] [US4] Implement test for parse_jekyll node in tests/pipelines/extract_github/test_nodes.py (frontmatter extraction, draft/private skip, date extraction priority: frontmatter→filename→regex→now)
+- [ ] T112 [P] [US4] Implement test for convert_frontmatter node in tests/pipelines/extract_github/test_nodes.py (Jekyll→Obsidian frontmatter: date→created, tags/categories/keywords→tags, remove draft/private/slug/lastmod)
+- [ ] T113 Verify `make test` FAIL (RED)
+- [ ] T114 Generate RED output: specs/044-kedro-migration/red-tests/ph7-test.md
+
+### 実装 (GREEN)
+- [ ] T115 Read RED tests: specs/044-kedro-migration/red-tests/ph7-test.md
+- [ ] T116 [US4] Implement clone_repo node in src/obsidian_etl/pipelines/extract_github/nodes.py (subprocess git clone with sparse-checkout)
+- [ ] T117 [US4] Implement parse_jekyll node in src/obsidian_etl/pipelines/extract_github/nodes.py (YAML frontmatter parse, skip draft/private)
+- [ ] T118 [US4] Implement convert_frontmatter node in src/obsidian_etl/pipelines/extract_github/nodes.py (Jekyll→Obsidian field conversion)
+- [ ] T119 [US4] Create extract_github pipeline definition in src/obsidian_etl/pipelines/extract_github/pipeline.py (raw_github_posts → parsed_items)
+- [ ] T120 [US4] Register import_github pipeline in src/obsidian_etl/pipeline_registry.py (extract_github + transform + organize)
+- [ ] T121 Verify `make test` PASS (GREEN)
+
+### 検証
+- [ ] T122 [US4] Create GitHub test fixture in tests/fixtures/github_posts/ (sample Jekyll markdown files with frontmatter)
+- [ ] T123 [US4] Implement integration test in tests/pipelines/extract_github/test_integration.py (Jekyll files → parsed_items)
+- [ ] T124 Verify `make test` PASS (all tests)
+- [ ] T125 Generate phase output: specs/044-kedro-migration/tasks/ph7-output.md
+
+**Checkpoint**: `kedro run --pipeline=import_github` で GitHub Jekyll → Vault 配置が動作
+
+---
+
+## Phase 8: US6 - DAG 可視化・部分実行 (Priority: P3)
+
+**Goal**: `kedro viz` と `--from-nodes`/`--to-nodes` による部分実行の動作確認
+
+**Independent Test**: `kedro viz` で DAG 表示、`kedro run --to-nodes=format_markdown` で部分実行
+
+### 入力
+- [ ] T126 Read previous phase output: specs/044-kedro-migration/tasks/ph7-output.md
+
+### 実装（NO TDD — Kedro 組み込み機能の設定・検証）
+- [ ] T127 [US6] Install kedro-viz: `pip install kedro-viz` and add to pyproject.toml dependencies
+- [ ] T128 [US6] Add kedro-viz layer metadata to all catalog entries in conf/base/catalog.yml (verify metadata.kedro-viz.layer exists for all 7 datasets)
+- [ ] T129 [US6] Verify `kedro viz` launches and displays correct DAG with all pipeline nodes and datasets
+- [ ] T130 [US6] Verify partial execution: `kedro run --pipeline=import_claude --to-nodes=format_markdown` stops after transform
+- [ ] T131 [US6] Verify partial execution: `kedro run --pipeline=import_claude --from-nodes=extract_knowledge` starts from transform
+- [ ] T132 [US6] Document partial execution examples in project README or conf notes
+
+### 検証
+- [ ] T133 Verify `make test` PASS (no regression)
+- [ ] T134 Generate phase output: specs/044-kedro-migration/tasks/ph8-output.md
+
+**Checkpoint**: DAG 可視化と部分実行が動作
+
+---
+
+## Phase 9: Polish & Cross-Cutting Concerns
+
+**Purpose**: 旧コード削除、最終検証、ドキュメント更新
+
+- [ ] T135 Read previous phase output: specs/044-kedro-migration/tasks/ph8-output.md
+- [ ] T136 [P] Remove old `src/etl/` directory (旧パイプラインコード削除)
+- [ ] T137 [P] Remove old Makefile targets: import, organize, retry, status, item-trace, session-clean (旧 CLI コマンド削除)
+- [ ] T138 [P] Remove `.staging/@session/` directory structure references from codebase
+- [ ] T139 Update CLAUDE.md: replace ETL pipeline documentation with Kedro-based commands and structure
+- [ ] T140 Update pyproject.toml: add kedro, kedro-datasets, kedro-viz to dependencies
+- [ ] T141 [P] Run full test suite: `make test` (verify no regressions from cleanup)
+- [ ] T142 [P] Run quickstart.md validation: execute all commands from specs/044-kedro-migration/quickstart.md
+- [ ] T143 Verify golden data comparison: run pipeline with existing input data and compare outputs to pre-migration results
+- [ ] T144 Generate phase output: specs/044-kedro-migration/tasks/ph9-output.md
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+```
+Phase 1: Setup ──────────────────────────────► Phase 2: Foundational
+                                                       │
+                                              ┌────────┴────────┐
+                                              ▼                 ▼
+                                    Phase 3: US1          (blocked until US1)
+                                    (Claude Import)
+                                              │
+                                              ▼
+                                    Phase 4: US2
+                                    (Organize)
+                                              │
+                                              ▼
+                                    Phase 5: US5
+                                    (Error/Resume)
+                                              │
+                                    ┌─────────┴─────────┐
+                                    ▼                   ▼
+                          Phase 6: US3          Phase 7: US4
+                          (OpenAI)              (GitHub)
+                                    │                   │
+                                    └─────────┬─────────┘
+                                              ▼
+                                    Phase 8: US6
+                                    (Viz)
+                                              │
+                                              ▼
+                                    Phase 9: Polish
+```
+
+### User Story Dependencies
+
+- **US1 (Claude Import)**: Depends on Phase 2 (Foundational). No other story dependencies
+- **US2 (Organize)**: Depends on US1 (needs Transform pipeline output format)
+- **US5 (Error/Resume)**: Depends on US1+US2 (adds cross-cutting concerns to existing nodes)
+- **US3 (OpenAI)**: Depends on US5 (reuses Transform+Organize+Error handling). Can parallel with US4
+- **US4 (GitHub)**: Depends on US5 (reuses Transform+Organize+Error handling). Can parallel with US3
+- **US6 (Viz)**: Depends on all pipelines being registered. Low effort
+
+### Within Each User Story
+
+- Tests (RED) MUST be written and FAIL before implementation (GREEN)
+- Node functions before pipeline definitions
+- Pipeline definitions before registry updates
+- Integration tests after pipeline registration
+- `make test` verification at each RED/GREEN boundary
+
+### Parallel Opportunities
+
+- **Phase 1**: T003-T008, T011-T012 can all run in parallel
+- **Phase 2**: T016-T019 (RED tests) in parallel, T023-T027 (implementation) in parallel
+- **Phase 3**: T031-T033 (Extract RED) in parallel, T041-T043 (Transform RED) in parallel
+- **Phase 4**: T059-T063 (Organize RED) in parallel, T067-T069 (implementation) in parallel
+- **Phase 5**: T079-T081 (Error/Resume RED) in parallel
+- **Phase 6-7**: US3 and US4 can run in parallel if team capacity allows
+- **Phase 9**: T136-T138, T141-T142 can run in parallel
+
+---
+
+## Parallel Example: Phase 3 (US1 - Claude Import)
+
+```bash
+# Launch Extract RED tests in parallel:
+Task: "Implement test for parse_claude_json in tests/pipelines/extract_claude/test_nodes.py"
+Task: "Implement test for validate_structure in tests/pipelines/extract_claude/test_nodes.py"
+Task: "Implement test for validate_content in tests/pipelines/extract_claude/test_nodes.py"
+
+# After RED confirmed, launch Transform RED tests in parallel:
+Task: "Implement test for extract_knowledge in tests/pipelines/transform/test_nodes.py"
+Task: "Implement test for generate_metadata in tests/pipelines/transform/test_nodes.py"
+Task: "Implement test for format_markdown in tests/pipelines/transform/test_nodes.py"
+```
+
+---
+
+## Implementation Strategy
+
+### MVP First (Phase 1-3: Claude Import Only)
+
+1. Phase 1: Setup — Kedro skeleton + directory structure
+2. Phase 2: Foundational — Utility migration (ollama, chunker, file_id)
+3. Phase 3: US1 — Claude Extract + Transform pipeline
+4. **STOP and VALIDATE**: `kedro run --pipeline=import_claude` produces Markdown from Claude JSON
+5. This is the minimal useful pipeline
+
+### Incremental Delivery
+
+1. Setup + Foundational → Infrastructure ready
+2. US1 (Claude Import) → Test: JSON → Markdown (**MVP**)
+3. US2 (Organize) → Test: Markdown → Vault placement
+4. US5 (Error/Resume) → Test: Partial failure → re-run resilience
+5. US3 (OpenAI) → Test: ZIP → Vault placement
+6. US4 (GitHub) → Test: Jekyll → Vault placement
+7. US6 (Viz) → Test: `kedro viz` displays DAG
+8. Polish → Cleanup, documentation, golden data validation
+
+### Key Risk Mitigation
+
+- **Golden data**: Create fixtures from existing pipeline output before modifying anything
+- **LLM calls**: Mock Ollama in unit tests, real calls only in manual integration tests
+- **旧コード保持**: `src/etl/` は Phase 9 まで削除しない（参照用）
+
+---
+
+## Test Coverage Rules
+
+**境界テストの原則**: データ変換が発生する**すべての境界**でテストを書く
+
+```
+[Raw JSON/ZIP] → [Parse] → [Validate] → [LLM Extract] → [Metadata] → [Markdown] → [Vault]
+      ↓             ↓          ↓             ↓              ↓            ↓           ↓
+    テスト        テスト      テスト        テスト          テスト       テスト      テスト
+```
+
+**チェックリスト**:
+- [ ] 入力パース部分のテスト (parse_claude_json, parse_chatgpt_zip, parse_jekyll)
+- [ ] バリデーションロジックのテスト (validate_structure, validate_content, validate_min_messages)
+- [ ] LLM 抽出部分のテスト (extract_knowledge — mock Ollama)
+- [ ] メタデータ生成のテスト (generate_metadata)
+- [ ] **Markdown 出力生成のテスト** (format_markdown — 見落としやすい)
+- [ ] ジャンル判定のテスト (classify_genre)
+- [ ] Vault 配置のテスト (move_to_vault)
+- [ ] End-to-End テスト (SequentialRunner integration)
+
+> ⚠️ 過去の教訓: 出力生成部分のテストがなく、データが最終ファイルに反映されないバグが検出されなかった
+
+---
+
+## Notes
+
+- [P] tasks = different files, no dependencies
+- [Story] label maps task to specific user story for traceability
+- Each user story should be independently completable and testable
+- Verify tests FAIL (RED) before implementing (GREEN)
+- Commit after each task or logical group
+- Stop at any checkpoint to validate story independently
+- **LLM tests**: Always mock Ollama responses in unit tests
+- **PartitionedDataset**: All nodes process `Dict[str, Callable]` (partition_id → lazy load)
+- **冪等性**: Node output existence = skip processing
+- **旧コード**: `src/etl/` は参照のみ。修正しない（Phase 9 で削除）

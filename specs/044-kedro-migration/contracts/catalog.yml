@@ -1,0 +1,95 @@
+# Kedro DataCatalog Definition
+# conf/base/catalog.yml
+#
+# This file defines all datasets used in the obsidian-etl pipeline.
+# PartitionedDataset is the primary pattern for item-level processing.
+
+# ============================================================
+# Layer 01: Raw Data (Provider-specific input)
+# ============================================================
+
+raw_claude_conversations:
+  type: partitions.PartitionedDataset
+  path: data/01_raw/claude
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  metadata:
+    kedro-viz:
+      layer: raw
+
+raw_openai_conversations:
+  type: partitions.PartitionedDataset
+  path: data/01_raw/openai
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  metadata:
+    kedro-viz:
+      layer: raw
+
+raw_github_posts:
+  type: partitions.PartitionedDataset
+  path: data/01_raw/github
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  metadata:
+    kedro-viz:
+      layer: raw
+
+# ============================================================
+# Layer 02: Intermediate (Extract output - unified format)
+# ============================================================
+
+parsed_items:
+  type: partitions.PartitionedDataset
+  path: data/02_intermediate/parsed
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false  # Idempotency: don't overwrite existing partitions
+  metadata:
+    kedro-viz:
+      layer: intermediate
+
+# ============================================================
+# Layer 03: Primary (Transform output - LLM-enriched)
+# ============================================================
+
+transformed_items:
+  type: partitions.PartitionedDataset
+  path: data/03_primary/transformed
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: primary
+
+# ============================================================
+# Layer 07: Model Output (Final Markdown + Organized)
+# ============================================================
+
+markdown_notes:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/notes
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+organized_items:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/organized
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
