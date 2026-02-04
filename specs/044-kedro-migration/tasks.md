@@ -194,30 +194,30 @@
 
 ### 入力
 
-- [ ] T081 Read previous phase output: specs/044-kedro-migration/tasks/ph4-output.md
+- [x] T081 Read previous phase output: specs/044-kedro-migration/tasks/ph4-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T082 [P] [US1] Implement test_error_handler_hook in tests/test_hooks.py (on_node_error logs error, pipeline continues)
-- [ ] T083 [P] [US1] Implement test_logging_hook in tests/test_hooks.py (before_node_run / after_node_run logs node name and timing)
-- [ ] T084 [P] [US1] Implement test_pipeline_registry in tests/test_pipeline_registry.py (register_pipelines returns import_claude, __default__)
-- [ ] T085 [P] [US1] Implement test_e2e_claude_import in tests/test_integration.py (SequentialRunner with test DataCatalog: raw_claude → organized_items; mock Ollama)
-- [ ] T086 Verify `make test` FAIL (RED)
-- [ ] T087 Generate RED output: specs/044-kedro-migration/red-tests/ph5-test.md
+- [x] T082 [P] [US1] Implement test_error_handler_hook in tests/test_hooks.py (on_node_error logs error, pipeline continues)
+- [x] T083 [P] [US1] Implement test_logging_hook in tests/test_hooks.py (before_node_run / after_node_run logs node name and timing)
+- [x] T084 [P] [US1] Implement test_pipeline_registry in tests/test_pipeline_registry.py (register_pipelines returns import_claude, __default__)
+- [x] T085 [P] [US1] Implement test_e2e_claude_import in tests/test_integration.py (SequentialRunner with test DataCatalog: raw_claude → organized_items; mock Ollama)
+- [x] T086 Verify `make test` FAIL (RED)
+- [x] T087 Generate RED output: specs/044-kedro-migration/red-tests/ph5-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T088 Read RED tests: specs/044-kedro-migration/red-tests/ph5-test.md
-- [ ] T089 [P] [US1] Implement ErrorHandlerHook in src/obsidian_etl/hooks.py (on_node_error: log error detail, record failed item)
-- [ ] T090 [P] [US1] Implement LoggingHook in src/obsidian_etl/hooks.py (before/after_node_run: log timing)
-- [ ] T091 [US1] Register import_claude pipeline in src/obsidian_etl/pipeline_registry.py (extract_claude + transform + organize)
-- [ ] T092 [US1] Wire settings.py: register hooks, configure session settings
-- [ ] T093 Verify `make test` PASS (GREEN)
+- [x] T088 Read RED tests: specs/044-kedro-migration/red-tests/ph5-test.md
+- [x] T089 [P] [US1] Implement ErrorHandlerHook in src/obsidian_etl/hooks.py (on_node_error: log error detail, record failed item)
+- [x] T090 [P] [US1] Implement LoggingHook in src/obsidian_etl/hooks.py (before/after_node_run: log timing)
+- [x] T091 [US1] Register import_claude pipeline in src/obsidian_etl/pipeline_registry.py (extract_claude + transform + organize)
+- [x] T092 [US1] Wire settings.py: register hooks, configure session settings
+- [x] T093 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T094 Verify `make test` passes all tests (no regressions)
-- [ ] T095 Generate phase output: specs/044-kedro-migration/tasks/ph5-output.md
+- [x] T094 Verify `make test` passes all tests (no regressions)
+- [x] T095 Generate phase output: specs/044-kedro-migration/tasks/ph5-output.md
 
 **Checkpoint**: `kedro run --pipeline=import_claude` executes full Claude import → organize pipeline. US1 MVP complete.
 
