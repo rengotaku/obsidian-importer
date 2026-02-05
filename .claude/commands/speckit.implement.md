@@ -126,8 +126,25 @@ You **MUST** consider the user input before proceeding (if not empty).
    1. Display phase completion summary
    2. Display deliverables list
    3. Generate `{FEATURE_DIR}/tasks/ph{N}-output.md`
-   4. **All tasks completed** → Auto-proceed to next phase
-   5. **Partial failure/error** → Ask user for confirmation
+   4. **Save session context**:
+      ```bash
+      /sc:save   # Saves branch, status=in_progress, timestamp
+      ```
+   5. **All tasks completed** → Auto-proceed to next phase
+   6. **Partial failure/error** → Ask user for confirmation
+
+   ### 6.6 Final Phase Completion (REQUIRED)
+
+   After the **final phase** (Polish) is completed:
+   1. Mark session as completed:
+      ```bash
+      /sc:save --completed   # Sets status=completed
+      ```
+   2. Or delete the session memory to prevent accidental reload:
+      ```bash
+      mcp__serena__delete_memory(memory_file_name="session-{feature-name}")
+      ```
+   3. This prevents the session from being reloaded after compaction in unrelated work
 
 7. **Progress tracking and error handling**:
    - Report progress after each completed task
