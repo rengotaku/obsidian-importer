@@ -57,20 +57,20 @@
 
 ### 入力
 
-- [ ] T010 Read previous phase output: specs/047-e2e-full-pipeline/tasks/ph1-output.md
+- [x] T010 Read previous phase output: specs/047-e2e-full-pipeline/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T011 [P] [US4] Implement test_extract_topic_normalizes_to_lowercase in tests/pipelines/organize/test_nodes.py
-- [ ] T012 [P] [US4] Implement test_extract_topic_preserves_spaces in tests/pipelines/organize/test_nodes.py
-- [ ] T013 [P] [US4] Implement test_extract_topic_empty_on_failure in tests/pipelines/organize/test_nodes.py
-- [ ] T014 [P] [US4] Implement test_embed_frontmatter_fields_adds_genre in tests/pipelines/organize/test_nodes.py
-- [ ] T015 [P] [US4] Implement test_embed_frontmatter_fields_adds_topic in tests/pipelines/organize/test_nodes.py
-- [ ] T016 [P] [US4] Implement test_embed_frontmatter_fields_adds_empty_topic in tests/pipelines/organize/test_nodes.py
-- [ ] T017 [P] [US4] Implement test_embed_frontmatter_fields_adds_summary in tests/pipelines/organize/test_nodes.py
-- [ ] T018 [P] [US4] Implement test_embed_frontmatter_fields_no_file_write in tests/pipelines/organize/test_nodes.py
-- [ ] T019 Verify `make test` FAIL (RED) for new tests
-- [ ] T020 Generate RED output: specs/047-e2e-full-pipeline/red-tests/ph2-test.md
+- [x] T011 [P] [US4] Implement test_extract_topic_normalizes_to_lowercase in tests/pipelines/organize/test_nodes.py
+- [x] T012 [P] [US4] Implement test_extract_topic_preserves_spaces in tests/pipelines/organize/test_nodes.py
+- [x] T013 [P] [US4] Implement test_extract_topic_empty_on_failure in tests/pipelines/organize/test_nodes.py
+- [x] T014 [P] [US4] Implement test_embed_frontmatter_fields_adds_genre in tests/pipelines/organize/test_nodes.py
+- [x] T015 [P] [US4] Implement test_embed_frontmatter_fields_adds_topic in tests/pipelines/organize/test_nodes.py
+- [x] T016 [P] [US4] Implement test_embed_frontmatter_fields_adds_empty_topic in tests/pipelines/organize/test_nodes.py
+- [x] T017 [P] [US4] Implement test_embed_frontmatter_fields_adds_summary in tests/pipelines/organize/test_nodes.py
+- [x] T018 [P] [US4] Implement test_embed_frontmatter_fields_no_file_write in tests/pipelines/organize/test_nodes.py
+- [x] T019 Verify `make test` FAIL (RED) for new tests
+- [x] T020 Generate RED output: specs/047-e2e-full-pipeline/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
