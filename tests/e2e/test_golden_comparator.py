@@ -41,6 +41,9 @@ tags:
 source_provider: claude
 file_id: a1b2c3d4e5f6
 normalized: true
+summary: Pythonの非同期処理ライブラリasyncioについて、イベントループ、コルーチン、タスクの基礎を解説。
+genre: engineer
+topic: python
 ---
 
 ## Summary
@@ -63,6 +66,9 @@ tags:
 source_provider: claude
 file_id: a1b2c3d4e5f6
 normalized: true
+summary: Pythonの非同期処理ライブラリasyncioについて、イベントループ、コルーチン、タスクの基礎を解説。
+genre: engineer
+topic: python
 ---
 
 ## Summary
@@ -83,6 +89,9 @@ tags:
 source_provider: claude
 file_id: ffffffffffffffff
 normalized: true
+summary: ReactはUIを構築するためのJavaScriptライブラリです。
+genre: engineer
+topic: javascript
 ---
 
 ## Summary
@@ -103,6 +112,45 @@ normalized: true
 ## Summary
 
 asyncio is a library for writing concurrent code using async/await syntax.
+"""
+
+# Additional samples for genre/topic testing
+SAMPLE_WITH_EMPTY_TOPIC = """\
+---
+title: Random daily thoughts
+created: 2026-01-15
+tags:
+  - daily
+source_provider: claude
+file_id: a1b2c3d4e5f6
+normalized: true
+summary: 日常の雑多な考えをまとめたメモ。
+genre: daily
+topic: ""
+---
+
+## Summary
+
+Random thoughts about daily life.
+"""
+
+SAMPLE_GOLDEN_WITH_EMPTY_TOPIC = """\
+---
+title: Random daily thoughts
+created: 2026-01-15
+tags:
+  - daily
+source_provider: claude
+file_id: a1b2c3d4e5f6
+normalized: true
+summary: 日常の雑多な考えをまとめたメモ。
+genre: daily
+topic: ""
+---
+
+## Summary
+
+Random thoughts about daily life.
 """
 
 
@@ -140,7 +188,17 @@ class TestSplitFrontmatterAndBody(unittest.TestCase):
     def test_frontmatter_keys_preserved(self):
         """frontmatter の全キーが保持される"""
         frontmatter, _ = split_frontmatter_and_body(SAMPLE_GOLDEN)
-        expected_keys = {"title", "created", "tags", "source_provider", "file_id", "normalized"}
+        expected_keys = {
+            "title",
+            "created",
+            "tags",
+            "source_provider",
+            "file_id",
+            "normalized",
+            "summary",
+            "genre",
+            "topic",
+        }
         self.assertEqual(set(frontmatter.keys()), expected_keys)
 
     def test_body_does_not_contain_frontmatter_delimiters(self):
@@ -198,6 +256,34 @@ class TestFrontmatterSimilarity(unittest.TestCase):
         golden_fm, _ = split_frontmatter_and_body(SAMPLE_GOLDEN)
         score = calculate_frontmatter_similarity({}, golden_fm)
         self.assertLess(score, 0.5)
+
+    def test_frontmatter_similarity_with_genre_topic(self):
+        """genre, topic フィールドがある場合、key existence に含まれる"""
+        golden_fm, _ = split_frontmatter_and_body(SAMPLE_GOLDEN)
+        actual_fm, _ = split_frontmatter_and_body(SAMPLE_ACTUAL_IDENTICAL)
+
+        # golden には genre, topic が含まれている
+        self.assertIn("genre", golden_fm)
+        self.assertIn("topic", golden_fm)
+        self.assertEqual(golden_fm["genre"], "engineer")
+        self.assertEqual(golden_fm["topic"], "python")
+
+        # 同一なので 1.0
+        score = calculate_frontmatter_similarity(actual_fm, golden_fm)
+        self.assertAlmostEqual(score, 1.0)
+
+    def test_frontmatter_similarity_with_empty_topic(self):
+        """topic が空文字の場合も正しく類似度計算される"""
+        golden_fm, _ = split_frontmatter_and_body(SAMPLE_GOLDEN_WITH_EMPTY_TOPIC)
+        actual_fm, _ = split_frontmatter_and_body(SAMPLE_WITH_EMPTY_TOPIC)
+
+        # topic は空文字
+        self.assertEqual(golden_fm["topic"], "")
+        self.assertEqual(actual_fm["topic"], "")
+
+        # 同一なので 1.0
+        score = calculate_frontmatter_similarity(actual_fm, golden_fm)
+        self.assertAlmostEqual(score, 1.0)
 
 
 # ===========================================================================

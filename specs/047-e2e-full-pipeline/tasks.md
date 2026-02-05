@@ -103,15 +103,15 @@
 
 ### 入力
 
-- [ ] T034 Read previous phase output: specs/047-e2e-full-pipeline/tasks/ph2-output.md
+- [x] T034 Read previous phase output: specs/047-e2e-full-pipeline/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T035 [P] [US1] Update SAMPLE_GOLDEN with genre, topic fields in tests/e2e/test_golden_comparator.py
-- [ ] T036 [P] [US1] Add test_frontmatter_similarity_with_genre_topic in tests/e2e/test_golden_comparator.py
-- [ ] T037 [P] [US1] Add test_frontmatter_similarity_with_empty_topic in tests/e2e/test_golden_comparator.py
-- [ ] T038 Verify `make test` FAIL (RED) for updated tests
-- [ ] T039 Generate RED output: specs/047-e2e-full-pipeline/red-tests/ph3-test.md
+- [x] T035 [P] [US1] Update SAMPLE_GOLDEN with genre, topic fields in tests/e2e/test_golden_comparator.py
+- [x] T036 [P] [US1] Add test_frontmatter_similarity_with_genre_topic in tests/e2e/test_golden_comparator.py
+- [x] T037 [P] [US1] Add test_frontmatter_similarity_with_empty_topic in tests/e2e/test_golden_comparator.py
+- [x] T038 Verify `make test` FAIL (RED) for updated tests — RED 省略: golden_comparator は動的 key チェックのため PASS
+- [x] T039 Generate RED output: specs/047-e2e-full-pipeline/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 
