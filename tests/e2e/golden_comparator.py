@@ -153,12 +153,16 @@ def _build_file_id_index(directory: Path) -> dict[str, tuple[Path, str, dict, st
     """Build an index of file_id -> (path, content, frontmatter, body) for .md files.
 
     Files without file_id in frontmatter are indexed by filename as fallback.
+    Hidden files (starting with '.') are excluded.
 
     Returns:
         Dict mapping file_id (or filename) to (path, content, frontmatter, body)
     """
     index: dict[str, tuple[Path, str, dict, str]] = {}
     for md_file in sorted(directory.glob("*.md")):
+        # Skip hidden files (e.g., .placeholder.md)
+        if md_file.name.startswith("."):
+            continue
         with open(md_file, encoding="utf-8") as f:
             content = f.read()
         fm, body = split_frontmatter_and_body(content)

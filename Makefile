@@ -132,20 +132,25 @@ test-e2e: test-clean
 	@mkdir -p $(TEST_DATA_DIR)/02_intermediate/parsed
 	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_knowledge
 	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_metadata
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/classified
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/topic_extracted
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/normalized
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/cleaned
 	@mkdir -p $(TEST_DATA_DIR)/07_model_output/notes
 	@mkdir -p $(TEST_DATA_DIR)/07_model_output/organized
 	@echo '{}' > $(TEST_DATA_DIR)/03_primary/transformed_knowledge/.placeholder.json
+	@echo '{}' > $(TEST_DATA_DIR)/07_model_output/classified/.placeholder.json
 	@cp tests/fixtures/claude_test.zip $(TEST_DATA_DIR)/01_raw/claude/
 	@echo "  ✅ Test data ready"
 	@echo ""
-	@echo "[3/5] Running pipeline to format_markdown..."
-	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test --to-nodes=format_markdown
+	@echo "[3/5] Running full pipeline..."
+	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test
 	@echo ""
 	@echo "[4/5] Comparing with golden files..."
 	@test -d tests/fixtures/golden && test $$(ls -1 tests/fixtures/golden/*.md 2>/dev/null | wc -l) -gt 0 \
 		|| (echo "❌ Golden files not found. Run 'make test-e2e-update-golden' first."; rm -rf $(TEST_DATA_DIR); exit 1)
 	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m tests.e2e.golden_comparator \
-		--actual $(TEST_DATA_DIR)/07_model_output/notes \
+		--actual $(TEST_DATA_DIR)/07_model_output/organized \
 		--golden tests/fixtures/golden \
 		--threshold 0.8
 	@echo ""
@@ -173,19 +178,24 @@ test-e2e-update-golden:
 	@mkdir -p $(TEST_DATA_DIR)/02_intermediate/parsed
 	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_knowledge
 	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_metadata
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/classified
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/topic_extracted
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/normalized
+	@mkdir -p $(TEST_DATA_DIR)/07_model_output/cleaned
 	@mkdir -p $(TEST_DATA_DIR)/07_model_output/notes
 	@mkdir -p $(TEST_DATA_DIR)/07_model_output/organized
 	@echo '{}' > $(TEST_DATA_DIR)/03_primary/transformed_knowledge/.placeholder.json
+	@echo '{}' > $(TEST_DATA_DIR)/07_model_output/classified/.placeholder.json
 	@cp tests/fixtures/claude_test.zip $(TEST_DATA_DIR)/01_raw/claude/
 	@echo "  ✅ Test data ready"
 	@echo ""
-	@echo "[3/5] Running pipeline to format_markdown..."
-	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test --to-nodes=format_markdown
+	@echo "[3/5] Running full pipeline (including Organize)..."
+	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test
 	@echo ""
 	@echo "[4/5] Copying output to golden directory..."
 	@rm -rf tests/fixtures/golden
 	@mkdir -p tests/fixtures/golden
-	@cp $(TEST_DATA_DIR)/07_model_output/notes/*.md tests/fixtures/golden/
+	@cp $(TEST_DATA_DIR)/07_model_output/organized/*.md tests/fixtures/golden/
 	@echo "  ✅ Golden files updated: $$(ls -1 tests/fixtures/golden/*.md | wc -l) files"
 	@echo ""
 	@echo "[5/5] Cleaning up..."

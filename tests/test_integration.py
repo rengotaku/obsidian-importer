@@ -167,10 +167,11 @@ class TestE2EClaudeImport(unittest.TestCase):
                 "markdown_notes": PartitionedMemoryDataset(),
                 "classified_items": classified_items_ds,
                 "existing_classified_items": classified_items_ds,  # Resume support
+                "topic_extracted_items": PartitionedMemoryDataset(),
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
-                "vault_determined_items": PartitionedMemoryDataset(),
-                "organized_items": PartitionedMemoryDataset(),
+                "organized_notes": PartitionedMemoryDataset(),  # Phase 2: renamed from organized_items
+                "organized_items": PartitionedMemoryDataset(),  # Legacy compatibility
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -208,8 +209,8 @@ class TestE2EClaudeImport(unittest.TestCase):
         )
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_claude_import_produces_organized_items(self, mock_extract):
-        """raw_claude_conversations から organized_items まで一気通貫で処理されること。"""
+    def test_e2e_claude_import_produces_organized_notes(self, mock_extract):
+        """raw_claude_conversations から organized_notes まで一気通貫で処理されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
         pipeline = self.pipelines["import_claude"]
@@ -217,10 +218,10 @@ class TestE2EClaudeImport(unittest.TestCase):
 
         self.runner.run(pipeline, catalog)
 
-        # Verify organized_items was produced (load returns dict of callables)
-        organized_callables = catalog.load("organized_items")
+        # Verify organized_notes was produced (load returns dict of callables)
+        organized_callables = catalog.load("organized_notes")
         self.assertIsInstance(organized_callables, dict)
-        self.assertGreater(len(organized_callables), 0, "organized_items should not be empty")
+        self.assertGreater(len(organized_callables), 0, "organized_notes should not be empty")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
     def test_e2e_claude_import_all_conversations_processed(self, mock_extract):
@@ -236,8 +237,8 @@ class TestE2EClaudeImport(unittest.TestCase):
 
         self.runner.run(pipeline, catalog)
 
-        organized_callables = catalog.load("organized_items")
-        # 2 conversations should produce 2 organized items
+        organized_callables = catalog.load("organized_notes")
+        # 2 conversations should produce 2 organized notes
         self.assertEqual(len(organized_callables), 2)
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
@@ -260,8 +261,8 @@ class TestE2EClaudeImport(unittest.TestCase):
         self.assertGreater(len(markdown_callables), 0, "markdown_notes should not be empty")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_organized_item_has_required_fields(self, mock_extract):
-        """organized_items の各アイテムが必須フィールドを持つこと。"""
+    def test_e2e_organized_note_has_required_frontmatter(self, mock_extract):
+        """organized_notes の各ノートが必須 frontmatter フィールドを持つこと。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
         pipeline = self.pipelines["import_claude"]
@@ -269,14 +270,22 @@ class TestE2EClaudeImport(unittest.TestCase):
 
         self.runner.run(pipeline, catalog)
 
-        organized_callables = catalog.load("organized_items")
-        # Unwrap callables to get actual items
+        organized_callables = catalog.load("organized_notes")
+        # Unwrap callables to get actual Markdown content
         for partition_id, load_func in organized_callables.items():
-            item = load_func()
-            self.assertIn("item_id", item, f"Missing item_id in {partition_id}")
-            self.assertIn("genre", item, f"Missing genre in {partition_id}")
-            self.assertIn("vault_path", item, f"Missing vault_path in {partition_id}")
-            self.assertIn("final_path", item, f"Missing final_path in {partition_id}")
+            content = load_func()
+            self.assertIsInstance(content, str, f"Content should be string in {partition_id}")
+            # Verify frontmatter structure
+            self.assertTrue(
+                content.startswith("---\n"), f"Missing frontmatter start in {partition_id}"
+            )
+            # Extract frontmatter
+            parts = content.split("---\n", 2)
+            self.assertGreaterEqual(len(parts), 3, f"Invalid frontmatter format in {partition_id}")
+            frontmatter = parts[1]
+            # Check required fields exist in frontmatter
+            self.assertIn("genre:", frontmatter, f"Missing genre in {partition_id}")
+            self.assertIn("topic:", frontmatter, f"Missing topic in {partition_id}")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
     def test_e2e_ollama_mock_called(self, mock_extract):
@@ -388,9 +397,9 @@ class TestResumeAfterFailure(unittest.TestCase):
         # First run: 3 items parsed, but 1 fails at extract_knowledge
         self.runner.run(pipeline, catalog)
 
-        # After first run: 2 items succeed through to organized_items
-        first_run_organized = catalog.load("organized_items")
-        self.assertEqual(len(first_run_organized), 2, "First run should produce 2 organized items")
+        # After first run: 2 items succeed through to organized_notes
+        first_run_organized = catalog.load("organized_notes")
+        self.assertEqual(len(first_run_organized), 2, "First run should produce 2 organized notes")
 
         first_run_llm_calls = mock_extract.call_count
         self.assertEqual(first_run_llm_calls, 3, "First run should call LLM 3 times")
@@ -414,11 +423,11 @@ class TestResumeAfterFailure(unittest.TestCase):
         )
 
         # After second run: all 3 items should be organized
-        second_run_organized = catalog.load("organized_items")
+        second_run_organized = catalog.load("organized_notes")
         self.assertEqual(
             len(second_run_organized),
             3,
-            "Second run should produce 3 organized items total",
+            "Second run should produce 3 organized notes total",
         )
 
 
@@ -574,10 +583,10 @@ class TestPartialRunFromTo(unittest.TestCase):
                 "markdown_notes": PartitionedMemoryDataset(),
                 "classified_items": classified_items_ds,
                 "existing_classified_items": classified_items_ds,
+                "topic_extracted_items": PartitionedMemoryDataset(),
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
-                "vault_determined_items": PartitionedMemoryDataset(),
-                "organized_items": PartitionedMemoryDataset(),
+                "organized_notes": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -635,12 +644,12 @@ class TestPartialRunFromTo(unittest.TestCase):
             len(markdown_callables), 0, "markdown_notes should be produced by partial run"
         )
 
-        # Organize should NOT have run (organized_items should be empty)
-        organized_callables = catalog.load("organized_items")
+        # Organize should NOT have run (organized_notes should be empty)
+        organized_callables = catalog.load("organized_notes")
         self.assertEqual(
             len(organized_callables),
             0,
-            "organized_items should be empty when running Transform only",
+            "organized_notes should be empty when running Transform only",
         )
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
@@ -668,12 +677,12 @@ class TestPartialRunFromTo(unittest.TestCase):
 
         self.runner.run(organize_pipeline, catalog2)
 
-        organized_callables = catalog2.load("organized_items")
+        organized_callables = catalog2.load("organized_notes")
         self.assertIsInstance(organized_callables, dict)
         self.assertGreater(
             len(organized_callables),
             0,
-            "organized_items should be produced by Organize-only partial run",
+            "organized_notes should be produced by Organize-only partial run",
         )
 
     def test_partial_run_invalid_node_raises_error(self):
@@ -818,10 +827,10 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 "markdown_notes": PartitionedMemoryDataset(),
                 "classified_items": classified_items_ds,
                 "existing_classified_items": classified_items_ds,
+                "topic_extracted_items": PartitionedMemoryDataset(),
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
-                "vault_determined_items": PartitionedMemoryDataset(),
-                "organized_items": PartitionedMemoryDataset(),
+                "organized_notes": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
                         "provider": "openai",
@@ -859,8 +868,8 @@ class TestE2EOpenAIImport(unittest.TestCase):
         )
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_openai_import_produces_organized_items(self, mock_extract):
-        """OpenAI パイプラインが ZIP 入力から organized_items まで一気通貫で処理されること。"""
+    def test_e2e_openai_import_produces_organized_notes(self, mock_extract):
+        """OpenAI パイプラインが ZIP 入力から organized_notes まで一気通貫で処理されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
         pipeline = self.pipelines["import_openai"]
@@ -868,9 +877,9 @@ class TestE2EOpenAIImport(unittest.TestCase):
 
         self.runner.run(pipeline, catalog)
 
-        organized_callables = catalog.load("organized_items")
+        organized_callables = catalog.load("organized_notes")
         self.assertIsInstance(organized_callables, dict)
-        self.assertGreater(len(organized_callables), 0, "organized_items should not be empty")
+        self.assertGreater(len(organized_callables), 0, "organized_notes should not be empty")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
     def test_e2e_openai_import_all_conversations_processed(self, mock_extract):
@@ -885,9 +894,9 @@ class TestE2EOpenAIImport(unittest.TestCase):
 
         self.runner.run(pipeline, catalog)
 
-        organized_callables = catalog.load("organized_items")
+        organized_callables = catalog.load("organized_notes")
         self.assertEqual(
-            len(organized_callables), 2, "2 conversations should produce 2 organized items"
+            len(organized_callables), 2, "2 conversations should produce 2 organized notes"
         )
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")

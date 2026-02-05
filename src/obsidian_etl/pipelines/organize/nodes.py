@@ -10,9 +10,7 @@ This module implements the organize pipeline nodes:
 
 from __future__ import annotations
 
-import json
 import logging
-import re
 from collections.abc import Callable
 from pathlib import Path
 
@@ -58,9 +56,42 @@ def classify_genre(
 
         item = load_func()
 
-        # Extract tags and content for matching
-        tags = item.get("metadata", {}).get("tags", [])
-        content = item.get("content", "")
+        # Handle both dict (unit tests) and string (real pipeline) inputs
+        if isinstance(item, str):
+            # Parse markdown frontmatter
+            import re
+
+            import yaml
+
+            # Extract frontmatter
+            original_content = item  # Keep original Markdown with frontmatter
+            frontmatter_match = re.match(r"^---\n(.*?)\n---\n(.*)", item, re.DOTALL)
+            if frontmatter_match:
+                frontmatter_text = frontmatter_match.group(1)
+                body = frontmatter_match.group(2)
+                frontmatter = yaml.safe_load(frontmatter_text) or {}
+                # Convert date objects to strings for JSON serialization
+                from datetime import date, datetime
+
+                for fkey, fval in frontmatter.items():
+                    if isinstance(fval, (date, datetime)):
+                        frontmatter[fkey] = str(fval)
+                tags = frontmatter.get("tags", [])
+                content = body  # Use body for keyword matching
+            else:
+                tags = []
+                frontmatter = {}
+                content = original_content
+
+            # Convert to dict format, preserving original content (with frontmatter)
+            item = {
+                "metadata": frontmatter,
+                "content": original_content,
+            }
+        else:
+            # Extract tags and content for matching (dict format)
+            tags = item.get("metadata", {}).get("tags", [])
+            content = item.get("content", "")
 
         # Check tags first (higher priority)
         tags_text = " ".join(tags)
@@ -119,8 +150,13 @@ def extract_topic(
     """
     result = {}
 
-    for key, load_func in partitioned_input.items():
-        item = load_func()
+    for key, load_func_or_item in partitioned_input.items():
+        # Handle both callable (real pipeline) and dict (memory dataset in tests)
+        if callable(load_func_or_item):
+            item = load_func_or_item()
+        else:
+            item = load_func_or_item
+
         content = item.get("content", "")
 
         # Extract topic via LLM
@@ -205,8 +241,13 @@ def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) 
     # Fields to remove from frontmatter
     unnecessary_fields = {"draft", "private", "slug", "lastmod", "keywords"}
 
-    for key, load_func in partitioned_input.items():
-        item = load_func()
+    for key, load_func_or_item in partitioned_input.items():
+        # Handle both callable (real pipeline) and dict (memory dataset in tests)
+        if callable(load_func_or_item):
+            item = load_func_or_item()
+        else:
+            item = load_func_or_item
+
         content = item.get("content", "")
 
         # Parse frontmatter
@@ -272,8 +313,13 @@ def clean_content(partitioned_input: dict[str, Callable]) -> dict[str, dict]:
     """
     result = {}
 
-    for key, load_func in partitioned_input.items():
-        item = load_func()
+    for key, load_func_or_item in partitioned_input.items():
+        # Handle both callable (real pipeline) and dict (memory dataset in tests)
+        if callable(load_func_or_item):
+            item = load_func_or_item()
+        else:
+            item = load_func_or_item
+
         content = item.get("content", "")
 
         if not content.startswith("---\n"):
@@ -382,12 +428,16 @@ def embed_frontmatter_fields(
     """
     result = {}
 
-    for key, load_func in partitioned_input.items():
-        item = load_func()
+    for key, load_func_or_item in partitioned_input.items():
+        # Handle both callable (real pipeline) and dict (memory dataset in tests)
+        if callable(load_func_or_item):
+            item = load_func_or_item()
+        else:
+            item = load_func_or_item
+
         content = item.get("content", "")
         genre = item.get("genre", "other")
         topic = item.get("topic", "")
-        output_filename = item.get("output_filename", "unknown.md")
 
         # Extract summary from metadata (may be in metadata or generated_metadata)
         summary = ""
@@ -399,9 +449,8 @@ def embed_frontmatter_fields(
         # Embed fields in frontmatter
         updated_content = _embed_fields_in_frontmatter(content, genre, topic, summary)
 
-        # Use output_filename without .md extension as key
-        filename_key = output_filename.replace(".md", "")
-        result[filename_key] = updated_content
+        # Use partition key as output key (already sanitized filename from format_markdown)
+        result[key] = updated_content
 
     return result
 

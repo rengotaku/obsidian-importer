@@ -37,6 +37,12 @@ import:
 # ============================================================
 
 organize:
+  # Ollama LLM settings (for topic extraction)
+  ollama:
+    model: "gemma3:12b"
+    base_url: "http://localhost:11434"
+    timeout: 60
+
   # Vault path mapping (genre -> relative path)
   vaults:
     engineer: "Vaults/エンジニア/"
