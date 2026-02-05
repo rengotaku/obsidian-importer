@@ -335,7 +335,9 @@ class TestCompareDirectories(unittest.TestCase):
     def test_file_count_mismatch(self):
         """actual と golden でファイル数が異なる場合は失敗"""
         self._write_file(self.actual_dir, "file1.md", SAMPLE_GOLDEN)
-        self._write_file(self.actual_dir, "file2.md", SAMPLE_GOLDEN)
+        # Second file has different file_id so it's a distinct entry
+        extra = SAMPLE_GOLDEN.replace("file_id: a1b2c3d4e5f6", "file_id: extra_file_id_1")
+        self._write_file(self.actual_dir, "file2.md", extra)
         self._write_file(self.golden_dir, "file1.md", SAMPLE_GOLDEN)
         result = compare_directories(self.actual_dir, self.golden_dir, threshold=0.9)
         self.assertFalse(result["passed"])
@@ -354,20 +356,28 @@ class TestCompareDirectories(unittest.TestCase):
 
     def test_multiple_files_all_pass(self):
         """複数ファイルが全て閾値以上なら成功"""
+        sample_b = SAMPLE_GOLDEN.replace("file_id: a1b2c3d4e5f6", "file_id: b_file_id_001")
         self._write_file(self.actual_dir, "a.md", SAMPLE_GOLDEN)
-        self._write_file(self.actual_dir, "b.md", SAMPLE_GOLDEN)
+        self._write_file(self.actual_dir, "b.md", sample_b)
         self._write_file(self.golden_dir, "a.md", SAMPLE_GOLDEN)
-        self._write_file(self.golden_dir, "b.md", SAMPLE_GOLDEN)
+        self._write_file(self.golden_dir, "b.md", sample_b)
         result = compare_directories(self.actual_dir, self.golden_dir, threshold=0.9)
         self.assertTrue(result["passed"])
         self.assertEqual(len(result["files"]), 2)
 
     def test_one_file_below_threshold(self):
         """1ファイルでも閾値を下回ればディレクトリ全体として失敗"""
-        self._write_file(self.actual_dir, "good.md", SAMPLE_GOLDEN)
-        self._write_file(self.actual_dir, "bad.md", SAMPLE_ACTUAL_MAJOR_DIFF)
-        self._write_file(self.golden_dir, "good.md", SAMPLE_GOLDEN)
-        self._write_file(self.golden_dir, "bad.md", SAMPLE_GOLDEN)
+        # good file has same file_id
+        good_golden = SAMPLE_GOLDEN
+        # bad file: golden and actual share file_id but content differs
+        bad_golden = SAMPLE_GOLDEN.replace("file_id: a1b2c3d4e5f6", "file_id: bad_file_id_01")
+        bad_actual = SAMPLE_ACTUAL_MAJOR_DIFF.replace(
+            "file_id: ffffffffffffffff", "file_id: bad_file_id_01"
+        )
+        self._write_file(self.actual_dir, "good.md", good_golden)
+        self._write_file(self.actual_dir, "bad.md", bad_actual)
+        self._write_file(self.golden_dir, "good.md", good_golden)
+        self._write_file(self.golden_dir, "bad.md", bad_golden)
         result = compare_directories(self.actual_dir, self.golden_dir, threshold=0.9)
         self.assertFalse(result["passed"])
 
@@ -378,6 +388,15 @@ class TestCompareDirectories(unittest.TestCase):
         # Low threshold should pass
         result_low = compare_directories(self.actual_dir, self.golden_dir, threshold=0.5)
         self.assertTrue(result_low["passed"])
+
+    def test_different_filenames_matched_by_file_id(self):
+        """ファイル名が異なっても file_id が一致すればマッチする"""
+        self._write_file(self.golden_dir, "golden_title.md", SAMPLE_GOLDEN)
+        self._write_file(self.actual_dir, "different_title.md", SAMPLE_GOLDEN)
+        result = compare_directories(self.actual_dir, self.golden_dir, threshold=0.9)
+        self.assertTrue(result["passed"])
+        self.assertEqual(len(result["files"]), 1)
+        self.assertAlmostEqual(result["files"][0]["total_score"], 1.0)
 
 
 # ===========================================================================
@@ -406,7 +425,11 @@ class TestComparisonReport(unittest.TestCase):
 
     def test_report_contains_filename(self):
         """レポートにファイル名が含まれる"""
-        self._write_file(self.actual_dir, "test_file.md", SAMPLE_ACTUAL_MAJOR_DIFF)
+        # Use same file_id so files are matched
+        actual = SAMPLE_ACTUAL_MAJOR_DIFF.replace(
+            "file_id: ffffffffffffffff", "file_id: a1b2c3d4e5f6"
+        )
+        self._write_file(self.actual_dir, "test_file.md", actual)
         self._write_file(self.golden_dir, "test_file.md", SAMPLE_GOLDEN)
         result = compare_directories(self.actual_dir, self.golden_dir, threshold=0.9)
         file_result = result["files"][0]
@@ -427,18 +450,34 @@ class TestComparisonReport(unittest.TestCase):
 
     def test_report_contains_missing_keys(self):
         """frontmatter キー欠落時に missing_keys が含まれる"""
-        self._write_file(self.actual_dir, "file1.md", SAMPLE_MISSING_KEYS)
+        # Actual has file_id (for matching) but missing tags
+        missing_tags = """\
+---
+title: Python asyncio discussion
+created: 2026-01-15
+source_provider: claude
+file_id: a1b2c3d4e5f6
+normalized: true
+---
+
+## Summary
+
+asyncio is a library for writing concurrent code using async/await syntax.
+"""
+        self._write_file(self.actual_dir, "file1.md", missing_tags)
         self._write_file(self.golden_dir, "file1.md", SAMPLE_GOLDEN)
         result = compare_directories(self.actual_dir, self.golden_dir, threshold=0.9)
         file_result = result["files"][0]
         self.assertIn("missing_keys", file_result)
         missing = file_result["missing_keys"]
         self.assertIn("tags", missing)
-        self.assertIn("file_id", missing)
 
     def test_report_contains_diff_summary(self):
         """レポートに diff_summary が含まれる"""
-        self._write_file(self.actual_dir, "file1.md", SAMPLE_ACTUAL_MAJOR_DIFF)
+        actual = SAMPLE_ACTUAL_MAJOR_DIFF.replace(
+            "file_id: ffffffffffffffff", "file_id: a1b2c3d4e5f6"
+        )
+        self._write_file(self.actual_dir, "file1.md", actual)
         self._write_file(self.golden_dir, "file1.md", SAMPLE_GOLDEN)
         result = compare_directories(self.actual_dir, self.golden_dir, threshold=0.9)
         file_result = result["files"][0]

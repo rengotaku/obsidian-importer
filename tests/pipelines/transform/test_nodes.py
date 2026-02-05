@@ -463,11 +463,10 @@ class TestFormatMarkdown(unittest.TestCase):
 
         # Output key should be sanitized filename
         output_key = list(result.keys())[0]
-        output_item = result[output_key]
+        markdown = result[output_key]
 
-        # Should contain markdown_content
-        self.assertIn("content", output_item)
-        markdown = output_item["content"]
+        # Output should be a string (markdown content)
+        self.assertIsInstance(markdown, str)
 
         # Should start with YAML frontmatter
         self.assertTrue(markdown.startswith("---\n"))
@@ -493,8 +492,7 @@ class TestFormatMarkdown(unittest.TestCase):
 
         result = format_markdown(partitioned_input)
 
-        output_item = list(result.values())[0]
-        markdown = output_item["content"]
+        markdown = list(result.values())[0]
 
         # Extract frontmatter section
         parts = markdown.split("---\n", 2)
@@ -514,8 +512,7 @@ class TestFormatMarkdown(unittest.TestCase):
 
         result = format_markdown(partitioned_input)
 
-        output_item = list(result.values())[0]
-        markdown = output_item["content"]
+        markdown = list(result.values())[0]
 
         # Body should contain summary text
         self.assertIn("asyncio", markdown)
@@ -527,8 +524,7 @@ class TestFormatMarkdown(unittest.TestCase):
 
         result = format_markdown(partitioned_input)
 
-        output_item = list(result.values())[0]
-        markdown = output_item["content"]
+        markdown = list(result.values())[0]
 
         # Tags should be in YAML list format
         self.assertIn("  - Python", markdown)
@@ -565,8 +561,8 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
         result = format_markdown(partitioned_input)
 
         output_key = list(result.keys())[0]
-        # Output key should be a valid filename ending with .md
-        self.assertTrue(output_key.endswith(".md") or "Python asyncio" in output_key)
+        # Output key should contain the title (extension added by PartitionedDataset)
+        self.assertIn("Python asyncio", output_key)
 
     def test_format_markdown_output_filename_special_chars(self):
         """特殊文字を含むタイトルがサニタイズされること。"""

@@ -128,6 +128,11 @@ def generate_metadata(
     for partition_id, load_func in partitioned_input.items():
         item = load_func()
 
+        # Skip placeholder or incomplete items
+        if "file_id" not in item:
+            logger.debug(f"Skipping incomplete item: {partition_id}")
+            continue
+
         gm = item.get("generated_metadata", {})
         created_at = item.get("created_at")
 
@@ -214,11 +219,8 @@ def format_markdown(
         title = metadata.get("title", "")
         filename = _sanitize_filename(title, item["file_id"])
 
-        # Store with content key
-        output[filename] = {
-            **item,
-            "content": markdown_content,
-        }
+        # Store content string (TextDataset expects str, not dict)
+        output[filename] = markdown_content
 
     logger.info(f"format_markdown: processed {len(output)} items")
 
@@ -229,17 +231,18 @@ def _sanitize_filename(title: str, file_id: str) -> str:
     """Sanitize title to create a valid filename.
 
     Removes filesystem-unsafe characters and truncates long titles.
+    Does NOT add file extension (handled by Kedro's PartitionedDataset filename_suffix).
 
     Args:
         title: Title string.
         file_id: Fallback file ID if title is empty.
 
     Returns:
-        Sanitized filename ending with .md
+        Sanitized filename without extension.
     """
     if not title or not title.strip():
         # Fallback to file_id
-        return f"{file_id[:12]}.md"
+        return file_id[:12]
 
     # Remove unsafe characters
     unsafe_chars = r'[/\\:*?"<>|]'
@@ -248,13 +251,13 @@ def _sanitize_filename(title: str, file_id: str) -> str:
     # Collapse multiple spaces
     sanitized = re.sub(r"\s+", " ", sanitized).strip()
 
-    # Truncate to prevent filesystem limits (255 chars including .md)
+    # Truncate to prevent filesystem limits (255 chars including extension)
     max_length = 250
     if len(sanitized) > max_length:
         sanitized = sanitized[:max_length].strip()
 
     # Ensure non-empty after sanitization
     if not sanitized:
-        return f"{file_id[:12]}.md"
+        return file_id[:12]
 
-    return f"{sanitized}.md"
+    return sanitized

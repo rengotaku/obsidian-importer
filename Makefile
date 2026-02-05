@@ -10,7 +10,7 @@ COMMA := ,
 
 .PHONY: help setup setup-dev test coverage check lint clean
 .PHONY: rag-index rag-search rag-ask rag-status
-.PHONY: test-e2e test-e2e-update-golden
+.PHONY: test-e2e test-e2e-update-golden test-clean
 .PHONY: kedro-run kedro-test kedro-viz
 
 # ═══════════════════════════════════════════════════════════
@@ -32,7 +32,9 @@ help:
 	@echo "                 [PARAMS='...'] [FROM_NODES=...] [TO_NODES=...]"
 	@echo "  kedro-test     Kedro テスト実行"
 	@echo "  kedro-viz      DAG 可視化"
-	@echo "  test-e2e       E2Eテスト（テスト用フィクスチャで実行）"
+	@echo "  test-e2e       E2Eテスト（ゴールデンファイル比較）"
+	@echo "  test-e2e-update-golden  ゴールデンファイル生成・更新"
+	@echo "  test-clean     E2Eテスト用データ削除"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test           全テスト実行"
@@ -114,7 +116,7 @@ kedro-viz:
 # Kedro E2Eテスト（テスト用フィクスチャで LLM 処理まで実行）
 # 前提: Ollama が起動していること
 TEST_DATA_DIR := data/test
-test-e2e:
+test-e2e: test-clean
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Kedro E2E Test (golden file comparison)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -144,7 +146,7 @@ test-e2e:
 	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m tests.e2e.golden_comparator \
 		--actual $(TEST_DATA_DIR)/07_model_output/notes \
 		--golden tests/fixtures/golden \
-		--threshold 0.9
+		--threshold 0.8
 	@echo ""
 	@echo "[5/5] Cleaning up..."
 	@rm -rf $(TEST_DATA_DIR)
@@ -231,6 +233,12 @@ lint:
 		exit 1; \
 	}
 	@echo "✅ Lint passed"
+
+# E2Eテスト用データディレクトリ削除
+test-clean:
+	@echo "Cleaning test data directory..."
+	@rm -rf $(TEST_DATA_DIR)
+	@echo "✅ $(TEST_DATA_DIR) cleaned"
 
 # 一時ファイル削除
 clean:

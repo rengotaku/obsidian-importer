@@ -150,8 +150,29 @@ def calculate_total_score(frontmatter_score: float, body_score: float) -> float:
     return frontmatter_score * 0.3 + body_score * 0.7
 
 
+def _build_file_id_index(directory: Path) -> dict[str, tuple[Path, str, dict, str]]:
+    """Build an index of file_id -> (path, content, frontmatter, body) for .md files.
+
+    Files without file_id in frontmatter are indexed by filename as fallback.
+
+    Returns:
+        Dict mapping file_id (or filename) to (path, content, frontmatter, body)
+    """
+    index: dict[str, tuple[Path, str, dict, str]] = {}
+    for md_file in sorted(directory.glob("*.md")):
+        with open(md_file, encoding="utf-8") as f:
+            content = f.read()
+        fm, body = split_frontmatter_and_body(content)
+        key = fm.get("file_id", md_file.name)
+        index[key] = (md_file, content, fm, body)
+    return index
+
+
 def compare_directories(actual_dir: str, golden_dir: str, threshold: float = 0.9) -> dict[str, Any]:
     """Compare all .md files in actual directory against golden directory.
+
+    Files are matched by file_id from frontmatter (not by filename), since
+    LLM-generated titles may vary between runs while file_id is deterministic.
 
     Args:
         actual_dir: Directory with actual output files
@@ -162,7 +183,8 @@ def compare_directories(actual_dir: str, golden_dir: str, threshold: float = 0.9
         Dict with keys:
             - passed: bool (all files >= threshold and count matches)
             - files: list of dicts with:
-                - filename: str
+                - filename: str (golden filename)
+                - actual_filename: str (actual filename or "MISSING")
                 - total_score: float
                 - frontmatter_score: float
                 - body_score: float
@@ -183,42 +205,34 @@ def compare_directories(actual_dir: str, golden_dir: str, threshold: float = 0.9
     if not golden_files:
         raise ValueError(f"Golden directory is empty: {golden_dir}")
 
-    actual_files = sorted(actual_path.glob("*.md"))
+    # Build file_id indexes for both directories
+    golden_index = _build_file_id_index(golden_path)
+    actual_index = _build_file_id_index(actual_path)
 
     # File count must match
-    file_count_match = len(actual_files) == len(golden_files)
+    file_count_match = len(actual_index) == len(golden_index)
 
     results = []
     all_passed = file_count_match  # Start with file count check
 
-    for golden_file in golden_files:
-        filename = golden_file.name
-        actual_file = actual_path / filename
-
-        if not actual_file.exists():
-            # Missing file in actual
+    for key, (golden_file, golden_content, golden_fm, golden_body) in golden_index.items():
+        if key not in actual_index:
+            # No matching file_id in actual
             results.append(
                 {
-                    "filename": filename,
+                    "filename": golden_file.name,
+                    "actual_filename": "MISSING",
                     "total_score": 0.0,
                     "frontmatter_score": 0.0,
                     "body_score": 0.0,
                     "missing_keys": [],
-                    "diff_summary": "File missing in actual output",
+                    "diff_summary": f"No file with file_id '{key}' in actual output",
                 }
             )
             all_passed = False
             continue
 
-        # Read files
-        with open(golden_file, encoding="utf-8") as f:
-            golden_content = f.read()
-        with open(actual_file, encoding="utf-8") as f:
-            actual_content = f.read()
-
-        # Split and compare
-        golden_fm, golden_body = split_frontmatter_and_body(golden_content)
-        actual_fm, actual_body = split_frontmatter_and_body(actual_content)
+        actual_file, actual_content, actual_fm, actual_body = actual_index[key]
 
         fm_score = calculate_frontmatter_similarity(actual_fm, golden_fm)
         body_score = calculate_body_similarity(actual_body, golden_body)
@@ -240,7 +254,8 @@ def compare_directories(actual_dir: str, golden_dir: str, threshold: float = 0.9
 
         results.append(
             {
-                "filename": filename,
+                "filename": golden_file.name,
+                "actual_filename": actual_file.name,
                 "total_score": total_score,
                 "frontmatter_score": fm_score,
                 "body_score": body_score,
@@ -282,8 +297,12 @@ if __name__ == "__main__":
             print("\n❌ Comparison failed:", file=sys.stderr)
             for file_result in result["files"]:
                 if file_result["total_score"] < args.threshold:
+                    actual_name = file_result.get("actual_filename", "MISSING")
+                    name_info = file_result["filename"]
+                    if actual_name != file_result["filename"] and actual_name != "MISSING":
+                        name_info = f"{file_result['filename']} (actual: {actual_name})"
                     print(
-                        f"  {file_result['filename']}: {file_result['total_score']:.2%} "
+                        f"  {name_info}: {file_result['total_score']:.2%} "
                         f"(threshold: {args.threshold:.0%})",
                         file=sys.stderr,
                     )

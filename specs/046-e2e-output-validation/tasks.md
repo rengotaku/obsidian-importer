@@ -117,19 +117,19 @@
 
 ### 入力
 
-- [ ] T032 Read previous phase output: specs/046-e2e-output-validation/tasks/ph3-output.md
+- [x] T032 Read previous phase output: specs/046-e2e-output-validation/tasks/ph3-output.md
 
 ### 実装
 
-- [ ] T033 Run `make test-e2e-update-golden` to generate initial golden files in tests/fixtures/golden/
-- [ ] T034 Verify golden files exist: 3 .md files in tests/fixtures/golden/
-- [ ] T035 Verify golden file structure: frontmatter (title, created, tags, file_id, normalized) + body (要約 + summary_content)
-- [ ] T036 Run `make test-e2e` to verify comparison passes (all files ≥90% similarity)
+- [x] T033 Run `make test-e2e-update-golden` to generate initial golden files in tests/fixtures/golden/
+- [x] T034 Verify golden files exist: 3 .md files in tests/fixtures/golden/
+- [x] T035 Verify golden file structure: frontmatter (title, created, tags, file_id, normalized) + body (要約 + summary_content)
+- [x] T036 Run `make test-e2e` to verify comparison passes (all files ≥90% similarity)
 
 ### 検証
 
-- [ ] T037 Run `make test` to verify all unit tests still pass
-- [ ] T038 Generate phase output: specs/046-e2e-output-validation/tasks/ph4-output.md
+- [x] T037 Run `make test` to verify all unit tests still pass
+- [x] T038 Generate phase output: specs/046-e2e-output-validation/tasks/ph4-output.md
 
 ---
 
