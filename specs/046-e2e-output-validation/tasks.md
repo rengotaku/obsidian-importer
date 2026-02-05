@@ -139,19 +139,19 @@
 
 ### 入力
 
-- [ ] T039 Read previous phase output: specs/046-e2e-output-validation/tasks/ph4-output.md
+- [x] T039 Read previous phase output: specs/046-e2e-output-validation/tasks/ph4-output.md
 
 ### 実装
 
-- [ ] T040 [P] Update CLAUDE.md: test-e2e-update-golden コマンドの説明を Custom Commands セクションに追加
-- [ ] T041 [P] Update Makefile help target: test-e2e-update-golden の説明を追加
-- [ ] T042 Code cleanup: 不要なインポートや未使用変数の削除
+- [x] T040 [P] Update CLAUDE.md: test-e2e-update-golden コマンドの説明を Custom Commands セクションに追加
+- [x] T041 [P] Update Makefile help target: test-e2e-update-golden の説明を追加
+- [x] T042 Code cleanup: 不要なインポートや未使用変数の削除
 
 ### 検証
 
-- [ ] T043 Run `make test` to verify all tests pass after cleanup
-- [ ] T044 Run `make lint` to verify code quality
-- [ ] T045 Generate phase output: specs/046-e2e-output-validation/tasks/ph5-output.md
+- [x] T043 Run `make test` to verify all tests pass after cleanup
+- [x] T044 Run `make lint` to verify code quality
+- [x] T045 Generate phase output: specs/046-e2e-output-validation/tasks/ph5-output.md
 
 ---
 
@@ -232,12 +232,12 @@ specs/046-e2e-output-validation/
 ```
 
 **チェックリスト**:
-- [ ] frontmatter/body 分離のテスト (T008)
-- [ ] frontmatter 類似度計算のテスト (T009)
-- [ ] body 類似度計算のテスト (T010)
-- [ ] 総合スコア計算のテスト (T011)
-- [ ] ディレクトリ比較のテスト (T012)
-- [ ] レポート出力のテスト (T013)
+- [x] frontmatter/body 分離のテスト (T008)
+- [x] frontmatter 類似度計算のテスト (T009)
+- [x] body 類似度計算のテスト (T010)
+- [x] 総合スコア計算のテスト (T011)
+- [x] ディレクトリ比較のテスト (T012)
+- [x] レポート出力のテスト (T013)
 
 ---
 

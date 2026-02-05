@@ -336,6 +336,38 @@ make kedro-test
 make coverage
 ```
 
+#### E2Eテスト（ゴールデンファイル比較）
+
+パイプライン出力をゴールデンファイル（期待される正解）と比較して E2E テストを実行。
+
+```bash
+# E2Eテスト実行（ゴールデンファイルと比較）
+make test-e2e
+
+# ゴールデンファイルの生成・更新
+make test-e2e-update-golden
+```
+
+**前提条件:**
+- Ollama が起動していること（LLM 処理が必要なため）
+
+**test-e2e の動作:**
+1. テストデータ（`tests/fixtures/claude_test.zip`）を使用
+2. パイプラインを `format_markdown` まで実行
+3. 出力を `tests/fixtures/golden/*.md` と比較
+4. 類似度 80% 以上で成功判定
+
+**test-e2e-update-golden の動作:**
+1. パイプラインを実行して最新の出力を生成
+2. 出力を `tests/fixtures/golden/` にコピー
+3. ゴールデンファイルとして保存
+
+**ゴールデンファイル更新のタイミング:**
+- LLM モデル変更後
+- プロンプト変更後
+- パイプラインロジック変更後
+- 既存のゴールデンファイルが正しくない場合
+
 **主要機能:**
 
 | 機能 | 説明 |

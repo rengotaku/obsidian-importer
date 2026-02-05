@@ -14,7 +14,6 @@ Functions:
 from __future__ import annotations
 
 import difflib
-import os
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +34,7 @@ def split_frontmatter_and_body(content: str) -> tuple[dict[str, Any], str]:
         return {}, ""
 
     lines = content.split("\n")
-    if not lines[0].strip() == "---":
+    if lines[0].strip() != "---":
         return {}, content
 
     # Find end of frontmatter
