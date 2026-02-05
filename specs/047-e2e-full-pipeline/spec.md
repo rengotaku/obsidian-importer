@@ -10,6 +10,11 @@
 ### Session 2026-02-05
 
 - Q: E2E テストでの Vault 書き込み範囲は？ → A: パイプラインを変更し、ファイルシステムへの Vault 書き込みを廃止。振り分け情報（genre, vault_path）は frontmatter に記載する方式に変更。
+- Q: Frontmatter フィールドの必須/任意の区別は？ → A: 必須: title, created, tags, source_provider, file_id, normalized, summary, genre。不要: vault_path（削除）。追加: topic（新規フィールド）。
+- Q: 新規フィールド「topic」の内容は？ → A: topic はサブフォルダ。genre が大分類（engineer 等）、topic が中分類（aws 等）、tags が詳細タグ（rds 等）の階層構造。
+- Q: topic の値はどう決定されるか？ → A: LLM 抽出 + 正規化。LLM が会話内容から抽出し、類似 topic を統合（例: AWS/aws → aws）。
+- Q: topic が空の場合の扱いは？ → A: 空文字許容。genre 直下に配置（例: `Vaults/エンジニア/ファイル.md`）。
+- Q: topic の正規化ルールは？ → A: 小文字化のみ（AWS → aws, React Native → react native）。スペースは保持。
 
 ## 背景
 
@@ -34,7 +39,7 @@
 本 feature では、パイプラインを以下のように変更する:
 
 - `move_to_vault` ノードを **ファイル書き込みなし** に変更（または廃止）
-- 振り分け情報（`genre`, `vault_path`）を **frontmatter に埋め込む**
+- 振り分け情報（`genre`, `topic`）を **frontmatter に埋め込む**
 - 最終出力は `data/07_model_output/notes/*.md` に統一（Vault ディレクトリへの分散配置なし）
 - Vault への実際の配置は **別プロセス（手動または別コマンド）** で行う
 
@@ -98,7 +103,7 @@
 **Acceptance Scenarios**:
 
 1. **Given** パイプラインを実行する, **When** Organize ステージが完了する, **Then** `Vaults/` ディレクトリにファイルが作成されない
-2. **Given** パイプラインを実行する, **When** 最終 Markdown が出力される, **Then** frontmatter に `genre`（例: `engineer`, `business`）と `vault_path`（例: `Vaults/エンジニア/`）が含まれる
+2. **Given** パイプラインを実行する, **When** 最終 Markdown が出力される, **Then** frontmatter に `genre`（例: `engineer`, `business`）と `topic`（例: `aws`, `kubernetes`、空許容）が含まれる
 3. **Given** 既存のユニットテストがある, **When** パイプライン変更後に `make test` を実行する, **Then** Organize パイプラインの既存テストが PASS する（後方互換性）
 
 ---
@@ -108,7 +113,8 @@
 - パイプライン途中（Organize 前）で失敗した場合、最終出力ディレクトリが空になる → 明確なエラーメッセージ
 - LLM の非決定性による出力ブレ → 046 と同様、80% 閾値で許容
 - Organize パイプラインが新しい frontmatter フィールドを追加した場合 → golden_comparator の必須キーリストを更新する必要がある
-- `genre` が `other` に分類された場合 → `vault_path` は `Vaults/その他/` となる
+- `genre` が `other` に分類された場合 → `topic` は空または LLM 抽出値となる
+- `topic` が空の場合 → genre 直下に配置（例: `Vaults/エンジニア/ファイル.md`）
 
 ## Requirements
 
@@ -119,7 +125,7 @@
 - **FR-001**: `make test-e2e` はフルパイプラインの最終出力をゴールデンファイルと比較しなければならない（046 の `--to-nodes=format_markdown` 制限を撤廃）
 - **FR-002**: `make test-e2e-update-golden` はフルパイプラインの最終出力をゴールデンファイルとして `tests/fixtures/golden/` に保存しなければならない
 - **FR-003**: golden_comparator の frontmatter 比較は、Organize 後のフィールド（`genre`, `vault_path`, `summary`, `tags`, `file_id`, `normalized`）を正しく評価しなければならない
-- **FR-004**: golden_comparator の必須キーリストは最終出力の frontmatter 構造に合わせて更新しなければならない（`title`, `created`, `tags`, `source_provider`, `file_id`, `normalized`, `summary`, `genre`, `vault_path`）
+- **FR-004**: golden_comparator の必須キーリストは最終出力の frontmatter 構造に合わせて更新しなければならない（`title`, `created`, `tags`, `source_provider`, `file_id`, `normalized`, `summary`, `genre`, `topic`）
 - **FR-005**: ゴールデンファイル更新後、`make test-e2e` の自己比較（同一ファイル同士）で 100% の類似度が返らなければならない
 - **FR-006**: 046 で構築した golden_comparator の既存テストが引き続き PASS しなければならない（後方互換性）
 
@@ -127,12 +133,13 @@
 
 - **FR-007**: Organize パイプラインはファイルシステム（`Vaults/` ディレクトリ）への書き込みを行ってはならない
 - **FR-008**: 最終 Markdown 出力の frontmatter に `genre` フィールド（`engineer`, `business`, `economy`, `daily`, `other` のいずれか）を含めなければならない
-- **FR-009**: 最終 Markdown 出力の frontmatter に `vault_path` フィールド（例: `Vaults/エンジニア/`）を含めなければならない
+- **FR-009**: 最終 Markdown 出力の frontmatter に `topic` フィールド（LLM 抽出 + 小文字正規化、空文字許容）を含めなければならない
 - **FR-010**: パイプライン変更後も Organize パイプラインの既存ユニットテストが PASS しなければならない
 
 ### Key Entities
 
-- **ゴールデンファイル**: Organize パイプライン後の最終 Markdown 出力。frontmatter に `title`, `created`, `summary`, `tags`, `source_provider`, `file_id`, `normalized`, `genre`, `vault_path` を含む
+- **ゴールデンファイル**: Organize パイプライン後の最終 Markdown 出力。frontmatter に `title`, `created`, `summary`, `tags`, `source_provider`, `file_id`, `normalized`, `genre`, `topic` を含む
+- **Frontmatter 階層構造**: `genre`（大分類: engineer, business, economy, daily, other）→ `topic`（中分類: aws, kubernetes 等、LLM 抽出 + 小文字正規化、空許容）→ `tags`（詳細タグ: rds, lambda 等）
 - **類似度スコア**: 046 と同様の計算方式（frontmatter × 0.3 + body × 0.7）。frontmatter の評価対象フィールドが拡張される
 
 ## Success Criteria
@@ -140,7 +147,7 @@
 ### Measurable Outcomes
 
 - **SC-001**: `make test-e2e` がフルパイプライン（Organize 含む）の最終出力を検証し、ゴールデンファイル自己比較で 100% の類似度を返す
-- **SC-002**: ゴールデンファイルの frontmatter に `summary`, `tags`（非空）, `file_id`, `normalized: true`, `genre`, `vault_path` が含まれる
+- **SC-002**: ゴールデンファイルの frontmatter に `summary`, `tags`（非空）, `file_id`, `normalized: true`, `genre`, `topic` が含まれる
 - **SC-003**: 046 で作成した golden_comparator のユニットテスト（37件以上）が全て PASS し続ける
 - **SC-004**: `make test` で新規テスト含む全テストが PASS する（既知の RAG 関連エラーを除く）
 - **SC-005**: `kedro run` 実行後、`Vaults/` ディレクトリにファイルが作成されない
@@ -157,10 +164,10 @@
 ### In Scope
 
 - Makefile `test-e2e` / `test-e2e-update-golden` ターゲットのフルパイプライン対応
-- golden_comparator の frontmatter 必須キーリスト更新（`genre`, `vault_path` 追加）
+- golden_comparator の frontmatter 必須キーリスト更新（`genre`, `topic` 追加）
 - ゴールデンファイルの再生成（Organize 後の最終出力）
 - **Organize パイプラインの変更**: `move_to_vault` のファイル書き込み廃止
-- **frontmatter への振り分け情報埋め込み**: `genre`, `vault_path` フィールド追加
+- **frontmatter への振り分け情報埋め込み**: `genre`, `topic` フィールド追加
 
 ### Out of Scope
 

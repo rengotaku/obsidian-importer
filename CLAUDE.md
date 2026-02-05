@@ -742,6 +742,8 @@ make lint      # コード品質チェック (ruff)
 - ファイルシステム（JSON, JSONL, Markdown, ZIP）、Kedro DataCatalog (045-fix-kedro-input)
 - Python 3.11+ + 標準ライブラリのみ (`difflib`, `yaml`, `unittest`)、Kedro 1.1.1 (046-e2e-output-validation)
 - ファイルシステム（Markdown, JSON） (046-e2e-output-validation)
+- Python 3.11+ + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, tenacity 8.x, difflib (stdlib) (047-e2e-full-pipeline)
+- ファイルシステム (Markdown, JSON, JSONL)、Kedro DataCatalog (PartitionedDataset) (047-e2e-full-pipeline)
 
 ## Recent Changes
 - 044-kedro-migration: Migrated from custom ETL pipeline (`src/etl/`) to Kedro 1.1.1. Removed session management, introduced DAG-based pipelines (import_claude, import_openai, import_github), idempotent resume via PartitionedDataset
