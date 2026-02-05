@@ -130,6 +130,17 @@ existing_classified_items:
     kedro-viz:
       layer: model_output
 
+topic_extracted_items:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/topic_extracted
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
 normalized_items:
   type: partitions.PartitionedDataset
   path: data/07_model_output/normalized
@@ -169,6 +180,19 @@ organized_items:
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+organized_notes:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/organized
+  dataset:
+    type: text.TextDataset
+    save_args:
+      encoding: utf-8
+  filename_suffix: ".md"
   overwrite: false
   metadata:
     kedro-viz:

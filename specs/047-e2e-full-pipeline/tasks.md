@@ -74,22 +74,22 @@
 
 ### 実装 (GREEN)
 
-- [ ] T021 Read RED tests: specs/047-e2e-full-pipeline/red-tests/ph2-test.md
-- [ ] T022 [P] [US4] Implement extract_topic node in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T023 [P] [US4] Implement _extract_topic_via_llm helper in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T024 [P] [US4] Implement embed_frontmatter_fields node in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T025 [P] [US4] Implement _embed_fields_in_frontmatter helper in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T026 [US4] Update create_pipeline with extract_topic and embed_frontmatter_fields in src/obsidian_etl/pipelines/organize/pipeline.py
-- [ ] T027 [US4] Remove determine_vault_path and move_to_vault from pipeline in src/obsidian_etl/pipelines/organize/pipeline.py
-- [ ] T028 [P] [US4] Add topic_extracted_items dataset in conf/base/catalog.yml
-- [ ] T029 [P] [US4] Update organized_notes dataset in conf/base/catalog.yml
-- [ ] T030 Verify `make test` PASS (GREEN)
+- [x] T021 Read RED tests: specs/047-e2e-full-pipeline/red-tests/ph2-test.md
+- [x] T022 [P] [US4] Implement extract_topic node in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T023 [P] [US4] Implement _extract_topic_via_llm helper in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T024 [P] [US4] Implement embed_frontmatter_fields node in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T025 [P] [US4] Implement _embed_fields_in_frontmatter helper in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T026 [US4] Update create_pipeline with extract_topic and embed_frontmatter_fields in src/obsidian_etl/pipelines/organize/pipeline.py
+- [x] T027 [US4] Remove determine_vault_path and move_to_vault from pipeline in src/obsidian_etl/pipelines/organize/pipeline.py
+- [x] T028 [P] [US4] Add topic_extracted_items dataset in conf/base/catalog.yml
+- [x] T029 [P] [US4] Update organized_notes dataset in conf/base/catalog.yml
+- [x] T030 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T031 Verify `make test` passes all tests (no regressions)
-- [ ] T032 Verify `kedro run` does not create files in `Vaults/` directory
-- [ ] T033 Generate phase output: specs/047-e2e-full-pipeline/tasks/ph2-output.md
+- [x] T031 Verify `make test` passes all tests (no regressions)
+- [x] T032 Verify `kedro run` does not create files in `Vaults/` directory
+- [x] T033 Generate phase output: specs/047-e2e-full-pipeline/tasks/ph2-output.md
 
 **Checkpoint**: extract_topic と embed_frontmatter_fields ノードが動作し、Vault 書き込みが廃止される
 

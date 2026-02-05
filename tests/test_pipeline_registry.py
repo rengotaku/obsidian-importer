@@ -82,10 +82,10 @@ class TestPipelineRegistry(unittest.TestCase):
 
         expected_organize_nodes = [
             "classify_genre",
+            "extract_topic",
             "normalize_frontmatter",
             "clean_content",
-            "determine_vault_path",
-            "move_to_vault",
+            "embed_frontmatter_fields",
         ]
         for expected in expected_organize_nodes:
             self.assertIn(

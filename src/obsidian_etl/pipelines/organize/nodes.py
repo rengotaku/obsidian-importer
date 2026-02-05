@@ -2,19 +2,21 @@
 
 This module implements the organize pipeline nodes:
 - classify_genre: Keyword-based genre classification
+- extract_topic: LLM-based topic extraction with lowercase normalization
 - normalize_frontmatter: Clean up frontmatter fields
 - clean_content: Remove excess blank lines and trailing whitespace
-- determine_vault_path: Map genre to vault directory
-- move_to_vault: Write files to vault directories
+- embed_frontmatter_fields: Embed genre, topic, summary into frontmatter content
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from collections.abc import Callable
 from pathlib import Path
 
+import requests
 import yaml
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,95 @@ def classify_genre(
         result[key] = item
 
     return result
+
+
+def extract_topic(
+    partitioned_input: dict[str, Callable],
+    params: dict,
+) -> dict[str, dict]:
+    """Extract topic from content using LLM.
+
+    Args:
+        partitioned_input: Items with genre field and content
+        params: Parameters dict with ollama settings
+
+    Returns:
+        dict[str, dict]: Items with 'topic' field added
+
+    Topic extraction logic:
+    - LLM extracts main topic from content
+    - Normalize to lowercase (AWS -> aws)
+    - Preserve spaces (React Native -> react native)
+    - Empty string on extraction failure
+    """
+    result = {}
+
+    for key, load_func in partitioned_input.items():
+        item = load_func()
+        content = item.get("content", "")
+
+        # Extract topic via LLM
+        topic = _extract_topic_via_llm(content, params)
+
+        # Normalize topic to lowercase (preserve spaces)
+        if topic:
+            topic = topic.lower()
+        else:
+            topic = ""
+
+        # Add topic to item
+        item["topic"] = topic
+        result[key] = item
+
+    return result
+
+
+def _extract_topic_via_llm(content: str, params: dict) -> str | None:
+    """Helper to extract topic via LLM.
+
+    Args:
+        content: Markdown content with frontmatter
+        params: Parameters dict with ollama settings
+
+    Returns:
+        str | None: Extracted topic or None on failure
+    """
+    ollama_config = params.get("ollama", {})
+    model = ollama_config.get("model", "llama3.2:3b")
+    base_url = ollama_config.get("base_url", "http://localhost:11434")
+
+    # Extract body text (skip frontmatter)
+    body = content
+    if content.startswith("---\n"):
+        try:
+            end_idx = content.index("\n---\n", 4)
+            body = content[end_idx + 5 :]
+        except ValueError:
+            pass
+
+    # Build prompt
+    prompt = f"""この会話から主題（トピック）を1つ抽出してください。
+
+会話内容:
+{body[:1000]}
+
+主題を1単語または2単語程度で答えてください（例: AWS, Kubernetes, React Native, Python）。
+抽出できない場合は空文字を返してください。"""
+
+    # Call Ollama API
+    try:
+        response = requests.post(
+            f"{base_url}/api/generate",
+            json={"model": model, "prompt": prompt, "stream": False},
+            timeout=60,
+        )
+        response.raise_for_status()
+        result = response.json()
+        topic = result.get("response", "").strip()
+        return topic if topic else None
+    except Exception as e:
+        logger.warning(f"Failed to extract topic via LLM: {e}")
+        return None
 
 
 def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
@@ -271,6 +362,115 @@ def determine_vault_path(partitioned_input: dict[str, Callable], params: dict) -
         result[key] = item
 
     return result
+
+
+def embed_frontmatter_fields(
+    partitioned_input: dict[str, Callable],
+    params: dict,
+) -> dict[str, str]:
+    """Embed genre, topic, summary into frontmatter content.
+
+    Args:
+        partitioned_input: Items with content, genre, topic, and metadata
+        params: Parameters dict (unused)
+
+    Returns:
+        dict[str, str]: Dict of filename -> markdown content with updated frontmatter
+
+    No file I/O - replaces move_to_vault.
+    Returns dict[filename, markdown_content].
+    """
+    result = {}
+
+    for key, load_func in partitioned_input.items():
+        item = load_func()
+        content = item.get("content", "")
+        genre = item.get("genre", "other")
+        topic = item.get("topic", "")
+        output_filename = item.get("output_filename", "unknown.md")
+
+        # Extract summary from metadata (may be in metadata or generated_metadata)
+        summary = ""
+        if "metadata" in item and "summary" in item["metadata"]:
+            summary = item["metadata"]["summary"]
+        elif "generated_metadata" in item and "summary" in item["generated_metadata"]:
+            summary = item["generated_metadata"]["summary"]
+
+        # Embed fields in frontmatter
+        updated_content = _embed_fields_in_frontmatter(content, genre, topic, summary)
+
+        # Use output_filename without .md extension as key
+        filename_key = output_filename.replace(".md", "")
+        result[filename_key] = updated_content
+
+    return result
+
+
+def _embed_fields_in_frontmatter(
+    content: str,
+    genre: str,
+    topic: str,
+    summary: str,
+) -> str:
+    """Helper to embed fields into frontmatter.
+
+    Args:
+        content: Markdown with YAML frontmatter
+        genre: Genre classification
+        topic: Topic (may be empty)
+        summary: Summary text (may be empty)
+
+    Returns:
+        str: Markdown with updated frontmatter
+    """
+    # Check if content has frontmatter
+    if not content.startswith("---\n"):
+        # No frontmatter, create one
+        fm = {
+            "summary": summary,
+            "genre": genre,
+            "topic": topic,
+        }
+        fm_lines = ["---"]
+        for k, v in fm.items():
+            fm_lines.append(f"{k}: {v}")
+        fm_lines.append("---")
+        return "\n".join(fm_lines) + "\n" + content
+
+    # Find frontmatter boundaries
+    try:
+        end_idx = content.index("\n---\n", 4)
+        frontmatter_text = content[4:end_idx]  # Skip first "---\n"
+        body = content[end_idx + 5 :]  # Skip "\n---\n"
+
+        # Parse YAML
+        frontmatter = yaml.safe_load(frontmatter_text) or {}
+
+        # Add new fields
+        frontmatter["summary"] = summary
+        frontmatter["genre"] = genre
+        frontmatter["topic"] = topic
+
+        # Rebuild content with updated frontmatter
+        # Manual formatting to match expected format (2-space indent for list items)
+        fm_lines = ["---"]
+        for k, v in frontmatter.items():
+            if isinstance(v, list):
+                fm_lines.append(f"{k}:")
+                for list_item in v:
+                    fm_lines.append(f"  - {list_item}")
+            elif isinstance(v, bool):
+                fm_lines.append(f"{k}: {str(v).lower()}")
+            else:
+                fm_lines.append(f"{k}: {v}")
+        fm_lines.append("---")
+
+        return "\n".join(fm_lines) + "\n" + body
+
+    except (ValueError, yaml.YAMLError) as e:
+        logger.warning(f"Failed to parse frontmatter: {e}")
+        # Return original content if parsing fails
+        return content
 
 
 def move_to_vault(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
