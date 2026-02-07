@@ -3,9 +3,9 @@
 Defines hooks, session store, and other Kedro configuration.
 """
 
-from obsidian_etl.hooks import ErrorHandlerHook, LoggingHook
+from obsidian_etl.hooks import ErrorHandlerHook, LoggingHook, PreRunValidationHook
 
-HOOKS = (ErrorHandlerHook(), LoggingHook())
+HOOKS = (PreRunValidationHook(), ErrorHandlerHook(), LoggingHook())
 
 # Disable telemetry
 TELEMETRY_ENABLED = False

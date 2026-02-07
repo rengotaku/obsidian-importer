@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import subprocess
 import tempfile
@@ -10,6 +11,10 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
+
+from obsidian_etl.utils.timing import timed_node
+
+logger = logging.getLogger(__name__)
 
 # GitHub URL pattern for tree view
 GITHUB_URL_PATTERN = re.compile(
@@ -30,6 +35,7 @@ HASHTAG_PATTERN = re.compile(r"(?<!\S)#([a-zA-Z][a-zA-Z0-9_-]*)")
 FRONTMATTER_PATTERN = re.compile(r"^---\n(.+?)\n---\n", re.DOTALL)
 
 
+@timed_node
 def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, callable]:
     """Clone GitHub repository and return Markdown files as PartitionedDataset.
 
@@ -115,6 +121,7 @@ def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, callable]:
     return result
 
 
+@timed_node
 def parse_jekyll(
     partitioned_input: dict[str, callable], existing_output: dict | None = None
 ) -> dict[str, dict]:
@@ -175,6 +182,7 @@ def parse_jekyll(
     return result
 
 
+@timed_node
 def convert_frontmatter(partitioned_input: dict[str, callable]) -> dict[str, dict]:
     """Convert Jekyll frontmatter to Obsidian format.
 

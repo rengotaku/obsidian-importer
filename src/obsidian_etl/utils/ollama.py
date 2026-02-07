@@ -104,7 +104,7 @@ _FENCE_PATTERN = re.compile(
 def parse_markdown_response(response: str) -> tuple[dict, str | None]:
     """Parse markdown response into structured dict.
 
-    Extracts title (H1), summary (## summary), and content (## content) sections.
+    Extracts title (H1), summary (## 要約), tags (## タグ), and content (## 内容) sections.
 
     Args:
         response: LLM markdown response text.
@@ -123,21 +123,22 @@ def parse_markdown_response(response: str) -> tuple[dict, str | None]:
         text = match.group(1).strip()
 
     # Split sections
-    title, summary, summary_content = _split_markdown_sections(text)
+    title, summary, tags, summary_content = _split_markdown_sections(text)
 
-    return {"title": title, "summary": summary, "summary_content": summary_content}, None
+    return {"title": title, "summary": summary, "tags": tags, "summary_content": summary_content}, None
 
 
-def _split_markdown_sections(text: str) -> tuple[str, str, str]:
-    """Split markdown text into title, summary, summary_content.
+def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
+    """Split markdown text into title, summary, tags, summary_content.
 
     Returns:
-        Tuple of (title, summary, summary_content).
+        Tuple of (title, summary, tags, summary_content).
     """
     lines = text.split("\n")
 
     title = ""
     summary = ""
+    tags: list[str] = []
     summary_content = ""
 
     current_section: str | None = None
@@ -147,10 +148,14 @@ def _split_markdown_sections(text: str) -> tuple[str, str, str]:
     has_h1 = False
 
     def _flush_section() -> None:
-        nonlocal title, summary, summary_content
+        nonlocal title, summary, tags, summary_content
         body = "\n".join(section_lines).strip()
         if current_section == "summary":
             summary = body
+        elif current_section == "tags":
+            # Parse comma-separated tags
+            if body:
+                tags = [t.strip() for t in body.split(",") if t.strip()]
         elif current_section == "content":
             summary_content = body
 
@@ -179,10 +184,12 @@ def _split_markdown_sections(text: str) -> tuple[str, str, str]:
                 current_section = "title"
             elif level == 2 and heading_text == "要約":
                 current_section = "summary"
+            elif level == 2 and heading_text == "タグ":
+                current_section = "tags"
             elif level == 2 and heading_text == "内容":
                 current_section = "content"
             else:
-                if current_section in ("summary", "content"):
+                if current_section in ("summary", "tags", "content"):
                     section_lines.append(line)
                 else:
                     current_section = "other_heading"
@@ -193,11 +200,11 @@ def _split_markdown_sections(text: str) -> tuple[str, str, str]:
 
     # Title fallback
     if not has_h1 and first_heading_text:
-        if first_heading_level >= 2 and first_heading_text not in ("要約", "内容"):
+        if first_heading_level >= 2 and first_heading_text not in ("要約", "タグ", "内容"):
             title = first_heading_text
 
     # Plain text fallback
     if not first_heading_text:
         summary = text.strip()
 
-    return title, summary, summary_content
+    return title, summary, tags, summary_content

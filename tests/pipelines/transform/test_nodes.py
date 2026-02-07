@@ -90,6 +90,21 @@ def _make_partitioned_input(items: dict[str, dict]) -> dict[str, callable]:
 class TestExtractKnowledge(unittest.TestCase):
     """extract_knowledge: ParsedItem -> generated_metadata with title, summary, tags."""
 
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            # Remove test-generated files (conv-*, item-*, db-*)
+            for pattern in ["conv-*.json", "item-*.json", "db-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        """Clean up streaming output files after each test."""
+        self.setUp()  # Same cleanup
+
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_extract_knowledge(self, mock_llm_extract):
         """ParsedItem から LLM で title, summary, tags が抽出されること。"""
@@ -186,6 +201,19 @@ class TestExtractKnowledge(unittest.TestCase):
 class TestExtractKnowledgeEnglishSummaryTranslation(unittest.TestCase):
     """extract_knowledge: English summary -> Japanese translation."""
 
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            for pattern in ["conv-*.json", "item-*.json", "db-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        self.setUp()
+
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.translate_summary")
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.is_english_summary")
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
@@ -261,6 +289,19 @@ class TestExtractKnowledgeEnglishSummaryTranslation(unittest.TestCase):
 
 class TestExtractKnowledgeErrorHandling(unittest.TestCase):
     """extract_knowledge: LLM failure -> item excluded, logged."""
+
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            for pattern in ["conv-*.json", "item-*.json", "db-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        self.setUp()
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_extract_knowledge_error_handling(self, mock_llm_extract):
@@ -526,9 +567,9 @@ class TestFormatMarkdown(unittest.TestCase):
 
         markdown = list(result.values())[0]
 
-        # Tags should be in YAML list format
-        self.assertIn("  - Python", markdown)
-        self.assertIn("  - asyncio", markdown)
+        # Tags should be in YAML list format with quoted values
+        self.assertIn('  - "Python"', markdown)
+        self.assertIn('  - "asyncio"', markdown)
 
 
 class TestFormatMarkdownOutputFilename(unittest.TestCase):
@@ -623,6 +664,19 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
 
 class TestIdempotentTransform(unittest.TestCase):
     """extract_knowledge: existing output partitions -> skip items, no LLM call."""
+
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            for pattern in ["conv-*.json", "item-*.json", "db-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        self.setUp()
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_idempotent_transform_skips_existing(self, mock_llm_extract):

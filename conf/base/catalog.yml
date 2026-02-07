@@ -190,8 +190,6 @@ organized_notes:
   path: data/07_model_output/organized
   dataset:
     type: text.TextDataset
-    save_args:
-      encoding: utf-8
   filename_suffix: ".md"
   overwrite: false
   metadata:

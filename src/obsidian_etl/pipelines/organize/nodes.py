@@ -11,15 +11,50 @@ This module implements the organize pipeline nodes:
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from pathlib import Path
 
 import requests
 import yaml
 
+from obsidian_etl.utils.timing import timed_node
+
 logger = logging.getLogger(__name__)
 
 
+def _yaml_quote(value: str) -> str:
+    """Quote a string value for YAML if it contains special characters.
+
+    YAML special characters that need quoting: : # [ ] { } , & * ? | - < > = ! % @ `
+    Also quotes strings that start/end with spaces or contain newlines.
+    """
+    if value is None:
+        return '""'  # Empty quoted string for None
+
+    if not isinstance(value, str):
+        return str(value)
+
+    # Characters that require quoting in YAML
+    special_chars = set(":,[]{}#&*?|-><=!%@`\"'\n")
+
+    needs_quoting = (
+        any(c in value for c in special_chars)
+        or value.startswith(" ")
+        or value.endswith(" ")
+        or value.startswith("-")
+        or value.lower() in ("true", "false", "null", "yes", "no", "on", "off")
+    )
+
+    if needs_quoting:
+        # Escape double quotes and wrap in double quotes
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+
+    return value
+
+
+@timed_node
 def classify_genre(
     partitioned_input: dict[str, Callable],
     params: dict,
@@ -129,6 +164,7 @@ def classify_genre(
     return result
 
 
+@timed_node
 def extract_topic(
     partitioned_input: dict[str, Callable],
     params: dict,
@@ -223,6 +259,7 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
         return None
 
 
+@timed_node
 def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
     """Normalize frontmatter by removing unnecessary fields and ensuring normalized=True.
 
@@ -279,11 +316,11 @@ def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) 
                 if isinstance(v, list):
                     fm_lines.append(f"{k}:")
                     for list_item in v:
-                        fm_lines.append(f"  - {list_item}")
+                        fm_lines.append(f"  - {_yaml_quote(list_item)}")
                 elif isinstance(v, bool):
                     fm_lines.append(f"{k}: {str(v).lower()}")
                 else:
-                    fm_lines.append(f"{k}: {v}")
+                    fm_lines.append(f"{k}: {_yaml_quote(v)}")
             fm_lines.append("---")
 
             normalized_content = "\n".join(fm_lines) + "\n" + body
@@ -297,6 +334,7 @@ def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) 
     return result
 
 
+@timed_node
 def clean_content(partitioned_input: dict[str, Callable]) -> dict[str, dict]:
     """Clean content by removing excess blank lines and trailing whitespace.
 
@@ -374,6 +412,7 @@ def _clean_text(text: str) -> str:
     return "\n".join(cleaned_lines)
 
 
+@timed_node
 def determine_vault_path(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
     """Determine vault path based on genre.
 
@@ -410,6 +449,7 @@ def determine_vault_path(partitioned_input: dict[str, Callable], params: dict) -
     return result
 
 
+@timed_node
 def embed_frontmatter_fields(
     partitioned_input: dict[str, Callable],
     params: dict,
@@ -482,7 +522,7 @@ def _embed_fields_in_frontmatter(
         }
         fm_lines = ["---"]
         for k, v in fm.items():
-            fm_lines.append(f"{k}: {v}")
+            fm_lines.append(f"{k}: {_yaml_quote(v)}")
         fm_lines.append("---")
         return "\n".join(fm_lines) + "\n" + content
 
@@ -507,11 +547,11 @@ def _embed_fields_in_frontmatter(
             if isinstance(v, list):
                 fm_lines.append(f"{k}:")
                 for list_item in v:
-                    fm_lines.append(f"  - {list_item}")
+                    fm_lines.append(f"  - {_yaml_quote(list_item)}")
             elif isinstance(v, bool):
                 fm_lines.append(f"{k}: {str(v).lower()}")
             else:
-                fm_lines.append(f"{k}: {v}")
+                fm_lines.append(f"{k}: {_yaml_quote(v)}")
         fm_lines.append("---")
 
         return "\n".join(fm_lines) + "\n" + body
@@ -522,6 +562,7 @@ def _embed_fields_in_frontmatter(
         return content
 
 
+@timed_node
 def move_to_vault(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
     """Write files to vault directories.
 

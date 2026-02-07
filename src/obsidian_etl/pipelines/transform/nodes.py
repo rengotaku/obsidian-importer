@@ -6,20 +6,30 @@ to ParsedItem data from the Extract pipeline.
 Node Signatures (PartitionedDataset pattern):
 - Input: dict[str, Callable] - each Callable returns an item dict
 - Output: dict[str, dict] - partition_id -> transformed item
+
+Streaming Output:
+- extract_knowledge writes each item immediately after LLM processing
+- This ensures partial progress is saved even if the node fails midway
+- Kedro's PartitionedDataset with overwrite=false handles deduplication
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import re
+import time
 from collections.abc import Callable
 from datetime import datetime
-
-import yaml
+from pathlib import Path
 
 from obsidian_etl.utils import knowledge_extractor
+from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
+
+# Streaming output directory (relative to project root)
+STREAMING_OUTPUT_DIR = Path("data/03_primary/transformed_knowledge")
 
 
 def extract_knowledge(
@@ -35,6 +45,9 @@ def extract_knowledge(
     - Summary content (detailed Markdown)
     - Tags (optional)
 
+    STREAMING: Each successfully processed item is immediately saved to disk.
+    This ensures partial progress is preserved even if the node fails midway.
+
     Args:
         partitioned_input: Dict of partition_id -> callable that loads ParsedItem.
         params: Pipeline params including ollama settings.
@@ -49,15 +62,44 @@ def extract_knowledge(
     if existing_output is None:
         existing_output = {}
 
+    node_start = time.time()
     output = {}
+    processed = 0
+    skipped = 0
+    failed = 0
 
+    # Ensure streaming output directory exists
+    output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    total = len(partitioned_input)
+
+    # Pre-calculate items to process (for accurate progress display)
+    to_process = []
+    skipped_existing = 0
+    skipped_file = 0
     for partition_id, load_func in partitioned_input.items():
-        # Skip if this partition already exists in output
         if partition_id in existing_output:
-            logger.debug(f"Skipping existing partition (no LLM call): {partition_id}")
-            continue
+            skipped += 1
+            skipped_existing += 1
+        elif (output_dir / f"{partition_id}.json").exists():
+            skipped += 1
+            skipped_file += 1
+        else:
+            to_process.append((partition_id, load_func))
 
+    remaining = len(to_process)
+    logger.info(
+        f"extract_knowledge: total={total}, skipped={skipped} "
+        f"(existing={skipped_existing}, file={skipped_file}), to_process={remaining}"
+    )
+
+    for partition_id, load_func in to_process:
         item = load_func()
+        processed += 1
+        start_time = time.time()
+
+        logger.info(f"[{processed}/{remaining}] Processing: {partition_id}")
 
         # Extract knowledge via LLM
         knowledge, error = knowledge_extractor.extract_knowledge(
@@ -70,6 +112,7 @@ def extract_knowledge(
 
         if error or not knowledge:
             logger.warning(f"LLM extraction failed for {partition_id}: {error}. Item excluded.")
+            failed += 1
             continue
 
         # Check if summary is in English and translate if needed
@@ -92,16 +135,25 @@ def extract_knowledge(
             "tags": knowledge.get("tags", []),
         }
 
+        # STREAMING: Save immediately to disk
+        streaming_file = output_dir / f"{partition_id}.json"
+        streaming_file.write_text(json.dumps(item, ensure_ascii=False, indent=2))
+        elapsed = time.time() - start_time
+        logger.info(f"[{processed}/{remaining}] Done: {partition_id} ({elapsed:.1f}s)")
+
         output[partition_id] = item
 
+    node_elapsed = time.time() - node_start
     logger.info(
-        f"extract_knowledge: processed {len(partitioned_input)} items, "
-        f"{len(output)} succeeded, {len(partitioned_input) - len(output)} failed"
+        f"extract_knowledge: total={total}, skipped={skipped} "
+        f"(existing={skipped_existing}, file={skipped_file}), "
+        f"processed={processed}, succeeded={len(output)}, failed={failed} ({node_elapsed:.1f}s)"
     )
 
     return output
 
 
+@timed_node
 def generate_metadata(
     partitioned_input: dict[str, Callable],
     params: dict,
@@ -112,6 +164,7 @@ def generate_metadata(
     - title: from generated_metadata.title
     - created: YYYY-MM-DD from created_at (fallback to current date)
     - tags: from generated_metadata.tags
+    - summary: from generated_metadata.summary (for frontmatter)
     - source_provider: preserved from ParsedItem
     - file_id: preserved from ParsedItem
     - normalized: always True
@@ -151,6 +204,7 @@ def generate_metadata(
             "title": gm.get("title", ""),
             "created": created_date,
             "tags": gm.get("tags", []),
+            "summary": gm.get("summary", ""),
             "source_provider": item["source_provider"],
             "file_id": item["file_id"],
             "normalized": True,
@@ -163,13 +217,14 @@ def generate_metadata(
     return output
 
 
+@timed_node
 def format_markdown(
     partitioned_input: dict[str, Callable],
 ) -> dict[str, dict]:
     """Format items as Markdown with YAML frontmatter.
 
     Creates final Markdown output:
-    - YAML frontmatter from metadata
+    - YAML frontmatter from metadata (including summary)
     - Body from generated_metadata.summary_content
     - Output filename from sanitized title
 
@@ -189,13 +244,36 @@ def format_markdown(
 
         # Generate YAML frontmatter
         # Note: We manually format tags to ensure proper indentation
+        # Quote all tags to safely handle numeric values (e.g., "8080") as strings
         tags = metadata.get("tags", [])
-        tags_yaml = "tags:\n" + "\n".join(f"  - {tag}" for tag in tags) if tags else "tags: []"
+
+        def _escape_tag(tag: str) -> str:
+            """Escape tag for YAML double-quoted string."""
+            return str(tag).replace("\\", "\\\\").replace('"', '\\"')
+
+        tags_yaml = (
+            "tags:\n" + "\n".join(f'  - "{_escape_tag(tag)}"' for tag in tags)
+            if tags
+            else "tags: []"
+        )
+
+        # Escape title for YAML (special chars like : # [ ] { } need quoting)
+        title = metadata.get("title", "").replace('"', '\\"')
+
+        # Get summary for frontmatter (may be empty)
+        summary = metadata.get("summary", "")
+        # Always quote summary to safely handle special chars (`, :, #, etc.)
+        if summary:
+            summary_escaped = summary.replace("\\", "\\\\").replace('"', '\\"')
+            summary_yaml = f'summary: "{summary_escaped}"'
+        else:
+            summary_yaml = "summary:"
 
         frontmatter_parts = [
-            f"title: {metadata.get('title', '')}",
+            f'title: "{title}"',
             f"created: {metadata.get('created', '')}",
             tags_yaml,
+            summary_yaml,
             f"source_provider: {metadata.get('source_provider', '')}",
             f"file_id: {metadata.get('file_id', '')}",
             f"normalized: {str(metadata.get('normalized', True)).lower()}",
@@ -203,10 +281,8 @@ def format_markdown(
 
         frontmatter_yaml = "\n".join(frontmatter_parts) + "\n"
 
-        # Build body (summary + summary_content)
+        # Build body (only summary_content now, summary is in frontmatter)
         body_parts = []
-        if gm.get("summary"):
-            body_parts.append(f"## 要約\n\n{gm['summary']}")
         if gm.get("summary_content"):
             body_parts.append(gm["summary_content"])
 

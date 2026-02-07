@@ -10,12 +10,14 @@ from datetime import UTC, datetime
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
 from obsidian_etl.utils.file_id import generate_file_id
+from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
 
 MIN_MESSAGES = 3  # Minimum messages required for a valid conversation
 
 
+@timed_node
 def parse_chatgpt_zip(
     partitioned_input: dict[str, callable],
     params: dict | None = None,

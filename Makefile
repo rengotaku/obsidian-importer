@@ -11,7 +11,7 @@ COMMA := ,
 .PHONY: help setup setup-dev test coverage check lint clean
 .PHONY: rag-index rag-search rag-ask rag-status
 .PHONY: test-e2e test-e2e-update-golden test-clean
-.PHONY: kedro-run kedro-test kedro-viz
+.PHONY: run kedro-run kedro-test kedro-viz
 
 # ═══════════════════════════════════════════════════════════
 # Help
@@ -27,9 +27,9 @@ help:
 	@echo "  setup-dev      開発用依存関係インストール (ruff, coverage)"
 	@echo ""
 	@echo "Kedro Pipeline:"
-	@echo "  kedro-run      Kedro パイプライン実行"
+	@echo "  run            パイプライン実行 (= kedro-run)"
 	@echo "                 [PIPELINE=import_claude|import_openai|import_github]"
-	@echo "                 [PARAMS='...'] [FROM_NODES=...] [TO_NODES=...]"
+	@echo "                 [LIMIT=N] [FROM_NODES=...] [TO_NODES=...]"
 	@echo "  kedro-test     Kedro テスト実行"
 	@echo "  kedro-viz      DAG 可視化"
 	@echo "  test-e2e       E2Eテスト（ゴールデンファイル比較、閾値80%）"
@@ -51,9 +51,10 @@ help:
 	@echo ""
 	@echo "Examples:"
 	@echo "  make setup                                              # 初回セットアップ"
-	@echo "  make kedro-run PIPELINE=import_claude                   # Claude インポート"
-	@echo "  make kedro-run PIPELINE=import_openai                   # ChatGPT インポート"
-	@echo "  make kedro-run PIPELINE=import_github                   # GitHub Jekyll インポート"
+	@echo "  make run                                                # Claude インポート (デフォルト)"
+	@echo "  make run LIMIT=10                                       # 10件のみ処理"
+	@echo "  make run PIPELINE=import_openai                         # ChatGPT インポート"
+	@echo "  make run PIPELINE=import_github GITHUB_URL=\"...\"        # GitHub Jekyll インポート"
 	@echo "  make kedro-test                                         # Kedro テスト実行"
 	@echo "  make kedro-viz                                          # DAG 可視化"
 	@echo "  make test                                               # 全テスト実行"
@@ -93,11 +94,22 @@ setup-dev: setup
 # Kedro Pipeline Commands
 # ═══════════════════════════════════════════════════════════
 
-# Kedro パイプライン実行
+# Kedro パイプライン実行（エイリアス: make run）
+# Usage:
+#   make run                              # デフォルト (Claude インポート)
+#   make run PIPELINE=import_openai       # ChatGPT インポート
+#   make run PIPELINE=import_github GITHUB_URL="..."  # GitHub Jekyll インポート
+#   make run LIMIT=10                     # 処理件数制限
+#
+# 前提条件チェック（Ollama起動、入力ファイル存在）は Python hooks で実行
+run: kedro-run
+
 kedro-run:
 	@cd $(BASE_DIR) && $(PYTHON) -m kedro run \
 		$(if $(PIPELINE),--pipeline $(PIPELINE),) \
-		$(if $(PARAMS),--params '$(PARAMS)',) \
+		$(if $(GITHUB_URL),--params github_url=$(GITHUB_URL),) \
+		$(if $(LIMIT),--params import.limit=$(LIMIT),) \
+		$(if $(PARAMS),--params $(PARAMS),) \
 		$(if $(FROM_NODES),--from-nodes $(FROM_NODES),) \
 		$(if $(TO_NODES),--to-nodes $(TO_NODES),)
 
