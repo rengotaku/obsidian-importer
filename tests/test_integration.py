@@ -145,11 +145,22 @@ class TestE2EClaudeImport(unittest.TestCase):
         self.runner = SequentialRunner()
         self.tmp_dir = tempfile.mkdtemp()
 
+        # Patch STREAMING_OUTPUT_DIR to use temp directory (avoid collision with real data)
+        self.streaming_patcher = patch(
+            "obsidian_etl.pipelines.transform.nodes.STREAMING_OUTPUT_DIR",
+            Path(self.tmp_dir) / "streaming",
+        )
+        self.streaming_patcher.start()
+
         # Create test conversations (raw input)
         self.conversations = [
             _make_claude_conversation(uuid="conv-001", name="asyncio 解説"),
             _make_claude_conversation(uuid="conv-002", name="Django REST framework"),
         ]
+
+    def tearDown(self):
+        """Clean up patchers."""
+        self.streaming_patcher.stop()
 
     def _build_catalog(self) -> DataCatalog:
         """Build a test DataCatalog with MemoryDatasets."""
@@ -310,12 +321,23 @@ class TestResumeAfterFailure(unittest.TestCase):
         self.runner = SequentialRunner()
         self.tmp_dir = tempfile.mkdtemp()
 
+        # Patch STREAMING_OUTPUT_DIR to use temp directory
+        self.streaming_patcher = patch(
+            "obsidian_etl.pipelines.transform.nodes.STREAMING_OUTPUT_DIR",
+            Path(self.tmp_dir) / "streaming",
+        )
+        self.streaming_patcher.start()
+
         # Create 3 conversations
         self.conversations = [
             _make_claude_conversation(uuid="conv-resume-001", name="asyncio 解説"),
             _make_claude_conversation(uuid="conv-resume-002", name="Django REST"),
             _make_claude_conversation(uuid="conv-resume-003", name="Flask チュートリアル"),
         ]
+
+    def tearDown(self):
+        """Clean up patchers."""
+        self.streaming_patcher.stop()
 
     def _build_catalog(self) -> DataCatalog:
         """Build a test DataCatalog with PartitionedMemoryDatasets."""
@@ -538,6 +560,17 @@ class TestPartialRunFromTo(unittest.TestCase):
         self.pipelines = register_pipelines()
         self.runner = SequentialRunner()
         self.tmp_dir = tempfile.mkdtemp()
+
+        # Patch STREAMING_OUTPUT_DIR to use temp directory
+        self.streaming_patcher = patch(
+            "obsidian_etl.pipelines.transform.nodes.STREAMING_OUTPUT_DIR",
+            Path(self.tmp_dir) / "streaming",
+        )
+        self.streaming_patcher.start()
+
+    def tearDown(self):
+        """Clean up patchers."""
+        self.streaming_patcher.stop()
 
     def _build_catalog_with_intermediate_data(self) -> DataCatalog:
         """Build a test DataCatalog pre-populated with parsed_items (Extract output).
@@ -806,11 +839,22 @@ class TestE2EOpenAIImport(unittest.TestCase):
         self.runner = SequentialRunner()
         self.tmp_dir = tempfile.mkdtemp()
 
+        # Patch STREAMING_OUTPUT_DIR to use temp directory
+        self.streaming_patcher = patch(
+            "obsidian_etl.pipelines.transform.nodes.STREAMING_OUTPUT_DIR",
+            Path(self.tmp_dir) / "streaming",
+        )
+        self.streaming_patcher.start()
+
         # Create test OpenAI conversations
         self.conversations = [
             _make_openai_conversation(conv_id="openai-conv-001", title="asyncio 解説"),
             _make_openai_conversation(conv_id="openai-conv-002", title="Django REST framework"),
         ]
+
+    def tearDown(self):
+        """Clean up patchers."""
+        self.streaming_patcher.stop()
 
     def _build_catalog(self) -> DataCatalog:
         """Build a test DataCatalog with MemoryDatasets for OpenAI pipeline."""
