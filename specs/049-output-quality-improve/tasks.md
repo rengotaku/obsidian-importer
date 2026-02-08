@@ -54,15 +54,15 @@
 
 ### 入力
 
-- [ ] T008 Read previous phase output: specs/049-output-quality-improve/tasks/ph1-output.md
+- [x] T008 Read previous phase output: specs/049-output-quality-improve/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T009 [P] [US1] Add test_extract_knowledge_skips_empty_content in tests/pipelines/transform/test_nodes.py
-- [ ] T010 [P] [US1] Add test_extract_knowledge_skips_whitespace_only_content in tests/pipelines/transform/test_nodes.py
-- [ ] T011 [P] [US1] Add test_extract_knowledge_logs_skip_count in tests/pipelines/transform/test_nodes.py
-- [ ] T012 Verify `make test` FAIL (RED)
-- [ ] T013 Generate RED output: specs/049-output-quality-improve/red-tests/ph2-test.md
+- [x] T009 [P] [US1] Add test_extract_knowledge_skips_empty_content in tests/pipelines/transform/test_nodes.py
+- [x] T010 [P] [US1] Add test_extract_knowledge_skips_whitespace_only_content in tests/pipelines/transform/test_nodes.py
+- [x] T011 [P] [US1] Add test_extract_knowledge_logs_skip_count in tests/pipelines/transform/test_nodes.py
+- [x] T012 Verify `make test` FAIL (RED)
+- [x] T013 Generate RED output: specs/049-output-quality-improve/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
