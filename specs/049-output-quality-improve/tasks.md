@@ -102,11 +102,11 @@
 
 ### 実装 (GREEN)
 
-- [ ] T028 Read RED tests: specs/049-output-quality-improve/red-tests/ph3-test.md
-- [ ] T029 [US2] Add EMOJI_PATTERN constant at module level in src/obsidian_etl/pipelines/transform/nodes.py
-- [ ] T030 [US2] Extend _sanitize_filename to remove emojis using EMOJI_PATTERN
-- [ ] T031 [US2] Extend _sanitize_filename unsafe_chars to include []()~%
-- [ ] T032 Verify `make test` PASS (GREEN)
+- [X] T028 Read RED tests: specs/049-output-quality-improve/red-tests/ph3-test.md
+- [X] T029 [US2] Add EMOJI_PATTERN constant at module level in src/obsidian_etl/pipelines/transform/nodes.py
+- [X] T030 [US2] Extend _sanitize_filename to remove emojis using EMOJI_PATTERN
+- [X] T031 [US2] Extend _sanitize_filename unsafe_chars to include []()~%
+- [X] T032 Verify `make test` PASS (GREEN)
 
 ### 検証
 

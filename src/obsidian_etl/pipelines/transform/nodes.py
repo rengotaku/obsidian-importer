@@ -28,6 +28,22 @@ from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
 
+# Emoji ranges from Unicode 15.1
+EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001f600-\U0001f64f"  # Emoticons
+    "\U0001f300-\U0001f5ff"  # Misc Symbols and Pictographs
+    "\U0001f680-\U0001f6ff"  # Transport and Map
+    "\U0001f1e0-\U0001f1ff"  # Flags
+    "\U00002702-\U000027b0"  # Dingbats
+    "\U0001f900-\U0001f9ff"  # Supplemental Symbols
+    "\U0001fa00-\U0001fa6f"  # Chess Symbols
+    "\U0001fa70-\U0001faff"  # Symbols and Pictographs Extended-A
+    "\U00002600-\U000026ff"  # Misc symbols
+    "]+",
+    flags=re.UNICODE,
+)
+
 # Streaming output directory (relative to project root)
 STREAMING_OUTPUT_DIR = Path("data/03_primary/transformed_knowledge")
 
@@ -336,19 +352,22 @@ def _sanitize_filename(title: str, file_id: str) -> str:
         # Fallback to file_id
         return file_id[:12]
 
-    # Remove unsafe characters
-    unsafe_chars = r'[/\\:*?"<>|]'
-    sanitized = re.sub(unsafe_chars, "", title)
+    # 1. Remove emojis first
+    sanitized = EMOJI_PATTERN.sub("", title)
 
-    # Collapse multiple spaces
+    # 2. Remove unsafe characters (extended to include []()~%)
+    unsafe_chars = r'[/\\:*?"<>|\[\]()~%]'
+    sanitized = re.sub(unsafe_chars, "", sanitized)
+
+    # 3. Collapse multiple spaces
     sanitized = re.sub(r"\s+", " ", sanitized).strip()
 
-    # Truncate to prevent filesystem limits (255 chars including extension)
+    # 4. Truncate to prevent filesystem limits (255 chars including extension)
     max_length = 250
     if len(sanitized) > max_length:
         sanitized = sanitized[:max_length].strip()
 
-    # Ensure non-empty after sanitization
+    # 5. Fallback to file_id if empty after sanitization
     if not sanitized:
         return file_id[:12]
 
