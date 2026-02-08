@@ -912,5 +912,111 @@ class TestExtractKnowledgeEmptyContent(unittest.TestCase):
         self.assertIn("skipped_empty=2", log_messages)
 
 
+# ============================================================
+# Title sanitization tests (Phase 3 - US2)
+# ============================================================
+
+
+class TestSanitizeFilename(unittest.TestCase):
+    """_sanitize_filename: title sanitization for filenames.
+
+    Tests for User Story 2 - タイトルサニタイズ
+    タイトルから絵文字、ブラケット、ファイルパス記号を除去する。
+    """
+
+    def test_sanitize_filename_removes_emoji(self):
+        """タイトルから絵文字が除去されること。
+
+        FR-003: システムはタイトルから絵文字を除去しなければならない
+
+        Input: "🚀 Python入門 📚"
+        Expected: "Python入門" (emoji removed, spaces normalized)
+        """
+        from obsidian_etl.pipelines.transform.nodes import _sanitize_filename
+
+        title = "🚀 Python入門 📚"
+        file_id = "abc123def456"
+
+        result = _sanitize_filename(title, file_id)
+
+        # Emoji should be removed
+        self.assertNotIn("🚀", result)
+        self.assertNotIn("📚", result)
+        # Content should be preserved
+        self.assertIn("Python入門", result)
+        # Spaces should be normalized (no leading/trailing/multiple spaces)
+        self.assertEqual(result.strip(), result)
+        self.assertNotIn("  ", result)
+
+    def test_sanitize_filename_removes_brackets(self):
+        """タイトルからブラケット記号が除去されること。
+
+        FR-004: システムはタイトルからブラケット記号（`[]`, `()`）を除去しなければならない
+
+        Input: "React [入門] (2026)"
+        Expected: "React 入門 2026" (brackets removed)
+        """
+        from obsidian_etl.pipelines.transform.nodes import _sanitize_filename
+
+        title = "React [入門] (2026)"
+        file_id = "abc123def456"
+
+        result = _sanitize_filename(title, file_id)
+
+        # Brackets should be removed
+        self.assertNotIn("[", result)
+        self.assertNotIn("]", result)
+        self.assertNotIn("(", result)
+        self.assertNotIn(")", result)
+        # Content should be preserved
+        self.assertIn("React", result)
+        self.assertIn("入門", result)
+        self.assertIn("2026", result)
+
+    def test_sanitize_filename_removes_tilde_percent(self):
+        """タイトルからチルダとパーセント記号が除去されること。
+
+        FR-005: システムはタイトルからファイルパス記号（`~`, `%`）を除去しなければならない
+
+        Input: "~/home/100% Complete"
+        Expected: "home100 Complete" (tilde, slash, and percent removed)
+        """
+        from obsidian_etl.pipelines.transform.nodes import _sanitize_filename
+
+        title = "~/home/100% Complete"
+        file_id = "abc123def456"
+
+        result = _sanitize_filename(title, file_id)
+
+        # Tilde and percent should be removed
+        self.assertNotIn("~", result)
+        self.assertNotIn("%", result)
+        # Slash should also be removed (existing behavior)
+        self.assertNotIn("/", result)
+        # Content should be preserved
+        self.assertIn("home", result)
+        self.assertIn("100", result)
+        self.assertIn("Complete", result)
+
+    def test_sanitize_filename_fallback_to_file_id(self):
+        """サニタイズ後にタイトルが空になる場合、file_id[:12] がフォールバックとして使用されること。
+
+        FR-006: システムはサニタイズ後に空になったタイトルに対して file_id ベースの代替タイトルを生成しなければならない
+
+        Input: "🚀🚀🚀" (only emoji)
+        Expected: file_id[:12] as fallback
+        """
+        from obsidian_etl.pipelines.transform.nodes import _sanitize_filename
+
+        title = "🚀🚀🚀"  # Only emoji - should become empty after sanitization
+        file_id = "abc123def456789"
+
+        result = _sanitize_filename(title, file_id)
+
+        # When title becomes empty, should fallback to file_id[:12]
+        self.assertEqual(result, file_id[:12])
+        self.assertEqual(result, "abc123def456")
+
+
 if __name__ == "__main__":
     unittest.main()

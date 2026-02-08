@@ -89,16 +89,16 @@
 
 ### 入力
 
-- [ ] T021 Read previous phase output: specs/049-output-quality-improve/tasks/ph2-output.md
+- [x] T021 Read previous phase output: specs/049-output-quality-improve/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T022 [P] [US2] Add test_sanitize_filename_removes_emoji in tests/pipelines/transform/test_nodes.py
-- [ ] T023 [P] [US2] Add test_sanitize_filename_removes_brackets in tests/pipelines/transform/test_nodes.py
-- [ ] T024 [P] [US2] Add test_sanitize_filename_removes_tilde_percent in tests/pipelines/transform/test_nodes.py
-- [ ] T025 [P] [US2] Add test_sanitize_filename_fallback_to_file_id in tests/pipelines/transform/test_nodes.py
-- [ ] T026 Verify `make test` FAIL (RED)
-- [ ] T027 Generate RED output: specs/049-output-quality-improve/red-tests/ph3-test.md
+- [x] T022 [P] [US2] Add test_sanitize_filename_removes_emoji in tests/pipelines/transform/test_nodes.py
+- [x] T023 [P] [US2] Add test_sanitize_filename_removes_brackets in tests/pipelines/transform/test_nodes.py
+- [x] T024 [P] [US2] Add test_sanitize_filename_removes_tilde_percent in tests/pipelines/transform/test_nodes.py
+- [x] T025 [P] [US2] Add test_sanitize_filename_fallback_to_file_id in tests/pipelines/transform/test_nodes.py
+- [x] T026 Verify `make test` FAIL (RED)
+- [x] T027 Generate RED output: specs/049-output-quality-improve/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 
