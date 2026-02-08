@@ -32,6 +32,13 @@ logger = logging.getLogger(__name__)
 STREAMING_OUTPUT_DIR = Path("data/03_primary/transformed_knowledge")
 
 
+def _is_empty_content(content: str | None) -> bool:
+    """Return True if content is empty or whitespace-only."""
+    if content is None:
+        return True
+    return not content.strip()
+
+
 def extract_knowledge(
     partitioned_input: dict[str, Callable],
     params: dict,
@@ -67,6 +74,7 @@ def extract_knowledge(
     processed = 0
     skipped = 0
     failed = 0
+    skipped_empty = 0
 
     # Ensure streaming output directory exists
     output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
@@ -115,6 +123,13 @@ def extract_knowledge(
             failed += 1
             continue
 
+        # Check for empty summary_content
+        summary_content = knowledge.get("summary_content", "")
+        if _is_empty_content(summary_content):
+            logger.warning(f"Empty summary_content for {partition_id}. Item excluded.")
+            skipped_empty += 1
+            continue
+
         # Check if summary is in English and translate if needed
         summary = knowledge.get("summary", "")
         if knowledge_extractor.is_english_summary(summary):
@@ -147,7 +162,8 @@ def extract_knowledge(
     logger.info(
         f"extract_knowledge: total={total}, skipped={skipped} "
         f"(existing={skipped_existing}, file={skipped_file}), "
-        f"processed={processed}, succeeded={len(output)}, failed={failed} ({node_elapsed:.1f}s)"
+        f"processed={processed}, succeeded={len(output)}, failed={failed}, "
+        f"skipped_empty={skipped_empty} ({node_elapsed:.1f}s)"
     )
 
     return output

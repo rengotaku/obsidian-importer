@@ -66,11 +66,11 @@
 
 ### 実装 (GREEN)
 
-- [ ] T014 Read RED tests: specs/049-output-quality-improve/red-tests/ph2-test.md
-- [ ] T015 [US1] Add empty content check in extract_knowledge function at src/obsidian_etl/pipelines/transform/nodes.py:113-116
-- [ ] T016 [US1] Add skipped_empty counter and log message in extract_knowledge
-- [ ] T017 [US1] Update summary log to include skipped_empty count
-- [ ] T018 Verify `make test` PASS (GREEN)
+- [X] T014 Read RED tests: specs/049-output-quality-improve/red-tests/ph2-test.md
+- [X] T015 [US1] Add empty content check in extract_knowledge function at src/obsidian_etl/pipelines/transform/nodes.py:113-116
+- [X] T016 [US1] Add skipped_empty counter and log message in extract_knowledge
+- [X] T017 [US1] Update summary log to include skipped_empty count
+- [X] T018 Verify `make test` PASS (GREEN)
 
 ### 検証
 
