@@ -184,10 +184,10 @@
 
 ### 実装 (GREEN)
 
-- [ ] T050 Read RED tests: specs/049-output-quality-improve/red-tests/ph6-test.md
-- [ ] T051 [US5] Add summary length check after LLM extraction in src/obsidian_etl/pipelines/transform/nodes.py
-- [ ] T052 [US5] Add warning log when summary exceeds 500 characters
-- [ ] T053 Verify `make test` PASS (GREEN)
+- [X] T050 Read RED tests: specs/049-output-quality-improve/red-tests/ph6-test.md
+- [X] T051 [US5] Add summary length check after LLM extraction in src/obsidian_etl/pipelines/transform/nodes.py
+- [X] T052 [US5] Add warning log when summary exceeds 500 characters
+- [X] T053 Verify `make test` PASS (GREEN)
 
 ### 検証
 

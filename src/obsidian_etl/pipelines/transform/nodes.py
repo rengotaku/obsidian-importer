@@ -157,6 +157,11 @@ def extract_knowledge(
                 )
             else:
                 knowledge["summary"] = translated
+                summary = translated  # Update summary reference for length check
+
+        # Check summary length and warn if too long
+        if len(summary) > 500:
+            logger.warning(f"Long summary ({len(summary)} chars) for {partition_id}")
 
         # Add generated_metadata to item
         item["generated_metadata"] = {
