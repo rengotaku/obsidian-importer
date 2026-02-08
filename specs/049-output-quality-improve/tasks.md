@@ -204,19 +204,19 @@
 
 ### 入力
 
-- [ ] T056 Read previous phase output: specs/049-output-quality-improve/tasks/ph6-output.md
+- [X] T056 Read previous phase output: specs/049-output-quality-improve/tasks/ph6-output.md
 
 ### 実装
 
-- [ ] T057 Run E2E test with `make test-e2e`
-- [ ] T058 Update golden files if needed with `make test-e2e-update-golden`
-- [ ] T059 Verify backward compatibility (FR-010) - no existing functionality broken
+- [X] T057 Run E2E test with `make test-e2e`
+- [X] T058 Update golden files if needed with `make test-e2e-update-golden`
+- [X] T059 Verify backward compatibility (FR-010) - no existing functionality broken
 
 ### 検証
 
-- [ ] T060 Run `make test` to verify all tests pass
-- [ ] T061 Run `make coverage` to verify coverage ≥80%
-- [ ] T062 Generate phase output: specs/049-output-quality-improve/tasks/ph7-output.md
+- [X] T060 Run `make test` to verify all tests pass
+- [X] T061 Run `make coverage` to verify coverage ≥80%
+- [X] T062 Generate phase output: specs/049-output-quality-improve/tasks/ph7-output.md
 
 ---
 

@@ -45,7 +45,12 @@ EMOJI_PATTERN = re.compile(
 )
 
 # Streaming output directory (relative to project root)
-STREAMING_OUTPUT_DIR = Path("data/03_primary/transformed_knowledge")
+# Respects KEDRO_ENV=test for test environment
+import os
+
+_env = os.getenv("KEDRO_ENV", "base")
+_data_prefix = "data/test" if _env == "test" else "data"
+STREAMING_OUTPUT_DIR = Path(f"{_data_prefix}/03_primary/transformed_knowledge")
 
 
 def _is_empty_content(content: str | None) -> bool:

@@ -156,7 +156,7 @@ test-e2e: test-clean
 	@echo "  ✅ Test data ready"
 	@echo ""
 	@echo "[3/5] Running full pipeline..."
-	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test
+	@cd $(BASE_DIR) && KEDRO_ENV=test $(PYTHON) -m kedro run --env=test
 	@echo ""
 	@echo "[4/5] Comparing with golden files..."
 	@test -d tests/fixtures/golden && test $$(ls -1 tests/fixtures/golden/*.md 2>/dev/null | wc -l) -gt 0 \
@@ -202,7 +202,7 @@ test-e2e-update-golden:
 	@echo "  ✅ Test data ready"
 	@echo ""
 	@echo "[3/5] Running full pipeline (including Organize)..."
-	@cd $(BASE_DIR) && $(PYTHON) -m kedro run --env=test
+	@cd $(BASE_DIR) && KEDRO_ENV=test $(PYTHON) -m kedro run --env=test
 	@echo ""
 	@echo "[4/5] Copying output to golden directory..."
 	@rm -rf tests/fixtures/golden
