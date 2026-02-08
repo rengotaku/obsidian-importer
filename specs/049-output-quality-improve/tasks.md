@@ -125,17 +125,17 @@
 
 ### 入力
 
-- [ ] T035 Read previous phase output: specs/049-output-quality-improve/tasks/ph3-output.md
+- [x] T035 Read previous phase output: specs/049-output-quality-improve/tasks/ph3-output.md
 
 ### 実装（プロンプト改善のみ、TDD 対象外）
 
-- [ ] T036 [US3] Add placeholder prohibition rules to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
-- [ ] T037 [US3] Add specific examples of prohibited placeholders: (省略), [トピック名], ...
+- [x] T036 [US3] Add placeholder prohibition rules to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
+- [x] T037 [US3] Add specific examples of prohibited placeholders: (省略), [トピック名], ...
 
 ### 検証
 
-- [ ] T038 Verify `make test` passes all tests (no regressions from prompt change)
-- [ ] T039 Generate phase output: specs/049-output-quality-improve/tasks/ph4-output.md
+- [x] T038 Verify `make test` passes all tests (no regressions from prompt change)
+- [x] T039 Generate phase output: specs/049-output-quality-improve/tasks/ph4-output.md
 
 **Checkpoint**: プロンプトが改善され、プレースホルダーが禁止された
 
