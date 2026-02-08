@@ -173,14 +173,14 @@
 
 ### 入力
 
-- [ ] T045 Read previous phase output: specs/049-output-quality-improve/tasks/ph5-output.md
+- [x] T045 Read previous phase output: specs/049-output-quality-improve/tasks/ph5-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T046 [P] [US5] Add test_extract_knowledge_warns_long_summary in tests/pipelines/transform/test_nodes.py
-- [ ] T047 [P] [US5] Add test_extract_knowledge_no_warning_for_short_summary in tests/pipelines/transform/test_nodes.py
-- [ ] T048 Verify `make test` FAIL (RED)
-- [ ] T049 Generate RED output: specs/049-output-quality-improve/red-tests/ph6-test.md
+- [x] T046 [P] [US5] Add test_extract_knowledge_warns_long_summary in tests/pipelines/transform/test_nodes.py
+- [x] T047 [P] [US5] Add test_extract_knowledge_no_warning_for_short_summary in tests/pipelines/transform/test_nodes.py
+- [x] T048 Verify `make test` FAIL (RED)
+- [x] T049 Generate RED output: specs/049-output-quality-improve/red-tests/ph6-test.md
 
 ### 実装 (GREEN)
 

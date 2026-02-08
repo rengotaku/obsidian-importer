@@ -1018,5 +1018,109 @@ class TestSanitizeFilename(unittest.TestCase):
         self.assertEqual(result, "abc123def456")
 
 
+# ============================================================
+# Summary length warning tests (Phase 6 - US5)
+# ============================================================
+
+
+class TestExtractKnowledgeSummaryLength(unittest.TestCase):
+    """extract_knowledge: Long summary -> warning logged.
+
+    Tests for User Story 5 - summary/content 逆転の検出
+    summary が 500 文字を超える場合に警告ログを出力する。
+    """
+
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            for pattern in ["conv-*.json", "item-*.json", "long-*.json", "short-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        self.setUp()
+
+    @patch("obsidian_etl.pipelines.transform.nodes.logger")
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_extract_knowledge_warns_long_summary(self, mock_llm_extract, mock_logger):
+        """summary が 500 文字を超える場合、警告ログが出力されること。
+
+        FR-009: システムは 500 文字を超える summary に対して警告ログを出力しなければならない
+
+        When LLM returns summary > 500 chars:
+        - Warning should be logged with "Long summary" message
+        - Item should still be included in output (not excluded)
+        """
+        # Generate a summary that exceeds 500 characters
+        long_summary = "あ" * 501  # 501 chars (exceeds 500)
+
+        mock_llm_extract.return_value = (
+            {
+                "title": "長いサマリーのテスト",
+                "summary": long_summary,
+                "summary_content": "有効な本文内容。",
+                "tags": ["テスト"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(item_id="long-summary", file_id="long12345678")
+        partitioned_input = _make_partitioned_input({"long-summary": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        # Item should still be included in output (not excluded)
+        self.assertEqual(len(result), 1)
+        self.assertIn("long-summary", result)
+
+        # Warning should be logged with "Long summary" message
+        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+        warning_messages = " ".join(warning_calls)
+        self.assertIn("Long summary", warning_messages)
+        self.assertIn("501", warning_messages)  # Character count
+        self.assertIn("long-summary", warning_messages)  # Partition ID
+
+    @patch("obsidian_etl.pipelines.transform.nodes.logger")
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_extract_knowledge_no_warning_for_short_summary(self, mock_llm_extract, mock_logger):
+        """summary が 500 文字以下の場合、警告ログが出力されないこと。
+
+        When LLM returns summary <= 500 chars:
+        - No warning should be logged for summary length
+        - Item should be included in output
+        """
+        # Generate a summary that is exactly 500 characters (boundary case)
+        short_summary = "あ" * 500  # Exactly 500 chars (not exceeding)
+
+        mock_llm_extract.return_value = (
+            {
+                "title": "短いサマリーのテスト",
+                "summary": short_summary,
+                "summary_content": "有効な本文内容。",
+                "tags": ["テスト"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(item_id="short-summary", file_id="short1234567")
+        partitioned_input = _make_partitioned_input({"short-summary": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        # Item should be included in output
+        self.assertEqual(len(result), 1)
+        self.assertIn("short-summary", result)
+
+        # No "Long summary" warning should be logged
+        warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+        warning_messages = " ".join(warning_calls)
+        self.assertNotIn("Long summary", warning_messages)
+
+
 if __name__ == "__main__":
     unittest.main()
