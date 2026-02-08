@@ -67,55 +67,84 @@ You **MUST** consider the user input before proceeding (if not empty).
 
    ### 6.1 Phase Type Detection
 
-   | Phase Type | 実行者 | 理由 |
-   |------------|--------|------|
-   | **Setup** (Phase 1) | メインエージェント | コンテキスト保持が必要 |
-   | **TDD Phase** (テスト設計セクションあり) | tdd-generator → phase-executor | TDD フロー |
-   | **通常 Phase** (Polish/Documentation等) | phase-executor のみ | 統合テスト・検証のみ |
+   | Phase Type | Executor | Reason |
+   |------------|----------|--------|
+   | **Setup** (Phase 1) | Main agent | Requires context preservation |
+   | **TDD Phase** (has test design section) | tdd-generator → phase-executor | TDD flow |
+   | **Standard Phase** (Polish/Documentation) | phase-executor only | Integration test/verification only |
 
-   判定: Phase 名に "setup" → main, "### テスト設計" or "### テスト実装" あり → TDD, それ以外 → 通常
+   Detection: Phase name contains "setup" → main, has "### Test Design" or "### Test Implementation" → TDD, otherwise → standard
 
-   ### 6.2 Phase 1 (Setup) - メインエージェント直接実行
+   ### 6.2 Phase 1 (Setup) - Main agent direct execution
 
-   Phase 1 が Setup の場合、サブエージェントに委譲せずメインが直接実行:
-   1. tasks.md から Phase 1 タスク抽出
-   2. 各タスクを順次実行
-   3. tasks.md 更新（`- [ ]` → `- [X]`）
-   4. `{FEATURE_DIR}/tasks/ph1-output.md` 生成
+   If Phase 1 is Setup, execute directly without delegating to subagents:
+   1. Extract Phase 1 tasks from tasks.md
+   2. Execute each task sequentially
+   3. Update tasks.md (`- [ ]` → `- [X]`)
+   4. Generate `{FEATURE_DIR}/tasks/ph1-output.md`
+   5. **Commit setup changes**:
+      ```bash
+      git add -A && git commit -m "chore(phase-1): Setup - {brief description}"
+      ```
 
-   ### 6.3 TDD フロー（User Story / Foundational Phase）
+   ### 6.3 TDD Flow (User Story / Foundational Phase)
 
-   **Step 1: テスト実装 (RED)**
-   - Task tool で `tdd-generator` を呼び出す（`model: opus`）
-   - 入力/出力形式は `.claude/agents/tdd-generator.md` を参照
-   - 完了後、テストが FAIL 状態であることを確認
+   **Step 1: Test Implementation (RED)**
+   - Invoke `tdd-generator` via Task tool (`model: opus`)
+   - Refer to `.claude/agents/tdd-generator.md` for input/output format
+   - Verify tests are in FAIL state after completion
+   - **Commit RED**:
+     ```bash
+     git add -A && git commit -m "test(phase-{N}): RED - {brief description}"
+     ```
 
-   **Step 2: 実装 (GREEN) + 検証**
-   - Task tool で `phase-executor` を呼び出す（`model: sonnet`）
-   - 入力/出力形式は `.claude/agents/phase-executor.md` を参照
-   - 完了後、全テストが PASS であることを確認
+   **Step 2: Implementation (GREEN) + Verification**
+   - Invoke `phase-executor` via Task tool (`model: sonnet`)
+   - Refer to `.claude/agents/phase-executor.md` for input/output format
+   - Verify all tests PASS after completion
+   - **Commit GREEN**:
+     ```bash
+     git add -A && git commit -m "feat(phase-{N}): GREEN - {brief description}"
+     ```
 
-   **Step 3: カバレッジ検証**
-   - `make coverage` で ≥80% を確認
-   - 不足時は tdd-generator に追加テスト依頼
+   **Step 3: Coverage Verification**
+   - Verify ≥80% with `make coverage`
+   - If insufficient, request additional tests from tdd-generator
 
-   ### 6.4 通常フロー（Polish/Documentation Phase）
+   ### 6.4 Standard Flow (Polish/Documentation Phase)
 
-   - Task tool で `phase-executor` を呼び出す（`model: sonnet`）
-   - 入力/出力形式は `.claude/agents/phase-executor.md` を参照
+   - Invoke `phase-executor` via Task tool (`model: sonnet`)
+   - Refer to `.claude/agents/phase-executor.md` for input/output format
+   - **Commit phase changes**:
+     ```bash
+     git add -A && git commit -m "feat(phase-{N}): Polish - {brief description}"
+     ```
 
    ### 6.5 Phase Transition
 
-   Phase 完了後:
-   1. Phase 完了サマリー表示
-   2. 成果物リスト表示
-   3. **Commit phase changes**:
+   After phase completion:
+   1. Display phase completion summary
+   2. Display deliverables list
+   3. Generate `{FEATURE_DIR}/tasks/ph{N}-output.md`
+   4. **Save session context**:
       ```bash
-      git add -A && git commit -m "feat(phase-{N}): {brief description}"
+      /sc:save   # Saves branch, status=in_progress, timestamp
       ```
-   4. `{FEATURE_DIR}/tasks/ph{N}-output.md` 生成
-   5. **全タスク完了** → 次 Phase へ自動進行
-   6. **一部失敗/エラー** → ユーザーに確認
+   5. **All tasks completed** → Auto-proceed to next phase
+   6. **Partial failure/error** → Ask user for confirmation
+
+   ### 6.6 Final Phase Completion (REQUIRED)
+
+   After the **final phase** (Polish) is completed:
+   1. Mark session as completed:
+      ```bash
+      /sc:save --completed   # Sets status=completed
+      ```
+   2. Or delete the session memory to prevent accidental reload:
+      ```bash
+      mcp__serena__delete_memory(memory_file_name="session-{feature-name}")
+      ```
+   3. This prevents the session from being reloaded after compaction in unrelated work
 
 7. **Progress tracking and error handling**:
    - Report progress after each completed task

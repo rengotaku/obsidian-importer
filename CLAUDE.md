@@ -88,111 +88,41 @@ Obsidian/
 
 ---
 
-## パイプライン用語定義
+## Kedro パイプライン用語定義
 
-ETL パイプライン処理で使用する階層構造の用語。フォルダ名として使用される。
+Kedro ベースのパイプライン処理で使用する用語。
 
-| 用語 | 説明 | フォルダ例 |
+| 用語 | 説明 | 例 |
 |------|------|-----------|
-| **Session** | 処理全体を包含する単位。日付時刻で識別 | `20260119_143052/` |
-| **Phase** | Session 内の処理種別 | `import/`, `organize/` |
-| **Stage** | Phase を ETL パターンで分割 | `extract/`, `transform/`, `load/` |
-| **Step** | Stage 内の具体的な処理単位 | `parse_json`, `validate`, `generate_metadata` |
+| **Pipeline** | 処理全体を包含する DAG（有向非巡回グラフ） | `import_claude`, `import_openai`, `import_github` |
+| **Node** | 単一の処理単位（純粋関数） | `parse_claude_json`, `extract_knowledge`, `classify_genre` |
+| **Dataset** | ノード間で受け渡される型付きデータ | `parsed_items`, `transformed_items`, `markdown_notes` |
+| **DataCatalog** | データセットの永続化先の宣言的定義 | `conf/base/catalog.yml` |
 
-### セッションフォルダ構成
+### データレイヤー構成
 
 ```
-.staging/@session/
-└── 20260119_143052/                    # Session
-    ├── session.json                    # セッションメタデータ
-    ├── import/                         # Phase
-    │   ├── phase.json                  # Phase ステータス（Step 単位で更新）
-    │   ├── extract/                    # Stage: Extract
-    │   │   ├── input/                  # 入力データ（Claude エクスポート等）
-    │   │   └── output/                 # 抽出結果
-    │   ├── transform/                  # Stage: Transform
-    │   │   └── output/                 # 変換結果
-    │   └── load/                       # Stage: Load
-    │       └── output/                 # 最終出力
-    └── organize/                       # Phase
-        ├── phase.json
-        ├── extract/
-        │   ├── input/
-        │   └── output/
-        ├── transform/
-        │   └── output/
-        └── load/
-            └── output/                 # Vaults への移動候補
+data/                                # Kedro データレイヤー
+├── 01_raw/                          # 入力データ（プロバイダー固有形式）
+│   ├── claude/                      # Claude エクスポート ZIP
+│   ├── openai/                      # ChatGPT エクスポート ZIP
+│   └── github/                      # GitHub Jekyll ブログ（git clone 自動取得）
+├── 02_intermediate/                 # Extract 出力（パース済みアイテム）
+│   └── parsed/
+├── 03_primary/                      # Transform 出力（LLM 処理済み）
+│   └── transformed/
+└── 07_model_output/                 # 最終 Markdown（Vault 配置前）
+    ├── notes/
+    └── organized/
 ```
 
-### debug モード
+### Resume（冪等再実行）
 
-| モード | ステータス JSON | 詳細ログ |
-|--------|----------------|---------|
-| 通常 | ✅ 出力（常時） | ❌ なし |
-| debug | ✅ 出力（常時） | ✅ 各 Stage に出力 |
+Kedro パイプラインは冪等性を持つため、同じコマンドの再実行により自動的に Resume 動作する。
 
-### session.json 形式
-
-セッションのメタデータと各フェーズの処理結果を記録する JSON ファイル。
-
-```json
-{
-  "session_id": "20260124_164549",
-  "created_at": "2026-01-24T16:45:49.417261",
-  "status": "completed",
-  "phases": {
-    "import": {
-      "status": "completed",
-      "success_count": 5,
-      "error_count": 1,
-      "skipped_count": 0,
-      "completed_at": "2026-01-24T16:45:49.417945"
-    },
-    "organize": {
-      "status": "crashed",
-      "success_count": 0,
-      "error_count": 0,
-      "skipped_count": 0,
-      "completed_at": "2026-01-24T16:50:12.123456",
-      "error": "ValueError: Invalid vault path"
-    }
-  },
-  "debug_mode": false
-}
-```
-
-**フィールド定義**:
-
-| フィールド | 型 | 説明 |
-|----------|-----|------|
-| `session_id` | string | セッション識別子（YYYYMMDD_HHMMSS 形式） |
-| `created_at` | string | セッション作成日時（ISO 8601 形式） |
-| `status` | string | セッション全体のステータス（`in_progress`, `completed`, `failed`） |
-| `phases` | dict | 各フェーズの処理結果（キーはフェーズ名） |
-| `debug_mode` | boolean | debug モードで実行されたかどうか |
-
-**PhaseStats フィールド**（`phases` の各値）:
-
-| フィールド | 型 | 説明 |
-|----------|-----|------|
-| `status` | string | フェーズのステータス（`completed`, `partial`, `failed`, `crashed`） |
-| `success_count` | int | 成功したアイテム数 |
-| `error_count` | int | 失敗したアイテム数 |
-| `skipped_count` | int | スキップされたアイテム数（Resume モード時）。デフォルト: 0 |
-| `completed_at` | string | フェーズ完了日時（ISO 8601 形式） |
-| `error` | string (optional) | クラッシュ時のエラーメッセージ（status="crashed" の場合のみ） |
-
-**ステータスの意味**:
-
-| Status | 説明 |
-|--------|------|
-| `completed` | すべてのアイテムが正常に処理された |
-| `partial` | 一部のアイテムが失敗したが、一部は成功した |
-| `failed` | すべてのアイテムが失敗した |
-| `crashed` | 予期しない例外でフェーズが中断された |
-
-**後方互換性**: 旧形式の `phases: ["import"]` も読み込み可能（`Session.from_dict()` で自動変換）
+- PartitionedDataset の `overwrite=false` により、出力ファイルが存在するアイテムはスキップ
+- 出力ファイルが存在しないアイテムのみ再処理
+- LLM 呼び出しなど高コストな処理の不要な再実行を回避
 
 ---
 
@@ -266,105 +196,57 @@ normalizer/
 
 ## Custom Commands
 
-### ETL パイプライン（新）
+### Kedro パイプライン
 
-新しい ETL パイプラインは `python -m src.etl` または `make` コマンドで実行。
+Kedro ベースのパイプラインは `kedro` コマンドまたは `make kedro-*` で実行。
 
-#### `import` / LLM会話インポート
+#### Claude 会話インポート
 
-Claude または ChatGPT エクスポートデータから知識を抽出して Obsidian ノートに変換。
+Claude エクスポート ZIP から知識を抽出して Obsidian ノートに変換し、Vault に配置。
 
 ```bash
-# Claude インポート
-make import INPUT=~/.staging/@llm_exports/claude/ PROVIDER=claude  # 全件処理
-make import INPUT=... PROVIDER=claude DRY_RUN=1                    # プレビュー
-make import INPUT=... PROVIDER=claude DEBUG=1                      # debug モード
-make import INPUT=... PROVIDER=claude LIMIT=5                      # 件数制限
+# 1. Claude エクスポート ZIP を配置
+cp ~/Downloads/data-2026-*.zip data/01_raw/claude/
 
-# ChatGPT インポート
-make import INPUT=chatgpt_export.zip PROVIDER=openai  # ZIP ファイル指定
-make import INPUT=... PROVIDER=openai DEBUG=1         # debug モード
+# 2. パイプライン実行（デフォルト: claude）
+kedro run
 
-# 複数 INPUT 指定（カンマ区切り）
-make import INPUT=export1.zip,export2.zip PROVIDER=openai  # 複数 ZIP を 1 セッションで処理
+# または明示的に指定
+kedro run --pipeline=import_claude
 
-# GitHub Jekyll ブログインポート（URL 入力）
-make import INPUT=https://github.com/user/repo/tree/master/_posts INPUT_TYPE=url PROVIDER=github
-make import INPUT=... INPUT_TYPE=url PROVIDER=github LIMIT=10  # 件数制限
-make import INPUT=... INPUT_TYPE=url PROVIDER=github DEBUG=1   # debug モード
+# 処理件数制限
+kedro run --pipeline=import_claude --params='{"import.limit": 10}'
 
-# 既存セッション再利用（Resume モード）- PROVIDER 不要
-make import SESSION=20260119_143052     # 指定セッションで続行
+# 部分実行（特定ノードから）
+kedro run --pipeline=import_claude --from-nodes=extract_knowledge
 
-# 直接実行
-python -m src.etl import --input PATH [--input PATH ...] --provider claude|openai|github [--input-type path|url] [--session ID] [--debug] [--dry-run] [--limit N]
+# 部分実行（特定ノードまで）
+kedro run --pipeline=import_claude --to-nodes=format_markdown
 ```
 
-**INPUT_TYPE パラメータ:**
+**Claude 特有の処理:**
 
-| 値 | デフォルト | 説明 |
-|----|-----------|------|
-| `path` | ✅ | ローカルファイル/ディレクトリ。`Path.exists()` チェック後コピー |
-| `url` | | リモート URL（GitHub 等）。URL フォーマットチェック後 `url.txt` に保存 |
+- **ZIP 読み込み**: `conversations.json` を自動抽出
+- **会話パース**: UUID ベースで会話を識別
+- **チャンク分割**: 25000文字超の会話を複数ファイルに分割
+- **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
 
-**複数 INPUT 指定:**
+#### ChatGPT 会話インポート
 
-- Makefile: カンマ区切り `INPUT=a.zip,b.zip`
-- CLI: 複数回指定 `--input a.zip --input b.zip`
-- `INPUT_TYPE` は全 INPUT に適用される（混在不可）
+ChatGPT エクスポート ZIP から知識を抽出。
 
-**サポートプロバイダー:**
+```bash
+# 1. ChatGPT エクスポート ZIP を配置
+# ChatGPT 設定 → Data controls → Export data
+# メールで届く ZIP ファイルをダウンロード
+cp ~/Downloads/chatgpt-export-*.zip data/01_raw/openai/
 
-| プロバイダー | 入力形式 | 指定方法 |
-|------------|---------|---------|
-| Claude (デフォルト) | JSON ファイル | `--provider claude` または省略 |
-| ChatGPT | ZIP ファイル | `--provider openai` |
-| GitHub | GitHub URL | `--provider github` |
+# 2. パイプライン実行
+kedro run --pipeline=import_openai
 
-**主要機能:**
-
-| 機能 | 説明 |
-|------|------|
-| Ollama 知識抽出 | LLM で会話からタイトル、要約、タグを自動抽出 |
-| Resume モード | `--session` で中断されたインポートを再開。Extract output（data-dump-*.jsonl）を再利用し、処理済みアイテムをスキップして LLM 呼び出しを回避 |
-| file_id 追跡 | SHA256 ハッシュで重複検出・更新管理 |
-| チャンク分割 | 25000文字超の会話を複数ファイルに分割 |
-| 英語 Summary 翻訳 | 英語 Summary を日本語に自動翻訳 |
-| エラー詳細出力 | errors/ フォルダに LLM プロンプト・出力を保存 |
-| マルチモーダル対応 | ChatGPT の画像・音声をプレースホルダー処理 |
-
-**スキップ条件:**
-
-- メッセージ数 < 3（MIN_MESSAGES）: 短すぎる会話をスキップ
-
-**エッジケース対応:**
-
-- 空の conversations.json: 警告ログを出力して正常終了
-- 破損した ZIP ファイル: エラーメッセージを出力して終了コード 2
-- タイトル欠損: 最初のユーザーメッセージから生成
-- タイムスタンプ欠損: 現在日時にフォールバック
-
-**出力フォルダ構成:**
-
+# または provider パラメータで指定
+kedro run --params='{"import.provider": "openai"}'
 ```
-.staging/@session/YYYYMMDD_HHMMSS/import/
-├── phase.json                   # Phase ステータス
-├── errors/                      # エラー詳細（conversation_id.md）
-├── extract/
-│   ├── input/                   # Claude: JSON, ChatGPT: ZIP
-│   └── output/                  # パース済み会話データ（data-dump-{番号4桁}.jsonl、1000レコード/ファイル）
-├── transform/
-│   └── output/                  # 知識抽出結果
-└── load/
-    └── output/
-        └── conversations/       # 最終 Markdown ファイル
-```
-
-**ChatGPT エクスポート方法:**
-
-1. ChatGPT 設定 → Data controls → Export data
-2. メールで届く ZIP ファイルをダウンロード
-3. `make import INPUT=chatgpt_export.zip PROVIDER=openai` でインポート
 
 **ChatGPT 特有の処理:**
 
@@ -372,8 +254,23 @@ python -m src.etl import --input PATH [--input PATH ...] --provider claude|opena
 - **ツリー走査**: ChatGPT の mapping 構造を chronological order に変換
 - **マルチモーダル**: 画像は `[Image: file-id]`, 音声は `[Audio: filename]` プレースホルダー
 - **role 変換**: `user` → `human`, `assistant` → `assistant`, `system`/`tool` は除外
+- **チャンク分割**: 25000文字超の会話を複数ファイルに分割
+- **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
 
-**GitHub Jekyll ブログ特有の処理:**
+#### GitHub Jekyll ブログインポート
+
+GitHub Jekyll ブログを git clone してインポート。
+
+```bash
+# URL 指定してパイプライン実行
+kedro run --pipeline=import_github \
+  --params='{"github_url": "https://github.com/rengotaku/rengotaku.github.io/tree/master/test_posts"}'
+
+# または provider パラメータで指定
+kedro run --params='{"import.provider": "github", "github_url": "https://github.com/user/repo/tree/master/_posts"}'
+```
+
+**GitHub Jekyll 特有の処理:**
 
 - **git clone**: `--depth 1` + sparse-checkout で対象パスのみ高速取得
 - **Jekyll frontmatter 変換**: `date` → `created`, `tags`/`categories`/`keywords` → `tags` に統合
@@ -382,106 +279,132 @@ python -m src.etl import --input PATH [--input PATH ...] --provider claude|opena
 - **スキップ処理**: `draft: true` または `private: true` のファイルは自動除外
 - **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
 
-**GitHub 入力例:**
+#### dispatch 型パイプライン
+
+`import.provider` パラメータ（デフォルト: `claude`）で適切なパイプラインに自動 dispatch。
 
 ```bash
-# 基本形式
-make import INPUT=https://github.com/user/repo/tree/master/_posts PROVIDER=github
+# デフォルト（claude）
+kedro run
 
-# 実際の例
-make import INPUT=https://github.com/example-user/example-user.github.io/tree/master/_posts PROVIDER=github LIMIT=5
+# OpenAI パイプラインに dispatch
+kedro run --params='{"import.provider": "openai"}'
+
+# GitHub パイプラインに dispatch
+kedro run --params='{"import.provider": "github", "github_url": "https://github.com/user/repo/tree/master/_posts"}'
+
+# 個別パイプライン名でも実行可能
+kedro run --pipeline=import_claude
+kedro run --pipeline=import_openai
+kedro run --pipeline=import_github
 ```
 
-#### `organize` / ファイル整理
+#### Resume（冪等再実行）
+
+同じコマンドの再実行により、完了済みアイテムをスキップして失敗分のみ再処理。
 
 ```bash
-make organize INPUT=.staging/@session/YYYYMMDD_HHMMSS/import/load/output/conversations/  # 全件処理
-make organize INPUT=... DRY_RUN=1       # プレビュー
+# 前回失敗した処理の再実行（同じコマンド）
+kedro run
 
-# 直接実行
-python -m src.etl organize --input PATH [--debug] [--dry-run] [--limit N]
+# PartitionedDataset の overwrite=false により:
+# - 出力ファイルが存在するアイテム → スキップ
+# - 出力ファイルが存在しないアイテム → 再処理
+# - LLM 呼び出しなど高コストな処理の不要な再実行を回避
 ```
 
-#### `status` / セッション状態確認
+#### DAG 可視化
+
+パイプラインの依存関係をグラフで可視化。
 
 ```bash
-make status ALL=1                       # 全セッション表示
-make status SESSION=20260119_143052     # 特定セッション
-make status SESSION=... JSON=1          # JSON 出力
+# DAG 可視化サーバー起動
+kedro viz
+make kedro-viz
 
-# 直接実行
-python -m src.etl status [--session ID] [--all] [--json]
+# ブラウザで http://localhost:4141 にアクセス
 ```
 
-#### `retry` / 失敗アイテムのリトライ
+#### テスト実行
 
 ```bash
-make retry SESSION=20260119_143052       # 全 Phase リトライ
-make retry SESSION=... PHASE=import      # 特定 Phase のみ
+# 全テスト実行
+make test
+make kedro-test
 
-# 直接実行
-python -m src.etl retry --session ID [--phase TYPE] [--debug]
+# カバレッジ計測
+make coverage
 ```
 
-#### `session-clean` / 古いセッション削除
+#### E2Eテスト（ゴールデンファイル比較）
+
+パイプライン出力をゴールデンファイル（期待される正解）と比較して E2E テストを実行。
 
 ```bash
-make session-clean DAYS=7 DRY_RUN=1   # プレビュー
-make session-clean DAYS=7 FORCE=1     # 確認なしで削除
+# E2Eテスト実行（ゴールデンファイルと比較）
+make test-e2e
 
-# 直接実行
-python -m src.etl clean [--days N] [--dry-run] [--force]
+# ゴールデンファイルの生成・更新
+make test-e2e-update-golden
 ```
 
-#### `item-trace` / アイテム処理の詳細トレース
+**前提条件:**
+- Ollama が起動していること（LLM 処理が必要なため）
 
-指定したアイテムの全処理ステップを時系列で表示。debug モード（`--debug`）で実行されたセッションのみ対応。
+**test-e2e の動作:**
+1. テストデータ（`tests/fixtures/claude_test.zip`）を使用
+2. パイプラインを `format_markdown` まで実行
+3. 出力を `tests/fixtures/golden/*.md` と比較
+4. 類似度 80% 以上で成功判定
 
-```bash
-# 特定アイテムのトレース（TARGET=ALL がデフォルト）
-make item-trace SESSION=20260119_143052 ITEM=conversation_uuid  # 基本トレース
-make item-trace SESSION=... ITEM=... SHOW_CONTENT=1            # content 差分も表示
+**test-e2e-update-golden の動作:**
+1. パイプラインを実行して最新の出力を生成
+2. 出力を `tests/fixtures/golden/` にコピー
+3. ゴールデンファイルとして保存
 
-# エラーアイテムすべてをトレース
-make item-trace SESSION=20260119_143052 TARGET=ERROR            # エラーアイテムを自動抽出
-make item-trace SESSION=... TARGET=ERROR SHOW_ERROR_DETAILS=1  # エラー詳細も表示
+**ゴールデンファイル更新のタイミング:**
+- LLM モデル変更後
+- プロンプト変更後
+- パイプラインロジック変更後
+- 既存のゴールデンファイルが正しくない場合
 
-# 直接実行
-python -m src.etl trace --session ID --target ALL --item ITEM_ID [--show-content] [--show-error-details]
-python -m src.etl trace --session ID --target ERROR [--show-content] [--show-error-details]
-```
+**主要機能:**
 
-**TARGET パラメータ:**
-
-| 値 | 説明 | ITEM パラメータ |
-|----|------|----------------|
-| `ALL` (デフォルト) | 特定アイテムをトレース | 必須 |
-| `ERROR` | エラーになったアイテムすべてをトレース | 不要（自動抽出） |
-
-**表示内容:**
-
-| 項目 | 説明 |
+| 機能 | 説明 |
 |------|------|
-| Step | ステップ番号（各 stage ごと） |
-| Phase | 処理フェーズ（import, organize） |
-| Stage | ETL ステージ（extract, transform, load） |
-| Current Step | ステップ名（extract_knowledge, format_markdown など） |
-| Before | 処理前の文字数 |
-| After | 処理後の文字数 |
-| Ratio | 変化率（after / before） |
-| Time(ms) | 処理時間（ミリ秒） |
+| Ollama 知識抽出 | LLM で会話からタイトル、要約、タグを自動抽出 |
+| 冪等 Resume | 再実行で完了済みをスキップ、失敗分のみ再処理 |
+| file_id 追跡 | SHA256 ハッシュで重複検出・更新管理 |
+| チャンク分割 | 25000文字超の会話を複数ファイルに分割 |
+| 英語 Summary 翻訳 | 英語 Summary を日本語に自動翻訳 |
+| マルチモーダル対応 | ChatGPT の画像・音声をプレースホルダー処理 |
+| DAG 可視化 | ノード依存関係のグラフィカル表示 |
+| 部分実行 | 特定ノード範囲のみ実行可能 |
 
-**出力例:**
+**スキップ条件:**
+
+- メッセージ数 < 3（MIN_MESSAGES）: 短すぎる会話をスキップ
+
+**エッジケース対応:**
+
+- 空の conversations.json: 警告ログを出力して正常終了
+- 破損した ZIP ファイル: エラーメッセージを出力して終了
+- タイトル欠損: 最初のユーザーメッセージから生成
+- タイムスタンプ欠損: 現在日時にフォールバック
+
+**データフロー:**
 
 ```
-Step   Phase      Stage      Current Step              Before     After      Ratio    Time(ms)
-================================================================================================
-1      import     transform  extract_knowledge         1964       1964       1.000    53761
-2      import     transform  generate_metadata         1964       1964       1.000    0
-3      import     transform  format_markdown           1964       1219       0.621    0
-1      import     load       write_to_session          1964       1219       0.621    0
-2      import     load       update_index              1964       1219       0.621    0
-================================================================================================
+data/01_raw/claude/*.zip           ← 入力（Claude エクスポート ZIP）
+    ↓ [extract_claude pipeline - parse_claude_zip]
+data/02_intermediate/parsed/*.json ← パース済みアイテム
+    ↓ [transform pipeline]
+data/03_primary/transformed/*.json ← LLM 処理済みアイテム
+    ↓ [transform pipeline - format_markdown]
+data/07_model_output/notes/*.md    ← 最終 Markdown
+    ↓ [organize pipeline]
+Vaults/エンジニア/*.md             ← Vault 配置
+```
 Total Processing Time: 53761ms
 Overall Change: 1964 → 1219 chars (ratio: 0.621)
 ```
@@ -527,105 +450,6 @@ make item-trace SESSION=20260126_144122 TARGET=ERROR SHOW_ERROR_DETAILS=1
 | 3 | Ollama 接続エラー |
 | 4 | 部分成功（一部失敗） |
 | 5 | 全件失敗 |
-
----
-
-### レガシーコマンド
-
-以下は旧実装。新 ETL パイプラインへの移行中は両方利用可能。
-
-### `Claude解析` / `claudeデータ解析`
-
-`.staging/@index/claude/` 内の Claude エクスポートデータを解析して Obsidian ノートに変換:
-
-```bash
-python3 scripts/parse_claude_export.py <export_dir> --output <output_dir>
-```
-
-**解析対象:**
-- `conversations.json` → 会話ごとの Markdown ファイル
-- `memories.json` → Claude が記憶しているコンテキスト
-- `projects.json` → プロジェクト一覧
-
-**出力:**
-- `Claude_Export_Index.md` - 統計とインデックス
-- `Claude_Memories.md` - メモリーデータ
-- `Claude_Projects.md` - プロジェクト一覧
-- `conversations/` - 個別会話ファイル
-
----
-
-### `整理して` / `organize`
-
-セッション内のファイルを適切な Vault へ振り分ける（セッションベース処理）:
-
-```bash
-make organize                    # 全件処理
-make organize ACTION=preview     # プレビュー（処理なし）
-make organize DEBUG=1            # debug モード
-```
-
-**処理フロー（ETL パターン）:**
-
-| Stage | 処理内容 | 入力 | 出力 |
-|-------|---------|------|------|
-| Extract | ファイル読み込み・メタデータ抽出 | `extract/input/` | `extract/output/` |
-| Transform | ジャンル判定・フォーマット正規化 | Extract 出力 | `transform/output/` |
-| Load | Vault への配置 | Transform 出力 | `load/output/` → Vaults |
-
-**ジャンル判定:**
-- 技術・エンジニアリング → `Vaults/エンジニア/`
-- ビジネス・マネジメント → `Vaults/ビジネス/`
-- 経済・時事ネタ → `Vaults/経済/`
-- 日常・雑記・趣味 → `Vaults/日常/`
-- 上記に該当しない → `Vaults/その他/`
-- **※ `Vaults/ClaudedocKnowledges/` には自動振り分けしない（手動管理）**
-
-**フォーマット正規化:**
-- YAML frontmatter 追加
-- 内部リンク `[[]]` 形式に変換
-- 適切な callout 使用
-- 余分な空行削除
-
-**セッション出力先:** `.staging/@session/YYYYMMDD_HHMMSS/organize/`
-
----
-
-### `llm-import` / `Claude会話インポート`
-
-Claude 会話データをナレッジとして抽出（セッションベース処理）:
-
-```bash
-make llm-import                  # 全件処理
-make llm-import ACTION=preview   # プレビュー（処理なし）
-make llm-import ACTION=status    # 処理状態確認
-make llm-import DEBUG=1          # debug モード（詳細ログ出力）
-```
-
-**処理フロー（ETL パターン）:**
-
-| Stage | 処理内容 | 入力 | 出力 |
-|-------|---------|------|------|
-| Extract | Claude エクスポート解析 | `extract/input/` | `extract/output/` |
-| Transform | Ollama でナレッジ抽出・要約生成 | Extract 出力 | `transform/output/` |
-| Load | Markdown ファイル生成 | Transform 出力 | `load/output/` |
-
-**セッション出力先:** `.staging/@session/YYYYMMDD_HHMMSS/import/`
-
----
-
-### `retry` / `エラーリトライ`
-
-セッション内のエラーファイルを再処理:
-
-```bash
-make retry                       # セッション一覧表示
-make retry SESSION=20260119_143052   # 指定セッションのリトライ
-make retry ACTION=preview SESSION=xxx  # プレビュー
-make retry DEBUG=1 SESSION=xxx   # debug モード
-```
-
-**セッション参照:** `.staging/@session/YYYYMMDD_HHMMSS/*/phase.json` のエラー情報
 
 ---
 
@@ -786,8 +610,8 @@ related:
 - ファイル移動前に既存構造を確認
 - 日本語ファイル名可
 - 大量ファイル処理時は確認を求める
-- **Python スクリプト実行時は必ず venv を使用**: `src/converter/.venv/bin/python` または `make` コマンド
-- **レガシーコード (`src/converter/`) は一切修正しない**: 新 ETL パイプライン (`src/etl/`) のみを修正対象とする
+- **Python スクリプト実行時は必ず venv を使用**: `.venv/bin/python` または `make` コマンド
+- **レガシーコード (`src/converter/`) は一切修正しない**: Kedro パイプライン (`src/obsidian_etl/`) のみを修正対象とする
 
 ---
 
@@ -859,6 +683,24 @@ make item-trace SESSION=20260126_080000 ITEM=conversation_12345
 
 ---
 
+## 初回セットアップ
+
+**重要**: 初回実行前に、必ず `make setup` を実行してください。
+
+```bash
+# Python venv作成 + 依存関係インストール + データディレクトリ作成
+make setup
+```
+
+このコマンドは以下を実行します：
+- Python仮想環境 (`.venv/`) の作成
+- 依存パッケージのインストール
+- **Kedroデータディレクトリの作成** (`data/01_raw/`, `data/02_intermediate/`, `data/03_primary/`, `data/07_model_output/`)
+
+初回セットアップ後、`kedro run` で正常に動作します。
+
+---
+
 ## 開発・テスト
 
 **テストフレームワーク**: Python 標準ライブラリの `unittest` を使用（pytest 不使用）
@@ -873,23 +715,18 @@ make lint      # コード品質チェック (ruff)
 
 | ターゲット | 説明 |
 |-----------|------|
-| `make test` | ユニットテスト + 統合テスト |
-| `make test-fixtures` | LLM使用の目視確認テスト |
-| `make import` | Claude会話インポート（新） |
-| `make organize` | ファイル整理（新） |
-| `make status` | セッション状態確認（新） |
-| `make retry` | 失敗リトライ（新） |
-| `make session-clean` | 古いセッション削除（新） |
-| `make llm-import` | Claude会話インポート（レガシー） |
-| `make preview` | プレビューモード（レガシー） |
-
-**※ `python -m pytest` 直接実行は統合テストがスキップされるため非推奨**
+| `make test` | ユニットテスト（Kedro パイプライン） |
+| `make coverage` | テストカバレッジ計測（≥80%） |
+| `make kedro-run` | Kedro パイプライン実行 |
+| `make kedro-test` | Kedro テスト実行 |
+| `make kedro-viz` | DAG 可視化 |
 
 ## 技術スタック
 
 | カテゴリ | 技術 |
 |---------|------|
 | 言語 | Python 3.11+（標準ライブラリ中心） |
+| パイプライン | Kedro 1.1.1 + kedro-datasets |
 | LLM | Ollama API（ローカル） |
 | データ形式 | Markdown, JSON, JSONL |
 | テスト | unittest（標準ライブラリ） |
@@ -899,34 +736,15 @@ make lint      # コード品質チェック (ruff)
 ## Active Technologies
 - Python 3.11+ + haystack-ai, ollama-haystack, qdrant-haystack (001-rag-migration-plan)
 - Qdrant (ローカルファイル永続化 @ `data/qdrant/`) (001-rag-migration-plan)
-- Python 3.11+ + tenacity (8.x), ollama (existing) (025-bonobo-tenacity-migration)
-- ETL パイプライン: `src/etl/` - tenacity ベースのリトライ、セッション管理 (025-bonobo-tenacity-migration)
-- JSON ファイル（session.json, phase.json）、Markdown ファイル (025-bonobo-tenacity-migration)
-- Python 3.13（src/etl 既存環境） + tenacity 8.x（既存）、ollama（既存 common/ 経由） (026-etl-import-parity)
-- ファイルシステム（JSON, Markdown）、セッションフォルダ構造 (026-etl-import-parity)
-- Python 3.13（src/etl 既存環境） + tenacity 8.x（既存）、ollama API（src/etl/utils/ にコピー） (026-etl-import-parity)
-- Python 3.13（既存 ETL パイプライン） + tenacity 8.x（既存）、標準ライブラリ（json, pathlib, dataclasses） (027-debug-step-output)
-- ファイルシステム（JSONL 形式） (027-debug-step-output)
-- Python 3.13（既存 src/etl 環境） + tenacity 8.x（既存）、標準ライブラリ（dataclasses, json, pathlib） (028-flexible-io-ratios)
-- ファイルシステム（JSONL, Markdown） (028-flexible-io-ratios)
-- Python 3.13（既存 ETL 環境） + tenacity 8.x（既存）、ollama（既存）、zipfile（標準ライブラリ） (030-chatgpt-import)
-- ファイルシステム（JSON, JSONL, Markdown） (030-chatgpt-import)
-- Python 3.13 + tenacity 8.x, ollama, 標準ライブラリ（json, pathlib, dataclasses） (031-extract-discovery-delegation)
-- Python 3.11+ (pyproject.toml: requires-python = ">=3.11") + tenacity 8.x, ollama (既存), 標準ライブラリ (json, pathlib, dataclasses, zipfile) (032-extract-step-refactor)
-- ファイルシステム (JSON, JSONL, Markdown) (032-extract-step-refactor)
-- Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + tenacity 8.x（既存）、標準ライブラリ（subprocess, pathlib, re, yaml） (034-jekyll-import)
-- ファイルシステム（JSON, JSONL, Markdown）- セッションフォルダ構造 (034-jekyll-import)
-- Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + tenacity 8.x（既存）、標準ライブラリ（abc, dataclasses, json, pathlib） (035-chunking-mixin)
-- Python 3.11+ + argparse (stdlib), pathlib (stdlib) - Modular CLI structure (src/etl/cli/) (036-cli-refactor)
-- File system (session JSON files, phase JSON files) - CLI commands in separate modules (036-cli-refactor)
-- Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + tenacity 8.x（リトライ）, ollama（LLM API）, 標準ライブラリ（json, pathlib, dataclasses） (037-resume-mode-redesign)
-- ファイルシステム（JSONL ログ、Markdown ファイル、JSON セッションデータ） (037-resume-mode-redesign)
-- Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + tenacity 8.x（リトライ）, ollama（LLM API）, 標準ライブラリ（json, dataclasses） (038-too-large-llm-context)
-- Python 3.11+ (pyproject.toml: `requires-python = ">=3.11"`) + tenacity 8.x（リトライ）, ollama（LLM API）, 標準ライブラリ（json, dataclasses） (039-resume-baseclass-refactor)
-- Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + tenacity 8.x（リトライ）、ollama（LLM API）、PyYAML 6.0+、標準ライブラリ（json, pathlib, dataclasses, abc） (040-resume-extract-reuse)
-- ファイルシステム（JSONL, JSON, Markdown）- セッションフォルダ構造 (040-resume-extract-reuse)
-- Python 3.11+ (pyproject.toml: `requires-python = ">=3.11"`) + tenacity 8.x（リトライ）、ollama（LLM API）、標準ライブラリ（json, pathlib, dataclasses, zipfile） (041-fix-extract-dedup)
-- Python 3.11+（pyproject.toml: `requires-python = ">=3.11"`） + tenacity 8.x（リトライ）、ollama（LLM API）、標準ライブラリ（re, json, dataclasses） (042-llm-markdown-response)
+- Python 3.11+ + Kedro 1.1.1, kedro-datasets, tenacity 8.x, PyYAML 6.0+, requests 2.28+ (044-kedro-migration)
+- ファイルシステム（JSON, JSONL, Markdown）、Kedro DataCatalog（PartitionedDataset） (044-kedro-migration)
+- Python 3.13 + Kedro 1.1.1 + kedro 1.1.1, kedro-datasets (PartitionedDataset, json, text), tenacity 8.x (045-fix-kedro-input)
+- ファイルシステム（JSON, JSONL, Markdown, ZIP）、Kedro DataCatalog (045-fix-kedro-input)
+- Python 3.11+ + 標準ライブラリのみ (`difflib`, `yaml`, `unittest`)、Kedro 1.1.1 (046-e2e-output-validation)
+- ファイルシステム（Markdown, JSON） (046-e2e-output-validation)
+- Python 3.11+ + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, tenacity 8.x, difflib (stdlib) (047-e2e-full-pipeline)
+- ファイルシステム (Markdown, JSON, JSONL)、Kedro DataCatalog (PartitionedDataset) (047-e2e-full-pipeline)
+- Python 3.11+ + Kedro 1.1.1, kedro-datasets, requests (Ollama API) (049-output-quality-improve)
 
 ## Recent Changes
-- 001-rag-migration-plan: Added Python 3.11+ + haystack-ai, ollama-haystack, qdrant-haystack
+- 044-kedro-migration: Migrated from custom ETL pipeline (`src/etl/`) to Kedro 1.1.1. Removed session management, introduced DAG-based pipelines (import_claude, import_openai, import_github), idempotent resume via PartitionedDataset

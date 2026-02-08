@@ -1,0 +1,66 @@
+# Kedro Parameters Definition
+# conf/base/parameters.yml
+#
+# Pipeline parameters accessible via params: namespace in nodes.
+
+# ============================================================
+# Import Parameters
+# ============================================================
+
+import:
+  # Provider selection (overridden via CLI: --params import.provider=openai)
+  provider: claude  # claude | openai | github
+
+  # Processing limits
+  limit: 0  # 0 = no limit
+  min_messages: 3  # Minimum messages to process a conversation
+
+  # Chunking
+  chunk_size: 25000  # Characters before splitting into chunks
+  chunk_enabled: true
+
+  # Ollama LLM settings
+  ollama:
+    model: "gemma3:12b"
+    base_url: "http://localhost:11434"
+    timeout: 120
+    temperature: 0.2
+    max_retries: 3
+
+# ============================================================
+# Organize Parameters
+# ============================================================
+
+organize:
+  # Vault path mapping (genre -> relative path)
+  vaults:
+    engineer: "Vaults/エンジニア/"
+    business: "Vaults/ビジネス/"
+    economy: "Vaults/経済/"
+    daily: "Vaults/日常/"
+    other: "Vaults/その他/"
+
+  # Genre classification keywords (used by classify_genre node)
+  genre_keywords:
+    engineer:
+      - プログラミング
+      - アーキテクチャ
+      - DevOps
+      - フレームワーク
+      - API
+      - データベース
+    business:
+      - ビジネス
+      - マネジメント
+      - リーダーシップ
+      - マーケティング
+    economy:
+      - 経済
+      - 投資
+      - 金融
+      - 市場
+    daily:
+      - 日常
+      - 趣味
+      - 雑記
+      - 生活

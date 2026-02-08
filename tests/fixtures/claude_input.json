@@ -1,0 +1,86 @@
+[
+  {
+    "uuid": "conv-001-uuid-abcdef",
+    "name": "Python asyncio discussion",
+    "created_at": "2026-01-15T10:30:00.000000+00:00",
+    "updated_at": "2026-01-15T11:00:00.000000+00:00",
+    "chat_messages": [
+      {
+        "uuid": "msg-001",
+        "sender": "human",
+        "text": "How does Python asyncio work?",
+        "created_at": "2026-01-15T10:30:00.000000+00:00"
+      },
+      {
+        "uuid": "msg-002",
+        "sender": "assistant",
+        "text": "Python asyncio is a library for writing concurrent code using the async/await syntax. It provides an event loop that manages coroutines.",
+        "created_at": "2026-01-15T10:30:30.000000+00:00"
+      },
+      {
+        "uuid": "msg-003",
+        "sender": "human",
+        "text": "Can you explain event loops in more detail?",
+        "created_at": "2026-01-15T10:31:00.000000+00:00"
+      },
+      {
+        "uuid": "msg-004",
+        "sender": "assistant",
+        "text": "An event loop runs async tasks and callbacks, handles I/O events, and manages subprocesses. It is the core of every asyncio application.",
+        "created_at": "2026-01-15T10:31:30.000000+00:00"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-002-uuid-ghijkl",
+    "name": "Database indexing strategies",
+    "created_at": "2026-01-16T14:00:00.000000+00:00",
+    "updated_at": "2026-01-16T15:00:00.000000+00:00",
+    "chat_messages": [
+      {
+        "uuid": "msg-005",
+        "sender": "human",
+        "text": "What are the best practices for database indexing?",
+        "created_at": "2026-01-16T14:00:00.000000+00:00"
+      },
+      {
+        "uuid": "msg-006",
+        "sender": "assistant",
+        "text": "Database indexing best practices include: creating indexes on frequently queried columns, using composite indexes for multi-column queries, and avoiding over-indexing.",
+        "created_at": "2026-01-16T14:00:30.000000+00:00"
+      },
+      {
+        "uuid": "msg-007",
+        "sender": "human",
+        "text": "How about partial indexes?",
+        "created_at": "2026-01-16T14:01:00.000000+00:00"
+      },
+      {
+        "uuid": "msg-008",
+        "sender": "assistant",
+        "text": "Partial indexes are indexes built on a subset of a table. They are useful when queries frequently target a specific subset of rows, reducing index size and improving performance.",
+        "created_at": "2026-01-16T14:01:30.000000+00:00"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-003-uuid-mnopqr",
+    "name": "Short conversation",
+    "created_at": "2026-01-17T09:00:00.000000+00:00",
+    "updated_at": "2026-01-17T09:01:00.000000+00:00",
+    "chat_messages": [
+      {
+        "uuid": "msg-009",
+        "sender": "human",
+        "text": "Hello",
+        "created_at": "2026-01-17T09:00:00.000000+00:00"
+      },
+      {
+        "uuid": "msg-010",
+        "sender": "assistant",
+        "text": "Hi there!",
+        "created_at": "2026-01-17T09:00:30.000000+00:00"
+      }
+    ]
+  }
+]
