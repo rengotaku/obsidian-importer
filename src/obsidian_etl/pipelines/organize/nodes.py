@@ -240,7 +240,14 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
 会話内容:
 {body[:1000]}
 
-主題を1単語または2単語程度で答えてください（例: AWS, Kubernetes, React Native, Python）。
+主題をカテゴリレベル（1-3単語）で答えてください。
+具体的な商品名・料理名・固有名詞ではなく、上位概念で答えてください。
+
+例:
+- バナナプリンの作り方 → 離乳食
+- iPhone 15 Pro の設定 → スマートフォン
+- Claude 3.5 Sonnet の使い方 → AI
+
 抽出できない場合は空文字を返してください。"""
 
     # Call Ollama API

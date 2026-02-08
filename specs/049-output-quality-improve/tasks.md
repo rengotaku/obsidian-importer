@@ -149,17 +149,17 @@
 
 ### 入力
 
-- [ ] T040 Read previous phase output: specs/049-output-quality-improve/tasks/ph4-output.md
+- [X] T040 Read previous phase output: specs/049-output-quality-improve/tasks/ph4-output.md
 
 ### 実装（プロンプト改善のみ、TDD 対象外）
 
-- [ ] T041 [US4] Update _extract_topic_via_llm prompt in src/obsidian_etl/pipelines/organize/nodes.py:238-244
-- [ ] T042 [US4] Add abstraction level instructions with examples (バナナプリン → 離乳食)
+- [X] T041 [US4] Update _extract_topic_via_llm prompt in src/obsidian_etl/pipelines/organize/nodes.py:238-244
+- [X] T042 [US4] Add abstraction level instructions with examples (バナナプリン → 離乳食)
 
 ### 検証
 
-- [ ] T043 Verify `make test` passes all tests (no regressions)
-- [ ] T044 Generate phase output: specs/049-output-quality-improve/tasks/ph5-output.md
+- [X] T043 Verify `make test` passes all tests (no regressions)
+- [X] T044 Generate phase output: specs/049-output-quality-improve/tasks/ph5-output.md
 
 **Checkpoint**: トピック抽出プロンプトが改善され、カテゴリレベルで抽出される
 
