@@ -208,19 +208,19 @@
 
 ### 入力
 
-- [ ] T066 Read previous phase output: specs/050-fix-content-compression/tasks/ph6-output.md
+- [x] T066 Read previous phase output: specs/050-fix-content-compression/tasks/ph6-output.md
 
 ### 実装
 
-- [ ] T067 [P] Update CLAUDE.md with new feature documentation
-- [ ] T068 [P] Remove any debug code or TODO comments
-- [ ] T069 Run code review using code-reviewer agent
+- [x] T067 [P] Update CLAUDE.md with new feature documentation
+- [x] T068 [P] Remove any debug code or TODO comments
+- [x] T069 Run code review using code-reviewer agent
 
 ### 検証
 
-- [ ] T070 Run `make test` to verify all tests pass after cleanup
-- [ ] T071 Run `make lint` to verify code quality
-- [ ] T072 Generate phase output: specs/050-fix-content-compression/tasks/ph7-output.md
+- [x] T070 Run `make test` to verify all tests pass after cleanup
+- [x] T071 Run `make lint` to verify code quality
+- [x] T072 Generate phase output: specs/050-fix-content-compression/tasks/ph7-output.md
 
 ---
 

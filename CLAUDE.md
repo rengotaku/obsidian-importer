@@ -112,8 +112,10 @@ data/                                # Kedro データレイヤー
 ├── 03_primary/                      # Transform 出力（LLM 処理済み）
 │   └── transformed/
 └── 07_model_output/                 # 最終 Markdown（Vault 配置前）
-    ├── notes/
-    └── organized/
+    ├── notes/                       # 通常出力（圧縮率OK）
+    ├── review/                      # レビュー出力（圧縮率低）
+    ├── organized/                   # 通常出力（ジャンル分類済み）
+    └── organized_review/            # レビュー出力（ジャンル分類済み）
 ```
 
 ### Resume（冪等再実行）
@@ -380,6 +382,7 @@ make test-e2e-update-golden
 | マルチモーダル対応 | ChatGPT の画像・音声をプレースホルダー処理 |
 | DAG 可視化 | ノード依存関係のグラフィカル表示 |
 | 部分実行 | 特定ノード範囲のみ実行可能 |
+| 圧縮率検証 | 過度な圧縮を検出し、レビューフォルダに出力 |
 
 **スキップ条件:**
 
@@ -450,6 +453,70 @@ make item-trace SESSION=20260126_144122 TARGET=ERROR SHOW_ERROR_DETAILS=1
 | 3 | Ollama 接続エラー |
 | 4 | 部分成功（一部失敗） |
 | 5 | 全件失敗 |
+
+---
+
+## 圧縮率検証とレビュー出力
+
+Kedro パイプラインでは、LLM による情報圧縮が過度でないかを自動検証し、基準未達のファイルをレビューフォルダに出力します。
+
+### 圧縮率のしきい値
+
+元コンテンツのサイズに応じて、以下のしきい値を適用:
+
+| 元サイズ | しきい値 | 説明 |
+|---------|---------|------|
+| 10,000文字以上 | 10% | 大規模会話は圧縮余地が大きい |
+| 5,000-9,999文字 | 15% | 中規模会話は適度な圧縮 |
+| 5,000文字未満 | 20% | 小規模会話は情報を多く残す |
+
+### レビュー出力フォルダ
+
+圧縮率がしきい値を下回ったファイルは以下のフォルダに出力されます:
+
+```
+data/07_model_output/
+├── review/                      # transform パイプライン出力（レビュー対象）
+└── organized_review/            # organize パイプライン出力（ジャンル分類済み）
+```
+
+### frontmatter の review_reason フィールド
+
+レビュー対象ファイルには `review_reason` フィールドが追加されます:
+
+```yaml
+---
+title: 会話のタイトル
+created: 2025-12-02
+tags:
+  - タグ1
+summary: 要約
+source_provider: claude
+file_id: abc123
+normalized: true
+review_reason: "extract_knowledge: body_ratio=3.3% < threshold=10.0%"
+genre: business
+topic: トピック名
+---
+```
+
+**review_reason のフォーマット**:
+- `<ノード名>: body_ratio=<実際の圧縮率>% < threshold=<しきい値>%`
+- 例: `"extract_knowledge: body_ratio=3.3% < threshold=10.0%"`
+
+### 手動レビューと復帰
+
+レビューフォルダのファイルは、手動で内容を確認し、問題なければ通常フォルダに移動します:
+
+```bash
+# レビュー対象ファイルの確認
+ls data/07_model_output/review/
+ls data/07_model_output/organized_review/
+
+# 問題なければ通常フォルダに移動
+mv data/07_model_output/review/*.md data/07_model_output/notes/
+mv data/07_model_output/organized_review/*.md data/07_model_output/organized/
+```
 
 ---
 
