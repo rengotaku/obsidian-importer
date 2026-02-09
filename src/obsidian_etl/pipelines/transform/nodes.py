@@ -299,8 +299,12 @@ def format_markdown(
             else "tags: []"
         )
 
-        # Escape title for YAML (special chars like : # [ ] { } need quoting)
-        title = metadata.get("title", "").replace('"', '\\"')
+        # Sanitize title for YAML and filename safety
+        # Replace backslashes with forward slashes (common in file paths)
+        # Then escape remaining special chars for YAML double-quoted string
+        title = metadata.get("title", "")
+        title = title.replace("\\", "/")  # Normalize path separators
+        title = title.replace('"', '\\"')  # Escape quotes for YAML
 
         # Get summary for frontmatter (may be empty)
         summary = metadata.get("summary", "")

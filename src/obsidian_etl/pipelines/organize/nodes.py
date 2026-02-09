@@ -104,7 +104,18 @@ def classify_genre(
             if frontmatter_match:
                 frontmatter_text = frontmatter_match.group(1)
                 body = frontmatter_match.group(2)
-                frontmatter = yaml.safe_load(frontmatter_text) or {}
+                # Parse YAML frontmatter with error handling
+                try:
+                    frontmatter = yaml.safe_load(frontmatter_text) or {}
+                except yaml.YAMLError as e:
+                    # If YAML parse fails, try to extract key fields manually
+                    logger.warning(f"YAML parse error for {key}: {e}")
+                    frontmatter = {}
+                    for line in frontmatter_text.split("\n"):
+                        if line.startswith("title:"):
+                            frontmatter["title"] = line.split(":", 1)[1].strip().strip('"')
+                        elif line.startswith("tags:"):
+                            frontmatter["tags"] = []
                 # Convert date objects to strings for JSON serialization
                 from datetime import date, datetime
 
