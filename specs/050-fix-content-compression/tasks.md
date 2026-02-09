@@ -50,18 +50,18 @@
 
 ### 入力
 
-- [ ] T008 Read previous phase output: specs/050-fix-content-compression/tasks/ph1-output.md
+- [X] T008 Read previous phase output: specs/050-fix-content-compression/tasks/ph1-output.md
 
 ### 実装 (NO TDD - プロンプトファイル変更のみ)
 
-- [ ] T009 [US1] Add "情報量の目安" section to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
-- [ ] T010 [US1] Add "省略禁止" section to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
+- [X] T009 [US1] Add "情報量の目安" section to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
+- [X] T010 [US1] Add "省略禁止" section to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
 
 ### 検証
 
-- [ ] T011 Verify prompt file contains new sections
-- [ ] T012 Run `make test` to verify no regressions
-- [ ] T013 Generate phase output: specs/050-fix-content-compression/tasks/ph2-output.md
+- [X] T011 Verify prompt file contains new sections
+- [X] T012 Run `make test` to verify no regressions
+- [X] T013 Generate phase output: specs/050-fix-content-compression/tasks/ph2-output.md
 
 **Checkpoint**: プロンプト改善完了、US1 の基盤が整う
 
