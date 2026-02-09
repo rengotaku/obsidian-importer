@@ -125,17 +125,17 @@
 
 ### 実装 (GREEN)
 
-- [ ] T036 Read RED tests: specs/050-fix-content-compression/red-tests/ph4-test.md
-- [ ] T037 [US2] Import compression_validator in src/obsidian_etl/pipelines/transform/nodes.py
-- [ ] T038 [US2] Replace existing ratio check with validate_compression() in extract_knowledge
-- [ ] T039 [US2] Add review_reason to item when is_valid=False (format: "node_name: body_ratio=X% < threshold=Y%")
-- [ ] T040 [US2] Remove skipped_empty continue for compression failures (process continues)
-- [ ] T041 Verify `make test` PASS (GREEN)
+- [x] T036 Read RED tests: specs/050-fix-content-compression/red-tests/ph4-test.md
+- [x] T037 [US2] Import compression_validator in src/obsidian_etl/pipelines/transform/nodes.py
+- [x] T038 [US2] Replace existing ratio check with validate_compression() in extract_knowledge
+- [x] T039 [US2] Add review_reason to item when is_valid=False (format: "node_name: body_ratio=X% < threshold=Y%")
+- [x] T040 [US2] Remove skipped_empty continue for compression failures (process continues)
+- [x] T041 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T042 Verify `make test` passes all tests (no regressions)
-- [ ] T043 Generate phase output: specs/050-fix-content-compression/tasks/ph4-output.md
+- [x] T042 Verify `make test` passes all tests (no regressions)
+- [x] T043 Generate phase output: specs/050-fix-content-compression/tasks/ph4-output.md
 
 **Checkpoint**: extract_knowledge が圧縮率を検証し、review_reason を付与
 

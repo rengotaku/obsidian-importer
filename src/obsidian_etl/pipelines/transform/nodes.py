@@ -24,6 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 from obsidian_etl.utils import knowledge_extractor
+from obsidian_etl.utils.compression_validator import validate_compression
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
@@ -151,19 +152,26 @@ def extract_knowledge(
             skipped_empty += 1
             continue
 
-        # Check content compression ratio (detect abnormal shrinkage)
-        original_len = len(item["content"])
-        output_len = len(summary_content)
-        if original_len > 0:
-            ratio = output_len / original_len * 100
-            min_ratio = params.get("transform", {}).get("min_content_ratio", 5.0)
-            if ratio < min_ratio:
-                logger.warning(
-                    f"Low content ratio ({ratio:.1f}% < {min_ratio}%) for {partition_id}: "
-                    f"{original_len} -> {output_len} chars. Item excluded."
-                )
-                skipped_empty += 1
-                continue
+        # Check content compression ratio using compression_validator
+        compression_result = validate_compression(
+            original_content=item["content"],
+            output_content=summary_content,
+            body_content=summary_content,  # For extract_knowledge, body = summary_content
+            node_name="extract_knowledge",
+        )
+
+        if not compression_result.is_valid:
+            # Add review_reason to item (don't exclude)
+            review_reason = (
+                f"{compression_result.node_name}: "
+                f"body_ratio={compression_result.body_ratio:.1%} < "
+                f"threshold={compression_result.threshold:.1%}"
+            )
+            item["review_reason"] = review_reason
+            logger.warning(
+                f"Low content ratio for {partition_id}: {review_reason}. Item marked for review."
+            )
+            # DO NOT continue - process the item normally
 
         # Check if summary is in English and translate if needed
         summary = knowledge.get("summary", "")
