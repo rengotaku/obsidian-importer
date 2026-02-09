@@ -75,19 +75,19 @@
 
 ### 入力
 
-- [ ] T014 Read previous phase output: specs/050-fix-content-compression/tasks/ph2-output.md
+- [X] T014 Read previous phase output: specs/050-fix-content-compression/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T015 [P] [US2] Create test file: tests/utils/test_compression_validator.py
-- [ ] T016 [P] [US2] Implement test_get_threshold_large in tests/utils/test_compression_validator.py
-- [ ] T017 [P] [US2] Implement test_get_threshold_medium in tests/utils/test_compression_validator.py
-- [ ] T018 [P] [US2] Implement test_get_threshold_small in tests/utils/test_compression_validator.py
-- [ ] T019 [P] [US2] Implement test_validate_compression_valid in tests/utils/test_compression_validator.py
-- [ ] T020 [P] [US2] Implement test_validate_compression_invalid in tests/utils/test_compression_validator.py
-- [ ] T021 [P] [US2] Implement test_validate_compression_zero_original in tests/utils/test_compression_validator.py
-- [ ] T022 Verify `make test` FAIL (RED)
-- [ ] T023 Generate RED output: specs/050-fix-content-compression/red-tests/ph3-test.md
+- [X] T015 [P] [US2] Create test file: tests/utils/test_compression_validator.py
+- [X] T016 [P] [US2] Implement test_get_threshold_large in tests/utils/test_compression_validator.py
+- [X] T017 [P] [US2] Implement test_get_threshold_medium in tests/utils/test_compression_validator.py
+- [X] T018 [P] [US2] Implement test_get_threshold_small in tests/utils/test_compression_validator.py
+- [X] T019 [P] [US2] Implement test_validate_compression_valid in tests/utils/test_compression_validator.py
+- [X] T020 [P] [US2] Implement test_validate_compression_invalid in tests/utils/test_compression_validator.py
+- [X] T021 [P] [US2] Implement test_validate_compression_zero_original in tests/utils/test_compression_validator.py
+- [X] T022 Verify `make test` FAIL (RED)
+- [X] T023 Generate RED output: specs/050-fix-content-compression/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 
