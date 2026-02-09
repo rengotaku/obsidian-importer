@@ -91,16 +91,16 @@
 
 ### 実装 (GREEN)
 
-- [ ] T024 Read RED tests: specs/050-fix-content-compression/red-tests/ph3-test.md
-- [ ] T025 [US2] Create src/obsidian_etl/utils/compression_validator.py with CompressionResult dataclass
-- [ ] T026 [US2] Implement get_threshold() in src/obsidian_etl/utils/compression_validator.py
-- [ ] T027 [US2] Implement validate_compression() in src/obsidian_etl/utils/compression_validator.py
-- [ ] T028 Verify `make test` PASS (GREEN)
+- [X] T024 Read RED tests: specs/050-fix-content-compression/red-tests/ph3-test.md
+- [X] T025 [US2] Create src/obsidian_etl/utils/compression_validator.py with CompressionResult dataclass
+- [X] T026 [US2] Implement get_threshold() in src/obsidian_etl/utils/compression_validator.py
+- [X] T027 [US2] Implement validate_compression() in src/obsidian_etl/utils/compression_validator.py
+- [X] T028 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T029 Verify `make test` passes all tests (no regressions)
-- [ ] T030 Generate phase output: specs/050-fix-content-compression/tasks/ph3-output.md
+- [X] T029 Verify `make test` passes all tests (no regressions)
+- [X] T030 Generate phase output: specs/050-fix-content-compression/tasks/ph3-output.md
 
 **Checkpoint**: 圧縮率検証ユーティリティが独立して動作
 
