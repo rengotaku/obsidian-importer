@@ -3,13 +3,14 @@
 This pipeline processes ParsedItems from the Extract pipeline:
 1. extract_knowledge: LLM-based knowledge extraction (title, summary, tags)
 2. generate_metadata: Metadata generation (file_id, created, normalized)
-3. format_markdown: Markdown formatting with YAML frontmatter
+3. format_markdown: Markdown formatting with YAML frontmatter (split by review_reason)
 
 Pipeline Inputs:
 - parsed_items: PartitionedDataset of ParsedItem dicts (from Extract)
 
 Pipeline Outputs:
-- markdown_notes: PartitionedDataset of Markdown files with frontmatter
+- markdown_notes: PartitionedDataset of Markdown files (normal, no review_reason)
+- review_notes: PartitionedDataset of Markdown files (with review_reason for manual review)
 """
 
 from kedro.pipeline import Pipeline, node, pipeline
@@ -47,7 +48,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=format_markdown,
                 inputs="transformed_items_with_metadata",
-                outputs="markdown_notes",
+                outputs=["markdown_notes", "review_notes"],
                 name="format_markdown",
             ),
         ]

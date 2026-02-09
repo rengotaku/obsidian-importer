@@ -160,18 +160,18 @@
 
 ### 実装 (GREEN)
 
-- [ ] T049 Read RED tests: specs/050-fix-content-compression/red-tests/ph5-test.md
-- [ ] T050 [P] [US2] Add review_notes dataset to conf/base/catalog.yml
-- [ ] T051 [US2] Modify format_markdown to return tuple (normal, review) in src/obsidian_etl/pipelines/transform/nodes.py
-- [ ] T052 [US2] Update transform pipeline to handle dual output in src/obsidian_etl/pipelines/transform/pipeline.py
-- [ ] T053 [US2] Modify embed_frontmatter_fields to include review_reason in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T054 Verify `make test` PASS (GREEN)
+- [x] T049 Read RED tests: specs/050-fix-content-compression/red-tests/ph5-test.md
+- [x] T050 [P] [US2] Add review_notes dataset to conf/base/catalog.yml
+- [x] T051 [US2] Modify format_markdown to return tuple (normal, review) in src/obsidian_etl/pipelines/transform/nodes.py
+- [x] T052 [US2] Update transform pipeline to handle dual output in src/obsidian_etl/pipelines/transform/pipeline.py
+- [x] T053 [US2] Modify embed_frontmatter_fields to include review_reason in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T054 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T055 Verify `make test` passes all tests (no regressions)
-- [ ] T056 Verify review/ directory structure in data/07_model_output/
-- [ ] T057 Generate phase output: specs/050-fix-content-compression/tasks/ph5-output.md
+- [x] T055 Verify `make test` passes all tests (no regressions)
+- [x] T056 Verify review/ directory structure in data/07_model_output/
+- [x] T057 Generate phase output: specs/050-fix-content-compression/tasks/ph5-output.md
 
 **Checkpoint**: レビューフォルダ出力が機能し、frontmatter に review_reason が含まれる
 

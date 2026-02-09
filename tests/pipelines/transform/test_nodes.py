@@ -501,12 +501,18 @@ class TestFormatMarkdown(unittest.TestCase):
 
         result = format_markdown(partitioned_input)
 
-        self.assertIsInstance(result, dict)
-        self.assertEqual(len(result), 1)
+        # Result should be a tuple (normal_dict, review_dict)
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        normal_dict, review_dict = result
+
+        # Item without review_reason should be in normal_dict
+        self.assertEqual(len(normal_dict), 1)
+        self.assertEqual(len(review_dict), 0)
 
         # Output key should be sanitized filename
-        output_key = list(result.keys())[0]
-        markdown = result[output_key]
+        output_key = list(normal_dict.keys())[0]
+        markdown = normal_dict[output_key]
 
         # Output should be a string (markdown content)
         self.assertIsInstance(markdown, str)
@@ -533,9 +539,9 @@ class TestFormatMarkdown(unittest.TestCase):
         metadata_item = self._make_metadata_item()
         partitioned_input = _make_partitioned_input({"item-vals": metadata_item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        markdown = list(result.values())[0]
+        markdown = list(normal_dict.values())[0]
 
         # Extract frontmatter section
         parts = markdown.split("---\n", 2)
@@ -553,9 +559,9 @@ class TestFormatMarkdown(unittest.TestCase):
         metadata_item = self._make_metadata_item()
         partitioned_input = _make_partitioned_input({"item-sum": metadata_item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        markdown = list(result.values())[0]
+        markdown = list(normal_dict.values())[0]
 
         # Body should contain summary text
         self.assertIn("asyncio", markdown)
@@ -565,9 +571,9 @@ class TestFormatMarkdown(unittest.TestCase):
         metadata_item = self._make_metadata_item()
         partitioned_input = _make_partitioned_input({"item-tags": metadata_item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        markdown = list(result.values())[0]
+        markdown = list(normal_dict.values())[0]
 
         # Tags should be in YAML list format with quoted values
         self.assertIn('  - "Python"', markdown)
@@ -601,9 +607,9 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
         item = self._make_metadata_item_with_title("Python asyncio の仕組み")
         partitioned_input = _make_partitioned_input({"item-fn": item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        output_key = list(result.keys())[0]
+        output_key = list(normal_dict.keys())[0]
         # Output key should contain the title (extension added by PartitionedDataset)
         self.assertIn("Python asyncio", output_key)
 
@@ -612,9 +618,9 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
         item = self._make_metadata_item_with_title("C++ vs C#: パフォーマンス比較 (2026/01)")
         partitioned_input = _make_partitioned_input({"item-special": item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        output_key = list(result.keys())[0]
+        output_key = list(normal_dict.keys())[0]
 
         # Filename should not contain filesystem-unsafe characters
         unsafe_chars = ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]
@@ -626,9 +632,9 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
         item = self._make_metadata_item_with_title("データベース正規化の基礎")
         partitioned_input = _make_partitioned_input({"item-unicode": item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        output_key = list(result.keys())[0]
+        output_key = list(normal_dict.keys())[0]
 
         # Should contain the Japanese title
         self.assertIn("データベース正規化", output_key)
@@ -639,9 +645,9 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
         item = self._make_metadata_item_with_title(long_title)
         partitioned_input = _make_partitioned_input({"item-long": item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        output_key = list(result.keys())[0]
+        output_key = list(normal_dict.keys())[0]
 
         # Filename should be reasonably short (< 255 chars for filesystem)
         self.assertLess(len(output_key), 256)
@@ -651,9 +657,9 @@ class TestFormatMarkdownOutputFilename(unittest.TestCase):
         item = self._make_metadata_item_with_title("")
         partitioned_input = _make_partitioned_input({"item-empty": item})
 
-        result = format_markdown(partitioned_input)
+        normal_dict, review_dict = format_markdown(partitioned_input)
 
-        output_key = list(result.keys())[0]
+        output_key = list(normal_dict.keys())[0]
 
         # Should have some fallback filename
         self.assertGreater(len(output_key), 0)

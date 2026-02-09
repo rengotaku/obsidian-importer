@@ -472,10 +472,10 @@ def embed_frontmatter_fields(
     partitioned_input: dict[str, Callable],
     params: dict,
 ) -> dict[str, str]:
-    """Embed genre, topic, summary into frontmatter content.
+    """Embed genre, topic, summary, review_reason into frontmatter content.
 
     Args:
-        partitioned_input: Items with content, genre, topic, and metadata
+        partitioned_input: Items with content, genre, topic, metadata, and optional review_reason
         params: Parameters dict (unused)
 
     Returns:
@@ -496,6 +496,7 @@ def embed_frontmatter_fields(
         content = item.get("content", "")
         genre = item.get("genre", "other")
         topic = item.get("topic", "")
+        review_reason = item.get("review_reason")
 
         # Extract summary from metadata (may be in metadata or generated_metadata)
         summary = ""
@@ -505,7 +506,9 @@ def embed_frontmatter_fields(
             summary = item["generated_metadata"]["summary"]
 
         # Embed fields in frontmatter
-        updated_content = _embed_fields_in_frontmatter(content, genre, topic, summary)
+        updated_content = _embed_fields_in_frontmatter(
+            content, genre, topic, summary, review_reason
+        )
 
         # Use partition key as output key (already sanitized filename from format_markdown)
         result[key] = updated_content
@@ -518,6 +521,7 @@ def _embed_fields_in_frontmatter(
     genre: str,
     topic: str,
     summary: str,
+    review_reason: str | None = None,
 ) -> str:
     """Helper to embed fields into frontmatter.
 
@@ -526,6 +530,7 @@ def _embed_fields_in_frontmatter(
         genre: Genre classification
         topic: Topic (may be empty)
         summary: Summary text (may be empty)
+        review_reason: Review reason (optional, only for items flagged for review)
 
     Returns:
         str: Markdown with updated frontmatter
@@ -538,6 +543,8 @@ def _embed_fields_in_frontmatter(
             "genre": genre,
             "topic": topic,
         }
+        if review_reason:
+            fm["review_reason"] = review_reason
         fm_lines = ["---"]
         for k, v in fm.items():
             fm_lines.append(f"{k}: {_yaml_quote(v)}")
@@ -557,6 +564,8 @@ def _embed_fields_in_frontmatter(
         frontmatter["summary"] = summary
         frontmatter["genre"] = genre
         frontmatter["topic"] = topic
+        if review_reason:
+            frontmatter["review_reason"] = review_reason
 
         # Rebuild content with updated frontmatter
         # Manual formatting to match expected format (2-space indent for list items)

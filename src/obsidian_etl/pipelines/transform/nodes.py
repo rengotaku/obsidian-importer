@@ -284,21 +284,25 @@ def generate_metadata(
 @timed_node
 def format_markdown(
     partitioned_input: dict[str, Callable],
-) -> dict[str, dict]:
+) -> tuple[dict[str, str], dict[str, str]]:
     """Format items as Markdown with YAML frontmatter.
 
     Creates final Markdown output:
     - YAML frontmatter from metadata (including summary)
     - Body from generated_metadata.summary_content
     - Output filename from sanitized title
+    - Split by review_reason: items with review_reason go to review dict
 
     Args:
         partitioned_input: Dict of partition_id -> callable that loads item with metadata.
 
     Returns:
-        Dict of sanitized_filename -> item with "content" field containing Markdown.
+        Tuple of (normal_output, review_output):
+        - normal_output: Dict of sanitized_filename -> markdown content (no review_reason)
+        - review_output: Dict of sanitized_filename -> markdown content (with review_reason)
     """
-    output = {}
+    normal_output = {}
+    review_output = {}
 
     for partition_id, load_func in partitioned_input.items():
         item = load_func()
@@ -363,12 +367,18 @@ def format_markdown(
         title = metadata.get("title", "")
         filename = _sanitize_filename(title, item["file_id"])
 
-        # Store content string (TextDataset expects str, not dict)
-        output[filename] = markdown_content
+        # Split by review_reason
+        if item.get("review_reason"):
+            review_output[filename] = markdown_content
+        else:
+            normal_output[filename] = markdown_content
 
-    logger.info(f"format_markdown: processed {len(output)} items")
+    logger.info(
+        f"format_markdown: processed {len(normal_output) + len(review_output)} items "
+        f"(normal={len(normal_output)}, review={len(review_output)})"
+    )
 
-    return output
+    return normal_output, review_output
 
 
 def _sanitize_filename(title: str, file_id: str) -> str:

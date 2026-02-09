@@ -108,6 +108,17 @@ markdown_notes:
     kedro-viz:
       layer: model_output
 
+review_notes:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/review
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
 classified_items:
   type: partitions.PartitionedDataset
   path: data/07_model_output/classified
@@ -188,6 +199,62 @@ organized_items:
 organized_notes:
   type: partitions.PartitionedDataset
   path: data/07_model_output/organized
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+# Review notes intermediate datasets
+classified_review_items:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/classified_review
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+topic_extracted_review_items:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/topic_extracted_review
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+normalized_review_items:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/normalized_review
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+cleaned_review_items:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/cleaned_review
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
+organized_review_notes:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/organized_review
   dataset:
     type: text.TextDataset
   filename_suffix: ".md"

@@ -111,11 +111,43 @@ def _make_claude_conversation(
 
 
 def _make_mock_ollama_response(title: str = "Python asyncio の仕組み") -> dict:
-    """Create a mock Ollama LLM response for knowledge extraction."""
+    """Create a mock Ollama LLM response for knowledge extraction.
+
+    The summary_content must be large enough to pass compression ratio check.
+    For content <5000 chars, threshold is 20%. Input is ~800 chars per conversation,
+    so we need at least 160 chars of body content.
+    """
+    # Make body content large enough to pass 20% threshold
+    body_content = """## asyncio の概要
+
+asyncio は Python の非同期 I/O フレームワークです。イベントループを使用して、
+並行処理を効率的に実行します。
+
+### 主な特徴
+
+- async/await 構文による直感的な非同期プログラミング
+- イベントループによる効率的なタスク管理
+- Future と Task による並行処理の制御
+- コルーチンベースの設計パターン
+
+### 使用例
+
+```python
+import asyncio
+
+async def main():
+    await asyncio.sleep(1)
+    print("Hello, asyncio!")
+
+asyncio.run(main())
+```
+
+この例では、非同期関数 main を定義し、asyncio.run で実行しています。"""
+
     return {
         "title": title,
         "summary": "Python asyncio ライブラリの非同期処理について",
-        "summary_content": "## asyncio の概要\n\nasyncio は Python の非同期 I/O フレームワークです。",
+        "summary_content": body_content,
         "tags": ["Python", "asyncio", "非同期処理"],
     }
 
@@ -183,6 +215,12 @@ class TestE2EClaudeImport(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),  # Phase 2: renamed from organized_items
                 "organized_items": PartitionedMemoryDataset(),  # Legacy compatibility
+                "review_notes": PartitionedMemoryDataset(),  # Phase 5: review folder output
+                "review_classified_items": PartitionedMemoryDataset(),
+                "review_topic_extracted_items": PartitionedMemoryDataset(),
+                "review_normalized_items": PartitionedMemoryDataset(),
+                "review_cleaned_items": PartitionedMemoryDataset(),
+                "review_organized_notes": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -361,6 +399,14 @@ class TestResumeAfterFailure(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "vault_determined_items": PartitionedMemoryDataset(),
                 "organized_items": PartitionedMemoryDataset(),
+                "organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),
+                "review_classified_items": PartitionedMemoryDataset(),
+                "review_topic_extracted_items": PartitionedMemoryDataset(),
+                "review_normalized_items": PartitionedMemoryDataset(),
+                "review_cleaned_items": PartitionedMemoryDataset(),
+                "review_organized_notes": PartitionedMemoryDataset(),
+                "topic_extracted_items": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -471,12 +517,18 @@ class TestPipelineNodeNames(unittest.TestCase):
             "extract_knowledge",
             "generate_metadata",
             "format_markdown",
-            # Organize
+            # Organize (normal path)
             "classify_genre",
             "extract_topic",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
+            # Organize (review path)
+            "classify_genre_review",
+            "extract_topic_review",
+            "normalize_frontmatter_review",
+            "clean_content_review",
+            "embed_frontmatter_fields_review",
         }
         self.assertEqual(
             node_names,
@@ -497,12 +549,18 @@ class TestPipelineNodeNames(unittest.TestCase):
             "extract_knowledge",
             "generate_metadata",
             "format_markdown",
-            # Organize
+            # Organize (normal path)
             "classify_genre",
             "extract_topic",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
+            # Organize (review path)
+            "classify_genre_review",
+            "extract_topic_review",
+            "normalize_frontmatter_review",
+            "clean_content_review",
+            "embed_frontmatter_fields_review",
         }
         self.assertEqual(
             node_names,
@@ -525,12 +583,18 @@ class TestPipelineNodeNames(unittest.TestCase):
             "extract_knowledge",
             "generate_metadata",
             "format_markdown",
-            # Organize
+            # Organize (normal path)
             "classify_genre",
             "extract_topic",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
+            # Organize (review path)
+            "classify_genre_review",
+            "extract_topic_review",
+            "normalize_frontmatter_review",
+            "clean_content_review",
+            "embed_frontmatter_fields_review",
         }
         self.assertEqual(
             node_names,
@@ -620,6 +684,12 @@ class TestPartialRunFromTo(unittest.TestCase):
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),
+                "review_classified_items": PartitionedMemoryDataset(),
+                "review_topic_extracted_items": PartitionedMemoryDataset(),
+                "review_normalized_items": PartitionedMemoryDataset(),
+                "review_cleaned_items": PartitionedMemoryDataset(),
+                "review_organized_notes": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -875,6 +945,12 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),
+                "review_classified_items": PartitionedMemoryDataset(),
+                "review_topic_extracted_items": PartitionedMemoryDataset(),
+                "review_normalized_items": PartitionedMemoryDataset(),
+                "review_cleaned_items": PartitionedMemoryDataset(),
+                "review_organized_notes": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
                         "provider": "openai",
