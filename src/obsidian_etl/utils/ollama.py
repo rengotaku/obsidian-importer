@@ -125,7 +125,12 @@ def parse_markdown_response(response: str) -> tuple[dict, str | None]:
     # Split sections
     title, summary, tags, summary_content = _split_markdown_sections(text)
 
-    return {"title": title, "summary": summary, "tags": tags, "summary_content": summary_content}, None
+    return {
+        "title": title,
+        "summary": summary,
+        "tags": tags,
+        "summary_content": summary_content,
+    }, None
 
 
 def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
@@ -146,6 +151,7 @@ def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
     first_heading_text = ""
     first_heading_level = 0
     has_h1 = False
+    in_code_block = False
 
     def _flush_section() -> None:
         nonlocal title, summary, tags, summary_content
@@ -160,6 +166,17 @@ def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
             summary_content = body
 
     for line in lines:
+        # Track code block state (``` toggles in/out of code block)
+        if line.strip().startswith("```"):
+            in_code_block = not in_code_block
+            section_lines.append(line)
+            continue
+
+        # Skip heading detection inside code blocks
+        if in_code_block:
+            section_lines.append(line)
+            continue
+
         heading_match = re.match(r"^(#{1,6})\s+(.+)$", line)
 
         if heading_match:

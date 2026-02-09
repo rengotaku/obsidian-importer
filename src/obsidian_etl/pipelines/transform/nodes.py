@@ -151,6 +151,20 @@ def extract_knowledge(
             skipped_empty += 1
             continue
 
+        # Check content compression ratio (detect abnormal shrinkage)
+        original_len = len(item["content"])
+        output_len = len(summary_content)
+        if original_len > 0:
+            ratio = output_len / original_len * 100
+            min_ratio = params.get("transform", {}).get("min_content_ratio", 5.0)
+            if ratio < min_ratio:
+                logger.warning(
+                    f"Low content ratio ({ratio:.1f}% < {min_ratio}%) for {partition_id}: "
+                    f"{original_len} -> {output_len} chars. Item excluded."
+                )
+                skipped_empty += 1
+                continue
+
         # Check if summary is in English and translate if needed
         summary = knowledge.get("summary", "")
         if knowledge_extractor.is_english_summary(summary):

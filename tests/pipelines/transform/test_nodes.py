@@ -344,6 +344,8 @@ class TestExtractKnowledgeErrorHandling(unittest.TestCase):
         }
         partitioned_input = _make_partitioned_input(items)
         params = _make_params()
+        # Disable ratio check for this test (testing LLM failure handling, not ratio)
+        params["transform"] = {"min_content_ratio": 0}
 
         result = extract_knowledge(partitioned_input, params)
 
