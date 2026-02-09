@@ -161,13 +161,14 @@ def extract_knowledge(
         )
 
         if not compression_result.is_valid:
-            # Add review_reason to item (don't exclude)
+            # Add review_reason and review_node to item (don't exclude)
             review_reason = (
                 f"{compression_result.node_name}: "
                 f"body_ratio={compression_result.body_ratio:.1%} < "
                 f"threshold={compression_result.threshold:.1%}"
             )
             item["review_reason"] = review_reason
+            item["review_node"] = compression_result.node_name
             logger.warning(
                 f"Low content ratio for {partition_id}: {review_reason}. Item marked for review."
             )
@@ -351,12 +352,15 @@ def format_markdown(
             f"normalized: {str(metadata.get('normalized', True)).lower()}",
         ]
 
-        # Add review_reason to frontmatter if present
+        # Add review fields to frontmatter if present
         review_reason = item.get("review_reason")
+        review_node = item.get("review_node")
         if review_reason:
             # Escape review_reason for YAML
             review_reason_escaped = review_reason.replace("\\", "\\\\").replace('"', '\\"')
             frontmatter_parts.append(f'review_reason: "{review_reason_escaped}"')
+        if review_node:
+            frontmatter_parts.append(f"review_node: {review_node}")
 
         frontmatter_yaml = "\n".join(frontmatter_parts) + "\n"
 

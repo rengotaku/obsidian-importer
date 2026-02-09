@@ -215,12 +215,7 @@ class TestE2EClaudeImport(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),  # Phase 2: renamed from organized_items
                 "organized_items": PartitionedMemoryDataset(),  # Legacy compatibility
-                "review_notes": PartitionedMemoryDataset(),  # Phase 5: review folder output
-                "review_classified_items": PartitionedMemoryDataset(),
-                "review_topic_extracted_items": PartitionedMemoryDataset(),
-                "review_normalized_items": PartitionedMemoryDataset(),
-                "review_cleaned_items": PartitionedMemoryDataset(),
-                "review_organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -400,12 +395,7 @@ class TestResumeAfterFailure(unittest.TestCase):
                 "vault_determined_items": PartitionedMemoryDataset(),
                 "organized_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
-                "review_notes": PartitionedMemoryDataset(),
-                "review_classified_items": PartitionedMemoryDataset(),
-                "review_topic_extracted_items": PartitionedMemoryDataset(),
-                "review_normalized_items": PartitionedMemoryDataset(),
-                "review_cleaned_items": PartitionedMemoryDataset(),
-                "review_organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "topic_extracted_items": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
@@ -517,18 +507,12 @@ class TestPipelineNodeNames(unittest.TestCase):
             "extract_knowledge",
             "generate_metadata",
             "format_markdown",
-            # Organize (normal path)
+            # Organize
             "classify_genre",
             "extract_topic",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
-            # Organize (review path)
-            "classify_genre_review",
-            "extract_topic_review",
-            "normalize_frontmatter_review",
-            "clean_content_review",
-            "embed_frontmatter_fields_review",
         }
         self.assertEqual(
             node_names,
@@ -549,18 +533,12 @@ class TestPipelineNodeNames(unittest.TestCase):
             "extract_knowledge",
             "generate_metadata",
             "format_markdown",
-            # Organize (normal path)
+            # Organize
             "classify_genre",
             "extract_topic",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
-            # Organize (review path)
-            "classify_genre_review",
-            "extract_topic_review",
-            "normalize_frontmatter_review",
-            "clean_content_review",
-            "embed_frontmatter_fields_review",
         }
         self.assertEqual(
             node_names,
@@ -583,18 +561,12 @@ class TestPipelineNodeNames(unittest.TestCase):
             "extract_knowledge",
             "generate_metadata",
             "format_markdown",
-            # Organize (normal path)
+            # Organize
             "classify_genre",
             "extract_topic",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
-            # Organize (review path)
-            "classify_genre_review",
-            "extract_topic_review",
-            "normalize_frontmatter_review",
-            "clean_content_review",
-            "embed_frontmatter_fields_review",
         }
         self.assertEqual(
             node_names,
@@ -684,12 +656,7 @@ class TestPartialRunFromTo(unittest.TestCase):
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
-                "review_notes": PartitionedMemoryDataset(),
-                "review_classified_items": PartitionedMemoryDataset(),
-                "review_topic_extracted_items": PartitionedMemoryDataset(),
-                "review_normalized_items": PartitionedMemoryDataset(),
-                "review_cleaned_items": PartitionedMemoryDataset(),
-                "review_organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -945,12 +912,7 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
-                "review_notes": PartitionedMemoryDataset(),
-                "review_classified_items": PartitionedMemoryDataset(),
-                "review_topic_extracted_items": PartitionedMemoryDataset(),
-                "review_normalized_items": PartitionedMemoryDataset(),
-                "review_cleaned_items": PartitionedMemoryDataset(),
-                "review_organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "params:import": MemoryDataset(
                     {
                         "provider": "openai",
