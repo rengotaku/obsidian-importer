@@ -114,14 +114,14 @@
 
 ### 入力
 
-- [ ] T031 Read previous phase output: specs/050-fix-content-compression/tasks/ph3-output.md
+- [x] T031 Read previous phase output: specs/050-fix-content-compression/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T032 [P] [US2] Add test_extract_knowledge_adds_review_reason in tests/pipelines/transform/test_nodes.py
-- [ ] T033 [P] [US2] Add test_extract_knowledge_no_review_reason_when_valid in tests/pipelines/transform/test_nodes.py
-- [ ] T034 Verify `make test` FAIL (RED)
-- [ ] T035 Generate RED output: specs/050-fix-content-compression/red-tests/ph4-test.md
+- [x] T032 [P] [US2] Add test_extract_knowledge_adds_review_reason in tests/pipelines/transform/test_nodes.py
+- [x] T033 [P] [US2] Add test_extract_knowledge_no_review_reason_when_valid in tests/pipelines/transform/test_nodes.py
+- [x] T034 Verify `make test` FAIL (RED)
+- [x] T035 Generate RED output: specs/050-fix-content-compression/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 

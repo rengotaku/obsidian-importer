@@ -1025,6 +1025,134 @@ class TestSanitizeFilename(unittest.TestCase):
 # ============================================================
 
 
+# ============================================================
+# Review reason tests (Phase 4 - US2)
+# ============================================================
+
+
+class TestExtractKnowledgeReviewReason(unittest.TestCase):
+    """extract_knowledge: Low compression ratio -> review_reason added.
+
+    Tests for User Story 2 - 圧縮率検証
+    圧縮率が基準未達の場合、アイテムを除外せず review_reason フラグを追加する。
+    """
+
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            for pattern in ["conv-*.json", "item-*.json", "low-ratio-*.json", "valid-ratio-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        self.setUp()
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_extract_knowledge_adds_review_reason(self, mock_llm_extract):
+        """圧縮率が基準未達の場合、item に review_reason が追加されること。
+
+        FR-005: システムは圧縮率が基準未達のアイテムに review_reason を追加しなければならない
+
+        When compression ratio is below threshold:
+        - review_reason should be added to item
+        - Format: "extract_knowledge: body_ratio=X.X% < threshold=Y.Y%"
+        - Item should NOT be excluded (still in output)
+        """
+        # Create a large original content (10000+ chars -> threshold 10%)
+        # LLM returns small summary_content that results in < 10% ratio
+        large_content = "A" * 10000  # 10000 chars -> threshold = 10%
+        small_summary = "B" * 500  # 500 chars = 5% of 10000 (below 10% threshold)
+
+        mock_llm_extract.return_value = (
+            {
+                "title": "低圧縮率テスト",
+                "summary": "テスト要約。",
+                "summary_content": small_summary,
+                "tags": ["テスト"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(
+            item_id="low-ratio-item",
+            file_id="lowratio12345",
+            content=large_content,
+        )
+        partitioned_input = _make_partitioned_input({"low-ratio-item": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        # Item should NOT be excluded - it should be in the output
+        self.assertEqual(len(result), 1)
+        self.assertIn("low-ratio-item", result)
+
+        item = result["low-ratio-item"]
+
+        # review_reason should be added to the item
+        self.assertIn("review_reason", item)
+
+        # review_reason format: "extract_knowledge: body_ratio=X.X% < threshold=Y.Y%"
+        review_reason = item["review_reason"]
+        self.assertIn("extract_knowledge", review_reason)
+        self.assertIn("body_ratio=", review_reason)
+        self.assertIn("threshold=", review_reason)
+        # Should contain actual percentages (5.0% < 10.0%)
+        self.assertIn("5.0%", review_reason)
+        self.assertIn("10.0%", review_reason)
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_extract_knowledge_no_review_reason_when_valid(self, mock_llm_extract):
+        """圧縮率が基準達成の場合、review_reason がないこと。
+
+        FR-006: システムは圧縮率が基準を満たすアイテムには review_reason を追加してはならない
+
+        When compression ratio meets or exceeds threshold:
+        - review_reason should NOT be present in item
+        - Item should be included in output normally
+        """
+        # Create content where ratio meets threshold
+        # 5000 chars -> threshold = 15%
+        medium_content = "A" * 5000
+        valid_summary = "B" * 1000  # 1000 chars = 20% of 5000 (meets 15% threshold)
+
+        mock_llm_extract.return_value = (
+            {
+                "title": "正常圧縮率テスト",
+                "summary": "テスト要約。",
+                "summary_content": valid_summary,
+                "tags": ["テスト"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(
+            item_id="valid-ratio-item",
+            file_id="validratio123",
+            content=medium_content,
+        )
+        partitioned_input = _make_partitioned_input({"valid-ratio-item": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        # Item should be included in output
+        self.assertEqual(len(result), 1)
+        self.assertIn("valid-ratio-item", result)
+
+        item = result["valid-ratio-item"]
+
+        # review_reason should NOT be present
+        self.assertNotIn("review_reason", item)
+
+        # generated_metadata should be present as usual
+        self.assertIn("generated_metadata", item)
+        self.assertEqual(item["generated_metadata"]["title"], "正常圧縮率テスト")
+
+
 class TestExtractKnowledgeSummaryLength(unittest.TestCase):
     """extract_knowledge: Long summary -> warning logged.
 
