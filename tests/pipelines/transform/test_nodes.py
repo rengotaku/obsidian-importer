@@ -1153,6 +1153,141 @@ class TestExtractKnowledgeReviewReason(unittest.TestCase):
         self.assertEqual(item["generated_metadata"]["title"], "正常圧縮率テスト")
 
 
+# ============================================================
+# format_markdown review output tests (Phase 5 - US2)
+# ============================================================
+
+
+class TestFormatMarkdownReviewOutput(unittest.TestCase):
+    """format_markdown: Items with review_reason -> review dict, others -> normal dict.
+
+    Tests for User Story 2 - レビューフォルダ出力
+    format_markdown は tuple を返し、review_reason を持つアイテムは review dict に振り分ける。
+    """
+
+    def _make_metadata_item_with_review(
+        self,
+        title: str = "テストタイトル",
+        review_reason: str | None = None,
+    ) -> dict:
+        """Create an item with metadata, optionally with review_reason."""
+        item = _make_parsed_item()
+        item["generated_metadata"] = {
+            "title": title,
+            "summary": "テスト要約。",
+            "summary_content": "## テスト内容\n\nテストの詳細内容。",
+            "tags": ["テスト"],
+        }
+        item["metadata"] = {
+            "title": title,
+            "created": "2026-01-15",
+            "tags": ["テスト"],
+            "source_provider": "claude",
+            "file_id": "review12345678",
+            "normalized": True,
+        }
+        if review_reason is not None:
+            item["review_reason"] = review_reason
+        return item
+
+    def test_format_markdown_returns_tuple(self):
+        """format_markdown が tuple (normal_dict, review_dict) を返すこと。
+
+        FR-007: システムは format_markdown から (normal, review) の tuple を返さなければならない
+        """
+        item = self._make_metadata_item_with_review()
+        partitioned_input = _make_partitioned_input({"item-normal": item})
+
+        result = format_markdown(partitioned_input)
+
+        # Result should be a tuple of two dicts
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        normal_dict, review_dict = result
+        self.assertIsInstance(normal_dict, dict)
+        self.assertIsInstance(review_dict, dict)
+
+    def test_format_markdown_review_reason_to_review_dict(self):
+        """review_reason を持つアイテムが review dict に含まれること。
+
+        FR-008: システムは review_reason を持つアイテムを review dict に振り分けなければならない
+        """
+        item_with_review = self._make_metadata_item_with_review(
+            title="要レビュー記事",
+            review_reason="extract_knowledge: body_ratio=5.0% < threshold=10.0%",
+        )
+        partitioned_input = _make_partitioned_input({"item-review": item_with_review})
+
+        result = format_markdown(partitioned_input)
+
+        normal_dict, review_dict = result
+
+        # Item with review_reason should be in review_dict, not in normal_dict
+        self.assertEqual(len(normal_dict), 0)
+        self.assertEqual(len(review_dict), 1)
+
+        # Verify content is markdown
+        review_content = list(review_dict.values())[0]
+        self.assertIsInstance(review_content, str)
+        self.assertTrue(review_content.startswith("---\n"))
+
+    def test_format_markdown_no_review_reason_to_normal_dict(self):
+        """review_reason を持たないアイテムが normal dict に含まれること。
+
+        FR-009: システムは review_reason を持たないアイテムを normal dict に振り分けなければならない
+        """
+        item_without_review = self._make_metadata_item_with_review(
+            title="通常記事",
+            review_reason=None,
+        )
+        partitioned_input = _make_partitioned_input({"item-normal": item_without_review})
+
+        result = format_markdown(partitioned_input)
+
+        normal_dict, review_dict = result
+
+        # Item without review_reason should be in normal_dict, not in review_dict
+        self.assertEqual(len(normal_dict), 1)
+        self.assertEqual(len(review_dict), 0)
+
+        # Verify content is markdown
+        normal_content = list(normal_dict.values())[0]
+        self.assertIsInstance(normal_content, str)
+        self.assertTrue(normal_content.startswith("---\n"))
+
+    def test_format_markdown_mixed_items(self):
+        """review_reason の有無で正しく振り分けられること（混在ケース）。
+
+        複数アイテムがある場合、各アイテムは review_reason の有無で適切な dict に振り分けられる。
+        """
+        item_normal = self._make_metadata_item_with_review(
+            title="通常記事",
+            review_reason=None,
+        )
+        item_normal["file_id"] = "normal123456"
+
+        item_review = self._make_metadata_item_with_review(
+            title="要レビュー記事",
+            review_reason="extract_knowledge: body_ratio=3.0% < threshold=10.0%",
+        )
+        item_review["file_id"] = "review123456"
+
+        partitioned_input = _make_partitioned_input(
+            {
+                "item-normal": item_normal,
+                "item-review": item_review,
+            }
+        )
+
+        result = format_markdown(partitioned_input)
+
+        normal_dict, review_dict = result
+
+        # One item in each dict
+        self.assertEqual(len(normal_dict), 1)
+        self.assertEqual(len(review_dict), 1)
+
+
 class TestExtractKnowledgeSummaryLength(unittest.TestCase):
     """extract_knowledge: Long summary -> warning logged.
 

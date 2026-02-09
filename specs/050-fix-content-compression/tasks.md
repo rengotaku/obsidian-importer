@@ -149,14 +149,14 @@
 
 ### 入力
 
-- [ ] T044 Read previous phase output: specs/050-fix-content-compression/tasks/ph4-output.md
+- [x] T044 Read previous phase output: specs/050-fix-content-compression/tasks/ph4-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T045 [P] [US2] Add test_format_markdown_review_output in tests/pipelines/transform/test_nodes.py
-- [ ] T046 [P] [US2] Add test_embed_frontmatter_with_review_reason in tests/pipelines/organize/test_nodes.py
-- [ ] T047 Verify `make test` FAIL (RED)
-- [ ] T048 Generate RED output: specs/050-fix-content-compression/red-tests/ph5-test.md
+- [x] T045 [P] [US2] Add test_format_markdown_review_output in tests/pipelines/transform/test_nodes.py
+- [x] T046 [P] [US2] Add test_embed_frontmatter_with_review_reason in tests/pipelines/organize/test_nodes.py
+- [x] T047 Verify `make test` FAIL (RED)
+- [x] T048 Generate RED output: specs/050-fix-content-compression/red-tests/ph5-test.md
 
 ### 実装 (GREEN)
 

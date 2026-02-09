@@ -1018,6 +1018,133 @@ class TestEmbedFrontmatterFields(unittest.TestCase):
 # ============================================================
 
 
+# ============================================================
+# embed_frontmatter_fields review_reason tests (Phase 5 - 050)
+# ============================================================
+
+
+class TestEmbedFrontmatterWithReviewReason(unittest.TestCase):
+    """embed_frontmatter_fields: embed review_reason into frontmatter.
+
+    Tests for User Story 2 - レビューフォルダ出力 (050-fix-content-compression)
+    review_reason が frontmatter に埋め込まれることを検証。
+    """
+
+    def test_embed_frontmatter_with_review_reason(self):
+        """review_reason が frontmatter に埋め込まれること。
+
+        FR-010: システムは review_reason を frontmatter に埋め込まなければならない
+        Format: review_reason: "extract_knowledge: body_ratio=X.X% < threshold=Y.Y%"
+        """
+        content = (
+            "---\n"
+            "title: 要レビュー記事\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - テスト\n"
+            "source_provider: claude\n"
+            "file_id: review12345678\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "内容が少ないテスト記事。\n"
+        )
+        item = _make_markdown_item(content=content)
+        item["genre"] = "engineer"
+        item["topic"] = "test"
+        item["review_reason"] = "extract_knowledge: body_ratio=5.0% < threshold=10.0%"
+        item["metadata"]["summary"] = "テスト要約"
+        partitioned_input = _make_partitioned_input({"item-review": item})
+        params = _make_organize_params()
+
+        result = embed_frontmatter_fields(partitioned_input, params)
+
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 1)
+        embedded_content = list(result.values())[0]
+
+        # review_reason should be in frontmatter
+        self.assertIn("review_reason:", embedded_content)
+        self.assertIn("extract_knowledge:", embedded_content)
+        self.assertIn("body_ratio=5.0%", embedded_content)
+        self.assertIn("threshold=10.0%", embedded_content)
+
+    def test_embed_frontmatter_without_review_reason(self):
+        """review_reason がない場合は frontmatter に含まれないこと。
+
+        review_reason が item にない場合、frontmatter には review_reason フィールドが含まれない。
+        """
+        content = (
+            "---\n"
+            "title: 通常記事\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - テスト\n"
+            "source_provider: claude\n"
+            "file_id: normal12345678\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "正常な内容の記事。\n"
+        )
+        item = _make_markdown_item(content=content)
+        item["genre"] = "engineer"
+        item["topic"] = "test"
+        # No review_reason
+        item["metadata"]["summary"] = "テスト要約"
+        partitioned_input = _make_partitioned_input({"item-normal": item})
+        params = _make_organize_params()
+
+        result = embed_frontmatter_fields(partitioned_input, params)
+
+        embedded_content = list(result.values())[0]
+
+        # review_reason should NOT be in frontmatter
+        self.assertNotIn("review_reason:", embedded_content)
+
+        # Other fields should still be present
+        self.assertIn("genre: engineer", embedded_content)
+        self.assertIn("topic: test", embedded_content)
+
+    def test_embed_frontmatter_review_reason_format(self):
+        """review_reason のフォーマットが正しいこと。
+
+        Format: "node_name: body_ratio=X.X% < threshold=Y.Y%"
+        例: "extract_knowledge: body_ratio=3.8% < threshold=10.0%"
+        """
+        content = (
+            "---\n"
+            "title: フォーマット確認\n"
+            "created: 2026-01-15\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "テスト内容。\n"
+        )
+        item = _make_markdown_item(content=content)
+        item["genre"] = "other"
+        item["topic"] = ""
+        item["review_reason"] = "extract_knowledge: body_ratio=3.8% < threshold=10.0%"
+        item["metadata"]["summary"] = ""
+        partitioned_input = _make_partitioned_input({"item-fmt": item})
+        params = _make_organize_params()
+
+        result = embed_frontmatter_fields(partitioned_input, params)
+
+        embedded_content = list(result.values())[0]
+
+        # Verify the exact format is preserved in frontmatter
+        # The value should be quoted in YAML due to special characters (%, <, :)
+        self.assertIn("review_reason:", embedded_content)
+        # The actual content should contain the ratio info
+        self.assertIn("body_ratio=3.8%", embedded_content)
+        self.assertIn("threshold=10.0%", embedded_content)
+
+
 class TestIdempotentOrganize(unittest.TestCase):
     """classify_genre: existing output partitions -> skip items, no re-classify."""
 
