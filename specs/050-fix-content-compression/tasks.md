@@ -183,20 +183,20 @@
 
 ### 入力
 
-- [ ] T058 Read previous phase output: specs/050-fix-content-compression/tasks/ph5-output.md
+- [x] T058 Read previous phase output: specs/050-fix-content-compression/tasks/ph5-output.md
 
 ### 実装
 
-- [ ] T059 Run kedro pipeline with test data: `kedro run --pipeline=import_claude --params='{"import.limit": 10}'`
-- [ ] T060 Calculate compression ratio for output files
-- [ ] T061 Verify review/ folder contains expected files (if any)
-- [ ] T062 Verify review files have review_reason in frontmatter
+- [x] T059 Run kedro pipeline with test data: `kedro run --pipeline=import_claude --params='{"import.limit": 10}'`
+- [x] T060 Calculate compression ratio for output files
+- [x] T061 Verify review/ folder contains expected files (if any)
+- [x] T062 Verify review files have review_reason in frontmatter
 
 ### 検証
 
-- [ ] T063 Verify `make test` passes all tests
-- [ ] T064 Verify Body% improvement (target: average >50%)
-- [ ] T065 Generate phase output: specs/050-fix-content-compression/tasks/ph6-output.md
+- [x] T063 Verify `make test` passes all tests
+- [x] T064 Verify Body% improvement (target: average >50%)
+- [x] T065 Generate phase output: specs/050-fix-content-compression/tasks/ph6-output.md
 
 **Checkpoint**: E2E で圧縮率改善を確認
 

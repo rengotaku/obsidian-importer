@@ -496,7 +496,10 @@ def embed_frontmatter_fields(
         content = item.get("content", "")
         genre = item.get("genre", "other")
         topic = item.get("topic", "")
+        # Check for review_reason in item or in metadata (for review path)
         review_reason = item.get("review_reason")
+        if not review_reason and "metadata" in item:
+            review_reason = item["metadata"].get("review_reason")
 
         # Extract summary from metadata (may be in metadata or generated_metadata)
         summary = ""

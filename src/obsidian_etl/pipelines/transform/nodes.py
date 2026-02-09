@@ -351,6 +351,13 @@ def format_markdown(
             f"normalized: {str(metadata.get('normalized', True)).lower()}",
         ]
 
+        # Add review_reason to frontmatter if present
+        review_reason = item.get("review_reason")
+        if review_reason:
+            # Escape review_reason for YAML
+            review_reason_escaped = review_reason.replace("\\", "\\\\").replace('"', '\\"')
+            frontmatter_parts.append(f'review_reason: "{review_reason_escaped}"')
+
         frontmatter_yaml = "\n".join(frontmatter_parts) + "\n"
 
         # Build body (only summary_content now, summary is in frontmatter)
@@ -368,7 +375,7 @@ def format_markdown(
         filename = _sanitize_filename(title, item["file_id"])
 
         # Split by review_reason
-        if item.get("review_reason"):
+        if review_reason:
             review_output[filename] = markdown_content
         else:
             normal_output[filename] = markdown_content
