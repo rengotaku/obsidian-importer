@@ -54,30 +54,30 @@
 
 ### 入力
 
-- [ ] T010 Read previous phase output: specs/051-ollama-params-config/tasks/ph1-output.md
+- [x] T010 Read previous phase output: specs/051-ollama-params-config/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T011 [P] [US1] Create test file tests/utils/test_ollama_config.py with test class
-- [ ] T012 [P] [US1] Implement test_get_config_extract_knowledge in tests/utils/test_ollama_config.py
-- [ ] T013 [P] [US1] Implement test_get_config_translate_summary in tests/utils/test_ollama_config.py
-- [ ] T014 [P] [US1] Implement test_get_config_extract_topic in tests/utils/test_ollama_config.py
-- [ ] T015 [P] [US1] Implement test_function_override_priority in tests/utils/test_ollama_config.py (function overrides defaults)
-- [ ] T016 Verify `make test` FAIL (RED) - new tests should fail
-- [ ] T017 Generate RED output: specs/051-ollama-params-config/red-tests/ph2-test.md
+- [x] T011 [P] [US1] Create test file tests/utils/test_ollama_config.py with test class
+- [x] T012 [P] [US1] Implement test_get_config_extract_knowledge in tests/utils/test_ollama_config.py
+- [x] T013 [P] [US1] Implement test_get_config_translate_summary in tests/utils/test_ollama_config.py
+- [x] T014 [P] [US1] Implement test_get_config_extract_topic in tests/utils/test_ollama_config.py
+- [x] T015 [P] [US1] Implement test_function_override_priority in tests/utils/test_ollama_config.py (function overrides defaults)
+- [x] T016 Verify `make test` FAIL (RED) - new tests should fail
+- [x] T017 Generate RED output: specs/051-ollama-params-config/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T018 Read RED tests: specs/051-ollama-params-config/red-tests/ph2-test.md
-- [ ] T019 [US1] Create src/obsidian_etl/utils/ollama_config.py with OllamaConfig dataclass
-- [ ] T020 [US1] Implement get_ollama_config() function in src/obsidian_etl/utils/ollama_config.py
-- [ ] T021 [US1] Add VALID_FUNCTION_NAMES constant and validation logic in src/obsidian_etl/utils/ollama_config.py
-- [ ] T022 Verify `make test` PASS (GREEN)
+- [x] T018 Read RED tests: specs/051-ollama-params-config/red-tests/ph2-test.md
+- [x] T019 [US1] Create src/obsidian_etl/utils/ollama_config.py with OllamaConfig dataclass
+- [x] T020 [US1] Implement get_ollama_config() function in src/obsidian_etl/utils/ollama_config.py
+- [x] T021 [US1] Add VALID_FUNCTION_NAMES constant and validation logic in src/obsidian_etl/utils/ollama_config.py
+- [x] T022 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T023 Verify `make test` passes all tests (no regressions)
-- [ ] T024 Generate phase output: specs/051-ollama-params-config/tasks/ph2-output.md
+- [x] T023 Verify `make test` passes all tests (no regressions)
+- [x] T024 Generate phase output: specs/051-ollama-params-config/tasks/ph2-output.md
 
 **Checkpoint**: User Story 1 should be fully functional - get_ollama_config() returns correct config for each function
 
