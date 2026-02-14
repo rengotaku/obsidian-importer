@@ -813,6 +813,8 @@ make lint      # コード品質チェック (ruff)
 - ファイルシステム (Markdown, JSON, JSONL)、Kedro DataCatalog (PartitionedDataset) (047-e2e-full-pipeline)
 - Python 3.11+ + Kedro 1.1.1, kedro-datasets, requests (Ollama API) (049-output-quality-improve)
 - ファイルシステム (JSON, JSONL, Markdown)、Kedro PartitionedDataset (050-fix-content-compression)
+- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, tenacity 8.x, requests 2.28+ (051-ollama-params-config)
+- ファイルシステム（YAML, JSON, JSONL, Markdown）、Kedro DataCatalog (PartitionedDataset) (051-ollama-params-config)
 
 ## Recent Changes
 - 044-kedro-migration: Migrated from custom ETL pipeline (`src/etl/`) to Kedro 1.1.1. Removed session management, introduced DAG-based pipelines (import_claude, import_openai, import_github), idempotent resume via PartitionedDataset
