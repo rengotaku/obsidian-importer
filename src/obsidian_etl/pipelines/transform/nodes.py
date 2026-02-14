@@ -380,7 +380,12 @@ def format_markdown(
 
         # Split by review_reason
         if review_reason:
-            review_output[filename] = markdown_content
+            # Include original content for review items
+            original_content = item.get("content", "")
+            review_markdown = (
+                f"{markdown_content}\n\n---\n\n## 元のコンテンツ\n\n{original_content}"
+            )
+            review_output[filename] = review_markdown
         else:
             normal_output[filename] = markdown_content
 
