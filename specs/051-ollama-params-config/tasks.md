@@ -91,31 +91,31 @@
 
 ### 入力
 
-- [ ] T025 Read previous phase output: specs/051-ollama-params-config/tasks/ph2-output.md
+- [x] T025 Read previous phase output: specs/051-ollama-params-config/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T026 [P] [US2] Implement test_partial_override_uses_defaults in tests/utils/test_ollama_config.py
-- [ ] T027 [P] [US2] Implement test_empty_ollama_section_uses_all_defaults in tests/utils/test_ollama_config.py
-- [ ] T028 [P] [US2] Implement test_invalid_timeout_falls_back_to_default in tests/utils/test_ollama_config.py
-- [ ] T029 [P] [US2] Implement test_invalid_temperature_falls_back_to_default in tests/utils/test_ollama_config.py
-- [ ] T030 [P] [US2] Implement test_legacy_params_fallback in tests/utils/test_ollama_config.py (import.ollama compatibility)
-- [ ] T031 Verify `make test` FAIL (RED)
-- [ ] T032 Generate RED output: specs/051-ollama-params-config/red-tests/ph3-test.md
+- [x] T026 [P] [US2] Implement test_hardcoded_defaults_applied in tests/utils/test_ollama_config.py
+- [x] T027 [P] [US2] Implement test_partial_defaults_merge in tests/utils/test_ollama_config.py
+- [x] T028 [P] [US2] Implement test_partial_function_override in tests/utils/test_ollama_config.py
+- [x] T029 [P] [US2] Implement test_timeout_validation in tests/utils/test_ollama_config.py (1-600s range)
+- [x] T030 [P] [US2] Implement test_temperature_validation in tests/utils/test_ollama_config.py (0.0-2.0 range)
+- [x] T031 Verify `make test` FAIL (RED)
+- [x] T032 Generate RED output: specs/051-ollama-params-config/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T033 Read RED tests: specs/051-ollama-params-config/red-tests/ph3-test.md
-- [ ] T034 [US2] Add HARDCODED_DEFAULTS constant in src/obsidian_etl/utils/ollama_config.py
-- [ ] T035 [US2] Add validation logic for timeout range (1-600) in get_ollama_config()
-- [ ] T036 [US2] Add validation logic for temperature range (0.0-2.0) in get_ollama_config()
-- [ ] T037 [US2] Add legacy params fallback (import.ollama, organize.ollama) in get_ollama_config()
-- [ ] T038 Verify `make test` PASS (GREEN)
+- [x] T033 Read RED tests: specs/051-ollama-params-config/red-tests/ph3-test.md
+- [x] T034 [US2] Add HARDCODED_DEFAULTS constant in src/obsidian_etl/utils/ollama_config.py
+- [x] T035 [US2] Add validation logic for timeout range (1-600) in get_ollama_config()
+- [x] T036 [US2] Add validation logic for temperature range (0.0-2.0) in get_ollama_config()
+- [x] T037 [US2] Add legacy params fallback (import.ollama, organize.ollama) in get_ollama_config()
+- [x] T038 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T039 Verify `make test` passes all tests (including regressions from US1)
-- [ ] T040 Generate phase output: specs/051-ollama-params-config/tasks/ph3-output.md
+- [x] T039 Verify `make test` passes all tests (including regressions from US1)
+- [x] T040 Generate phase output: specs/051-ollama-params-config/tasks/ph3-output.md
 
 **Checkpoint**: User Stories 1 AND 2 should both work - partial config with defaults applied
 

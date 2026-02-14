@@ -20,6 +20,16 @@ class OllamaConfig:
     num_predict: int = -1  # -1 = unlimited
 
 
+# Hardcoded defaults - lowest priority in merge hierarchy
+HARDCODED_DEFAULTS = {
+    "model": "gemma3:12b",
+    "base_url": "http://localhost:11434",
+    "timeout": 120,
+    "temperature": 0.2,
+    "num_predict": -1,
+}
+
+
 # Valid function names for per-function config
 VALID_FUNCTION_NAMES = {
     "extract_knowledge",
@@ -28,13 +38,38 @@ VALID_FUNCTION_NAMES = {
 }
 
 
+def _validate_config(config: dict) -> dict:
+    """Validate and sanitize config values.
+
+    Args:
+        config: Configuration dictionary to validate
+
+    Returns:
+        dict: Validated configuration
+
+    Raises:
+        ValueError: If timeout or temperature is out of valid range
+    """
+    # Timeout validation (1-600 seconds)
+    timeout = config.get("timeout", HARDCODED_DEFAULTS["timeout"])
+    if timeout < 1 or timeout > 600:
+        raise ValueError(f"timeout must be between 1 and 600, got {timeout}")
+
+    # Temperature validation (0.0-2.0)
+    temperature = config.get("temperature", HARDCODED_DEFAULTS["temperature"])
+    if temperature < 0.0 or temperature > 2.0:
+        raise ValueError(f"temperature must be between 0.0 and 2.0, got {temperature}")
+
+    return config
+
+
 def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
     """Get Ollama configuration for a specific function.
 
     Merge priority:
-    1. HARDCODED_DEFAULTS (OllamaConfig defaults)
+    1. HARDCODED_DEFAULTS (lowest priority)
     2. ollama.defaults from parameters.yml
-    3. ollama.functions.{function_name} from parameters.yml
+    3. ollama.functions.{function_name} from parameters.yml (highest priority)
 
     Args:
         params: Parameters dictionary from parameters.yml
@@ -42,6 +77,9 @@ def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
 
     Returns:
         OllamaConfig: Merged configuration for the function
+
+    Raises:
+        ValueError: If timeout or temperature is out of valid range
 
     Examples:
         >>> params = {
@@ -64,8 +102,10 @@ def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
     # Get function-specific overrides from parameters.yml
     overrides = params.get("ollama", {}).get("functions", {}).get(function_name, {})
 
-    # Merge: defaults first, then overrides
-    # OllamaConfig dataclass defaults will be used for any missing fields
-    merged = {**defaults, **overrides}
+    # Merge with priority: HARDCODED_DEFAULTS < defaults < overrides
+    merged = {**HARDCODED_DEFAULTS, **defaults, **overrides}
 
-    return OllamaConfig(**merged)
+    # Validate configuration
+    validated = _validate_config(merged)
+
+    return OllamaConfig(**validated)
