@@ -85,6 +85,7 @@ def translate_summary(summary: str, params: dict) -> tuple[str | None, str | Non
         f"以下の英語サマリーを日本語に翻訳してください:\n\n{summary}",
         model=ollama_params.get("model", "gemma3:12b"),
         base_url=ollama_params.get("base_url", "http://localhost:11434"),
+        num_predict=ollama_params.get("num_predict", -1),
         timeout=ollama_params.get("timeout", 120),
         temperature=ollama_params.get("temperature", 0.2),
     )
@@ -130,6 +131,7 @@ def extract_knowledge(
         user_message,
         model=ollama_params.get("model", "gemma3:12b"),
         base_url=ollama_params.get("base_url", "http://localhost:11434"),
+        num_predict=ollama_params.get("num_predict", -1),
         timeout=ollama_params.get("timeout", 120),
         temperature=ollama_params.get("temperature", 0.2),
     )

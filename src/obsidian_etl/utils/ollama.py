@@ -21,6 +21,7 @@ def call_ollama(
     model: str = "gemma3:12b",
     base_url: str = "http://localhost:11434",
     num_ctx: int = 65536,
+    num_predict: int = -1,
     temperature: float = 0.2,
     timeout: int = 120,
 ) -> tuple[str, str | None]:
@@ -32,6 +33,7 @@ def call_ollama(
         model: Model name.
         base_url: Ollama server base URL.
         num_ctx: Context window size.
+        num_predict: Maximum output tokens (-1 = unlimited, default).
         temperature: Sampling temperature.
         timeout: Request timeout in seconds.
 
@@ -48,7 +50,7 @@ def call_ollama(
             {"role": "user", "content": user_message},
         ],
         "stream": False,
-        "options": {"num_ctx": num_ctx, "temperature": temperature},
+        "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
     }
 
     try:
