@@ -435,7 +435,7 @@ class TestResumeAfterFailure(unittest.TestCase):
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
     def test_resume_after_failure(self, mock_extract):
-        """1回目で一部失敗、2回目で失敗分のみ再処理されること。"""
+        """1回目で一部失敗、2回目は全てスキップ（失敗分はreviewに出力済み）。"""
         call_count = [0]
 
         def first_run_side_effect(*args, **kwargs):
@@ -452,17 +452,21 @@ class TestResumeAfterFailure(unittest.TestCase):
         pipeline = self.pipelines["import_claude"]
         catalog = self._build_catalog()
 
-        # First run: 3 items parsed, but 1 fails at extract_knowledge
+        # First run: 3 items parsed, 1 fails at extract_knowledge
         self.runner.run(pipeline, catalog)
 
         # After first run: 2 items succeed through to organized_notes
         first_run_organized = catalog.load("organized_notes")
         self.assertEqual(len(first_run_organized), 2, "First run should produce 2 organized notes")
 
+        # Failed item goes to review_notes
+        first_run_review = catalog.load("review_notes")
+        self.assertEqual(len(first_run_review), 1, "First run should produce 1 review note")
+
         first_run_llm_calls = mock_extract.call_count
         self.assertEqual(first_run_llm_calls, 3, "First run should call LLM 3 times")
 
-        # Reset mock for second run: all items succeed
+        # Reset mock for second run
         mock_extract.reset_mock()
         mock_extract.return_value = (
             _make_mock_ollama_response(title="リカバリアイテム"),
@@ -470,22 +474,28 @@ class TestResumeAfterFailure(unittest.TestCase):
         )
 
         # Second run with same catalog (existing outputs are preserved)
-        # The failed item should be re-processed, succeeded items should be skipped
+        # All items are already processed (2 success + 1 review), so no LLM calls
         self.runner.run(pipeline, catalog)
 
-        # LLM should only be called for the 1 failed item (not for the 2 that already succeeded)
+        # LLM should NOT be called - all items already processed
         self.assertEqual(
             mock_extract.call_count,
-            1,
-            "Second run should only call LLM for the 1 failed item",
+            0,
+            "Second run should not call LLM - all items already processed (including review)",
         )
 
-        # After second run: all 3 items should be organized
+        # After second run: counts remain the same
         second_run_organized = catalog.load("organized_notes")
         self.assertEqual(
             len(second_run_organized),
-            3,
-            "Second run should produce 3 organized notes total",
+            2,
+            "Second run should still have 2 organized notes",
+        )
+        second_run_review = catalog.load("review_notes")
+        self.assertEqual(
+            len(second_run_review),
+            1,
+            "Second run should still have 1 review note",
         )
 
 

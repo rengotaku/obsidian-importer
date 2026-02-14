@@ -141,15 +141,41 @@ def extract_knowledge(
         )
 
         if error or not knowledge:
-            logger.warning(f"LLM extraction failed for {partition_id}: {error}. Item excluded.")
+            logger.warning(f"LLM extraction failed for {partition_id}: {error}. Marked for review.")
             failed += 1
+            # Mark for review with error details
+            item["review_reason"] = f"LLM extraction failed: {error}"
+            item["review_node"] = "extract_knowledge"
+            item["generated_metadata"] = {
+                "title": item.get("conversation_name", partition_id),
+                "summary": "",
+                "summary_content": "",
+                "tags": [],
+            }
+            # Save to streaming output (prevents re-processing)
+            streaming_file = output_dir / f"{partition_id}.json"
+            streaming_file.write_text(json.dumps(item, ensure_ascii=False, indent=2))
+            output[partition_id] = item
             continue
 
         # Check for empty summary_content
         summary_content = knowledge.get("summary_content", "")
         if _is_empty_content(summary_content):
-            logger.warning(f"Empty summary_content for {partition_id}. Item excluded.")
+            logger.warning(f"Empty summary_content for {partition_id}. Marked for review.")
             skipped_empty += 1
+            # Mark for review
+            item["review_reason"] = "LLM returned empty summary_content"
+            item["review_node"] = "extract_knowledge"
+            item["generated_metadata"] = {
+                "title": knowledge.get("title", item.get("conversation_name", partition_id)),
+                "summary": knowledge.get("summary", ""),
+                "summary_content": "",
+                "tags": knowledge.get("tags", []),
+            }
+            # Save to streaming output (prevents re-processing)
+            streaming_file = output_dir / f"{partition_id}.json"
+            streaming_file.write_text(json.dumps(item, ensure_ascii=False, indent=2))
+            output[partition_id] = item
             continue
 
         # Check content compression ratio using compression_validator

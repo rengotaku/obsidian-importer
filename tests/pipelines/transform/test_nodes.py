@@ -305,7 +305,7 @@ class TestExtractKnowledgeErrorHandling(unittest.TestCase):
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_extract_knowledge_error_handling(self, mock_llm_extract):
-        """LLM 呼び出しが失敗した場合、そのアイテムは出力から除外されること。"""
+        """LLM 呼び出しが失敗した場合、review としてマークされること。"""
         mock_llm_extract.return_value = (None, "Connection error: refused")
 
         parsed_item = _make_parsed_item()
@@ -314,12 +314,16 @@ class TestExtractKnowledgeErrorHandling(unittest.TestCase):
 
         result = extract_knowledge(partitioned_input, params)
 
-        # Failed item should be excluded from output
-        self.assertEqual(len(result), 0)
+        # Failed item should be in result, marked for review
+        self.assertEqual(len(result), 1)
+        item = result["conv-fail"]
+        self.assertIn("review_reason", item)
+        self.assertIn("Connection error", item["review_reason"])
+        self.assertEqual(item["review_node"], "extract_knowledge")
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_extract_knowledge_partial_failure(self, mock_llm_extract):
-        """複数アイテムのうち一部が失敗した場合、成功分のみ出力されること。"""
+        """複数アイテムのうち一部が失敗した場合、成功分は通常出力、失敗分はreview出力されること。"""
         call_count = [0]
 
         def side_effect(*args, **kwargs):
@@ -349,14 +353,25 @@ class TestExtractKnowledgeErrorHandling(unittest.TestCase):
 
         result = extract_knowledge(partitioned_input, params)
 
-        # Only the successful item should be in the result
-        self.assertEqual(len(result), 1)
-        item = list(result.values())[0]
-        self.assertEqual(item["generated_metadata"]["title"], "成功アイテム")
+        # Both items should be in result
+        self.assertEqual(len(result), 2)
+        # Find the LLM-processed item (may have compression ratio review, but not LLM failure)
+        ok_item = result.get("item-ok")
+        self.assertIsNotNone(ok_item)
+        self.assertEqual(ok_item["generated_metadata"]["title"], "成功アイテム")
+        # If review_reason exists, it should NOT be LLM failure (may be compression ratio)
+        if "review_reason" in ok_item:
+            self.assertNotIn("LLM extraction failed", ok_item["review_reason"])
+        # Find the failed item (marked for review due to LLM failure)
+        fail_item = result.get("item-fail")
+        self.assertIsNotNone(fail_item)
+        self.assertIn("review_reason", fail_item)
+        self.assertIn("Timeout", fail_item["review_reason"])
+        self.assertEqual(fail_item["review_node"], "extract_knowledge")
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_extract_knowledge_empty_response(self, mock_llm_extract):
-        """LLM が空レスポンスを返した場合、アイテムが除外されること。"""
+        """LLM が空レスポンスを返した場合、review としてマークされること。"""
         mock_llm_extract.return_value = ({}, "Empty response")
 
         parsed_item = _make_parsed_item()
@@ -365,7 +380,12 @@ class TestExtractKnowledgeErrorHandling(unittest.TestCase):
 
         result = extract_knowledge(partitioned_input, params)
 
-        self.assertEqual(len(result), 0)
+        # Item should be in result, marked for review
+        self.assertEqual(len(result), 1)
+        item = result["conv-empty"]
+        self.assertIn("review_reason", item)
+        self.assertIn("Empty response", item["review_reason"])
+        self.assertEqual(item["review_node"], "extract_knowledge")
 
 
 # ============================================================
@@ -825,12 +845,16 @@ class TestExtractKnowledgeEmptyContent(unittest.TestCase):
 
         result = extract_knowledge(partitioned_input, params)
 
-        # Item with empty summary_content should be excluded
-        self.assertEqual(len(result), 0)
+        # Item with empty summary_content should be marked for review
+        self.assertEqual(len(result), 1)
+        item = result["empty-content"]
+        self.assertIn("review_reason", item)
+        self.assertIn("empty summary_content", item["review_reason"])
+        self.assertEqual(item["review_node"], "extract_knowledge")
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_extract_knowledge_skips_whitespace_only_content(self, mock_llm_extract):
-        """summary_content が空白文字のみの場合、アイテムが出力から除外されること。
+        """summary_content が空白文字のみの場合、review としてマークされること。
 
         Whitespace-only content (spaces, tabs, newlines) is considered empty.
         """
@@ -851,8 +875,11 @@ class TestExtractKnowledgeEmptyContent(unittest.TestCase):
 
         result = extract_knowledge(partitioned_input, params)
 
-        # Item with whitespace-only summary_content should be excluded
-        self.assertEqual(len(result), 0)
+        # Item with whitespace-only summary_content should be marked for review
+        self.assertEqual(len(result), 1)
+        item = result["whitespace-content"]
+        self.assertIn("review_reason", item)
+        self.assertIn("empty summary_content", item["review_reason"])
 
     @patch("obsidian_etl.pipelines.transform.nodes.logger")
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
@@ -911,10 +938,17 @@ class TestExtractKnowledgeEmptyContent(unittest.TestCase):
 
         result = extract_knowledge(partitioned_input, params)
 
-        # Only 1 item should succeed
-        self.assertEqual(len(result), 1)
+        # All 3 items should be in result
+        self.assertEqual(len(result), 3)
+        # Check that 2 items are marked for review due to empty content specifically
+        empty_review_items = [
+            k
+            for k, v in result.items()
+            if v.get("review_reason", "").startswith("LLM returned empty")
+        ]
+        self.assertEqual(len(empty_review_items), 2)
 
-        # Log should contain skipped_empty count (2 items skipped for empty content)
+        # Log should contain skipped_empty count (2 items marked for review due to empty content)
         log_calls = [str(call) for call in mock_logger.info.call_args_list]
         log_messages = " ".join(log_calls)
         self.assertIn("skipped_empty=2", log_messages)
