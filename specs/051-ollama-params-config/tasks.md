@@ -196,20 +196,20 @@
 
 ### 入力
 
-- [ ] T066 Read previous phase output: specs/051-ollama-params-config/tasks/ph5-output.md
+- [x] T066 Read previous phase output: specs/051-ollama-params-config/tasks/ph5-output.md
 
 ### 実装
 
-- [ ] T067 [P] Remove deprecated import.ollama and organize.ollama from parameters.yml (if safe)
-- [ ] T068 [P] Add docstring to get_ollama_config() explaining merge logic
-- [ ] T069 [P] Remove requests import from organize/nodes.py if no longer needed
-- [ ] T070 Run quickstart.md validation - verify example configurations work
+- [x] T067 [P] Remove deprecated import.ollama and organize.ollama from parameters.yml (if safe) - KEPT for backward compatibility
+- [x] T068 [P] Add docstring to get_ollama_config() explaining merge logic
+- [x] T069 [P] Remove requests import from organize/nodes.py if no longer needed
+- [x] T070 Run quickstart.md validation - verify example configurations work
 
 ### 検証
 
-- [ ] T071 Run `make test` to verify all tests pass after cleanup
-- [ ] T072 Run `make check` for Python syntax validation
-- [ ] T073 Generate phase output: specs/051-ollama-params-config/tasks/ph6-output.md
+- [x] T071 Run `make test` to verify all tests pass after cleanup
+- [x] T072 Run `make check` for Python syntax validation
+- [x] T073 Generate phase output: specs/051-ollama-params-config/tasks/ph6-output.md
 
 ---
 

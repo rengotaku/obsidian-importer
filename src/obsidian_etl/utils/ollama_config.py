@@ -64,24 +64,62 @@ def _validate_config(config: dict) -> dict:
 
 
 def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
-    """Get Ollama configuration for a specific function.
+    """Get Ollama configuration for a specific function with hierarchical merging.
 
-    Merge priority:
-    1. HARDCODED_DEFAULTS (lowest priority)
-    2. ollama.defaults from parameters.yml
-    3. ollama.functions.{function_name} from parameters.yml (highest priority)
+    This function retrieves and merges Ollama configuration parameters from multiple
+    sources with well-defined precedence rules, enabling function-specific overrides
+    while maintaining sensible defaults.
+
+    Merge Priority (lowest to highest):
+        1. HARDCODED_DEFAULTS: Fallback values defined in code
+           - model: "gemma3:12b"
+           - base_url: "http://localhost:11434"
+           - timeout: 120
+           - temperature: 0.2
+           - num_predict: -1 (unlimited)
+
+        2. ollama.defaults: Common defaults from parameters.yml
+           - Applies to all functions unless overridden
+           - Example: {"model": "gemma3:12b", "timeout": 120}
+
+        3. ollama.functions.{function_name}: Function-specific overrides
+           - Highest priority - overrides both defaults and hardcoded values
+           - Example: {"num_predict": 16384, "timeout": 300}
+
+    Valid Function Names:
+        - "extract_knowledge": Long output, detailed markdown generation
+        - "translate_summary": Medium output, summary translation
+        - "extract_topic": Very short output (1-3 words)
 
     Args:
-        params: Parameters dictionary from parameters.yml
-        function_name: Name of the function ("extract_knowledge", etc.)
+        params: Parameters dictionary from parameters.yml containing:
+            - ollama.defaults (optional): Common default parameters
+            - ollama.functions.{function_name} (optional): Function-specific overrides
+        function_name: Name of the function requesting configuration.
+            Must be one of VALID_FUNCTION_NAMES.
 
     Returns:
-        OllamaConfig: Merged configuration for the function
+        OllamaConfig: Immutable configuration dataclass with merged parameters:
+            - model (str): LLM model name
+            - base_url (str): Ollama API endpoint URL
+            - timeout (int): Request timeout in seconds (1-600)
+            - temperature (float): Sampling temperature (0.0-2.0)
+            - num_predict (int): Maximum output tokens (-1 = unlimited)
 
     Raises:
-        ValueError: If timeout or temperature is out of valid range
+        ValueError: If timeout is not in range [1, 600] or
+                   temperature is not in range [0.0, 2.0]
 
     Examples:
+        Basic usage with defaults only:
+        >>> params = {"ollama": {"defaults": {"model": "gemma3:12b"}}}
+        >>> config = get_ollama_config(params, "extract_knowledge")
+        >>> config.model
+        'gemma3:12b'
+        >>> config.timeout  # From HARDCODED_DEFAULTS
+        120
+
+        Function-specific override:
         >>> params = {
         ...     "ollama": {
         ...         "defaults": {"model": "gemma3:12b", "timeout": 120},
@@ -93,8 +131,21 @@ def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
         >>> config = get_ollama_config(params, "extract_knowledge")
         >>> config.num_predict
         16384
-        >>> config.timeout
+        >>> config.timeout  # Overridden by function config
         300
+
+        Partial override (other values from defaults):
+        >>> params = {
+        ...     "ollama": {
+        ...         "defaults": {"model": "gemma3:12b", "timeout": 120},
+        ...         "functions": {"extract_topic": {"num_predict": 64}}
+        ...     }
+        ... }
+        >>> config = get_ollama_config(params, "extract_topic")
+        >>> config.num_predict
+        64
+        >>> config.model  # From defaults
+        'gemma3:12b'
     """
     # Get defaults from parameters.yml
     defaults = params.get("ollama", {}).get("defaults", {})

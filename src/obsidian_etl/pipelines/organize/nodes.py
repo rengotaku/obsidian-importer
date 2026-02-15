@@ -15,7 +15,6 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-import requests
 import yaml
 
 from obsidian_etl.utils.ollama import call_ollama
