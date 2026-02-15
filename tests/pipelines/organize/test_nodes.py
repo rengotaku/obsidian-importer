@@ -1214,5 +1214,139 @@ class TestIdempotentOrganize(unittest.TestCase):
         self.assertEqual(len(result), 2)
 
 
+# ============================================================
+# extract_topic Ollama config tests (Phase 4 - 051-ollama-params-config)
+# ============================================================
+
+
+class TestExtractTopicUsesOllamaConfig(unittest.TestCase):
+    """extract_topic: verify integration with get_ollama_config.
+
+    These tests verify that _extract_topic_via_llm uses get_ollama_config
+    to retrieve function-specific parameters and passes them correctly
+    to the Ollama API.
+    """
+
+    def test_extract_topic_uses_config(self):
+        """_extract_topic_via_llm が get_ollama_config を呼び出すこと。
+
+        Verify that _extract_topic_via_llm calls get_ollama_config(params, "extract_topic")
+        to retrieve the configuration.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nPythonの非同期処理について解説します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b", "timeout": 120},
+                "functions": {
+                    "extract_topic": {"model": "llama3.2:3b", "num_predict": 64, "timeout": 30}
+                },
+            }
+        }
+
+        # Mock get_ollama_config to verify it's called
+        with patch("obsidian_etl.pipelines.organize.nodes.get_ollama_config") as mock_get_config:
+            # Return a mock config that has required attributes
+            from obsidian_etl.utils.ollama_config import OllamaConfig
+
+            mock_get_config.return_value = OllamaConfig(
+                model="llama3.2:3b",
+                base_url="http://localhost:11434",
+                timeout=30,
+                temperature=0.2,
+                num_predict=64,
+            )
+
+            # Also mock the actual API call to avoid network calls
+            with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+                mock_call_ollama.return_value = ("python", None)
+                _extract_topic_via_llm(content, params)
+
+            # Verify get_ollama_config was called with correct arguments
+            mock_get_config.assert_called_once_with(params, "extract_topic")
+
+    def test_extract_topic_uses_correct_model(self):
+        """extract_topic が設定されたモデルを使用すること。
+
+        Verify that the model from ollama.functions.extract_topic is used
+        in the API call.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nAWSのLambda関数について解説します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b"},
+                "functions": {"extract_topic": {"model": "llama3.2:3b"}},
+            }
+        }
+
+        # Mock call_ollama to capture the arguments
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+            mock_call_ollama.return_value = ("aws", None)
+            _extract_topic_via_llm(content, params)
+
+            # Verify call_ollama was called with the correct model
+            mock_call_ollama.assert_called_once()
+            call_kwargs = mock_call_ollama.call_args
+            # Check that model argument is "llama3.2:3b" (from functions.extract_topic)
+            self.assertEqual(call_kwargs.kwargs.get("model"), "llama3.2:3b")
+
+    def test_extract_topic_uses_correct_timeout(self):
+        """extract_topic が設定されたタイムアウトを使用すること。
+
+        Verify that the timeout from ollama.functions.extract_topic is used
+        in the API call.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nReact Nativeでモバイルアプリを開発します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b", "timeout": 120},
+                "functions": {"extract_topic": {"timeout": 30}},
+            }
+        }
+
+        # Mock call_ollama to capture the arguments
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+            mock_call_ollama.return_value = ("mobile development", None)
+            _extract_topic_via_llm(content, params)
+
+            # Verify call_ollama was called with the correct timeout
+            mock_call_ollama.assert_called_once()
+            call_kwargs = mock_call_ollama.call_args
+            # Check that timeout argument is 30 (from functions.extract_topic)
+            self.assertEqual(call_kwargs.kwargs.get("timeout"), 30)
+
+    def test_extract_topic_num_predict_applied(self):
+        """extract_topic が num_predict を Ollama API に渡すこと。
+
+        Verify that num_predict from ollama.functions.extract_topic is passed
+        to the Ollama API call.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nDockerコンテナについて解説します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b", "num_predict": -1},
+                "functions": {"extract_topic": {"num_predict": 64}},
+            }
+        }
+
+        # Mock call_ollama to capture the arguments
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+            mock_call_ollama.return_value = ("docker", None)
+            _extract_topic_via_llm(content, params)
+
+            # Verify call_ollama was called with the correct num_predict
+            mock_call_ollama.assert_called_once()
+            call_kwargs = mock_call_ollama.call_args
+            # Check that num_predict argument is 64 (from functions.extract_topic)
+            self.assertEqual(call_kwargs.kwargs.get("num_predict"), 64)
+
+
 if __name__ == "__main__":
     unittest.main()

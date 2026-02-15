@@ -18,6 +18,8 @@ from pathlib import Path
 import requests
 import yaml
 
+from obsidian_etl.utils.ollama import call_ollama
+from obsidian_etl.utils.ollama_config import get_ollama_config
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
@@ -232,9 +234,7 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
     Returns:
         str | None: Extracted topic or None on failure
     """
-    ollama_config = params.get("ollama", {})
-    model = ollama_config.get("model", "llama3.2:3b")
-    base_url = ollama_config.get("base_url", "http://localhost:11434")
+    config = get_ollama_config(params, "extract_topic")
 
     # Extract body text (skip frontmatter)
     body = content
@@ -245,14 +245,9 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
         except ValueError:
             pass
 
-    # Build prompt
-    prompt = f"""この会話から主題（トピック）を1つ抽出してください。
-
-会話内容:
-{body[:1000]}
-
-主題をカテゴリレベル（1-3単語）で答えてください。
-具体的な商品名・料理名・固有名詞ではなく、上位概念で答えてください。
+    # Build prompts
+    system_prompt = """あなたはトピック分類の専門家です。会話内容から主題を1つ抽出してください。
+主題はカテゴリレベル（1-3単語）で答え、具体的な商品名・料理名・固有名詞ではなく、上位概念で答えてください。
 
 例:
 - バナナプリンの作り方 → 離乳食
@@ -261,20 +256,28 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
 
 抽出できない場合は空文字を返してください。"""
 
+    user_message = f"""会話内容:
+{body[:1000]}
+
+主題を1-3単語で答えてください。"""
+
     # Call Ollama API
-    try:
-        response = requests.post(
-            f"{base_url}/api/generate",
-            json={"model": model, "prompt": prompt, "stream": False},
-            timeout=60,
-        )
-        response.raise_for_status()
-        result = response.json()
-        topic = result.get("response", "").strip()
-        return topic if topic else None
-    except Exception as e:
-        logger.warning(f"Failed to extract topic via LLM: {e}")
+    response, error = call_ollama(
+        system_prompt,
+        user_message,
+        model=config.model,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        temperature=config.temperature,
+        num_predict=config.num_predict,
+    )
+
+    if error:
+        logger.warning(f"Failed to extract topic via LLM: {error}")
         return None
+
+    topic = response.strip()
+    return topic if topic else None
 
 
 @timed_node

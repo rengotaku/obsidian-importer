@@ -129,28 +129,28 @@
 
 ### 入力
 
-- [ ] T041 Read previous phase output: specs/051-ollama-params-config/tasks/ph3-output.md
+- [x] T041 Read previous phase output: specs/051-ollama-params-config/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T042 [P] [US3] Add test_extract_topic_uses_call_ollama in tests/pipelines/organize/test_nodes.py
-- [ ] T043 [P] [US3] Add test_extract_topic_uses_config_params in tests/pipelines/organize/test_nodes.py
-- [ ] T044 [P] [US3] Add test_extract_topic_with_num_predict_limit in tests/pipelines/organize/test_nodes.py
-- [ ] T045 Verify `make test` FAIL (RED)
-- [ ] T046 Generate RED output: specs/051-ollama-params-config/red-tests/ph4-test.md
+- [x] T042 [P] [US3] Add test_extract_topic_uses_call_ollama in tests/pipelines/organize/test_nodes.py
+- [x] T043 [P] [US3] Add test_extract_topic_uses_config_params in tests/pipelines/organize/test_nodes.py
+- [x] T044 [P] [US3] Add test_extract_topic_with_num_predict_limit in tests/pipelines/organize/test_nodes.py
+- [x] T045 Verify `make test` FAIL (RED)
+- [x] T046 Generate RED output: specs/051-ollama-params-config/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T047 Read RED tests: specs/051-ollama-params-config/red-tests/ph4-test.md
-- [ ] T048 [US3] Import get_ollama_config and call_ollama in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T049 [US3] Refactor _extract_topic_via_llm to use call_ollama in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T050 [US3] Update extract_topic to pass params with new ollama structure
-- [ ] T051 Verify `make test` PASS (GREEN)
+- [x] T047 Read RED tests: specs/051-ollama-params-config/red-tests/ph4-test.md
+- [x] T048 [US3] Import get_ollama_config and call_ollama in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T049 [US3] Refactor _extract_topic_via_llm to use call_ollama in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T050 [US3] Update extract_topic to pass params with new ollama structure
+- [x] T051 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T052 Verify `make test` passes all tests (all user stories working)
-- [ ] T053 Generate phase output: specs/051-ollama-params-config/tasks/ph4-output.md
+- [x] T052 Verify `make test` passes all tests (all user stories working)
+- [x] T053 Generate phase output: specs/051-ollama-params-config/tasks/ph4-output.md
 
 **Checkpoint**: All 3 user stories complete - extract_topic uses call_ollama with configured params
 
