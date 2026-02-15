@@ -1,16 +1,10 @@
 """Tests for Organize pipeline nodes.
 
-Phase 4 RED tests: classify_genre, normalize_frontmatter, clean_content,
-determine_vault_path, move_to_vault nodes.
-Phase 2 RED tests (047-e2e-full-pipeline): extract_topic, embed_frontmatter_fields nodes.
-
-These tests verify:
+Tests verify:
 - Keyword-based genre classification (engineer, business, economy, daily, other)
 - Default genre fallback when no keyword matches
 - Frontmatter normalization (normalized=True, clean unnecessary fields)
 - Content cleanup (excess blank lines, formatting)
-- Genre-to-vault path mapping from params
-- File writing to correct vault path (mock filesystem)
 - Topic extraction from content (LLM-based, lowercase normalized)
 - Frontmatter embedding of genre, topic, summary (no file I/O)
 """
@@ -26,10 +20,8 @@ from unittest.mock import MagicMock, patch
 from obsidian_etl.pipelines.organize.nodes import (
     classify_genre,
     clean_content,
-    determine_vault_path,
     embed_frontmatter_fields,
     extract_topic,
-    move_to_vault,
     normalize_frontmatter,
 )
 
@@ -83,13 +75,6 @@ def _make_markdown_item(
 def _make_organize_params() -> dict:
     """Helper to create organize params matching parameters.yml."""
     return {
-        "vaults": {
-            "engineer": "Vaults/エンジニア/",
-            "business": "Vaults/ビジネス/",
-            "economy": "Vaults/経済/",
-            "daily": "Vaults/日常/",
-            "other": "Vaults/その他/",
-        },
         "genre_keywords": {
             "engineer": [
                 "プログラミング",
@@ -518,236 +503,6 @@ class TestCleanContent(unittest.TestCase):
         self.assertTrue(cleaned_content.startswith("---\n"))
         self.assertIn("title: テスト", cleaned_content)
         self.assertIn("normalized: true", cleaned_content)
-
-
-# ============================================================
-# determine_vault_path node tests
-# ============================================================
-
-
-class TestDetermineVaultPath(unittest.TestCase):
-    """determine_vault_path: genre -> vault path mapping from params."""
-
-    def test_determine_vault_path_engineer(self):
-        """genre='engineer' が 'Vaults/エンジニア/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "engineer"
-        partitioned_input = _make_partitioned_input({"item-eng": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertIn("vault_path", determined_item)
-        self.assertEqual(determined_item["vault_path"], "Vaults/エンジニア/")
-
-    def test_determine_vault_path_business(self):
-        """genre='business' が 'Vaults/ビジネス/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "business"
-        partitioned_input = _make_partitioned_input({"item-biz": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/ビジネス/")
-
-    def test_determine_vault_path_economy(self):
-        """genre='economy' が 'Vaults/経済/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "economy"
-        partitioned_input = _make_partitioned_input({"item-eco": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/経済/")
-
-    def test_determine_vault_path_daily(self):
-        """genre='daily' が 'Vaults/日常/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "daily"
-        partitioned_input = _make_partitioned_input({"item-daily": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/日常/")
-
-    def test_determine_vault_path_other(self):
-        """genre='other' が 'Vaults/その他/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "other"
-        partitioned_input = _make_partitioned_input({"item-other": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/その他/")
-
-    def test_determine_vault_path_includes_final_path(self):
-        """final_path が vault_path + output_filename で構成されること。"""
-        item = _make_markdown_item(output_filename="Python asyncio の仕組み.md")
-        item["genre"] = "engineer"
-        partitioned_input = _make_partitioned_input({"item-final": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertIn("final_path", determined_item)
-        expected_path = "Vaults/エンジニア/Python asyncio の仕組み.md"
-        self.assertEqual(determined_item["final_path"], expected_path)
-
-    def test_determine_vault_path_unknown_genre_fallback(self):
-        """未知のジャンルが 'other' の Vault にフォールバックすること。"""
-        item = _make_markdown_item()
-        item["genre"] = "unknown_genre"
-        partitioned_input = _make_partitioned_input({"item-unknown": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/その他/")
-
-
-# ============================================================
-# move_to_vault node tests
-# ============================================================
-
-
-class TestMoveToVault(unittest.TestCase):
-    """move_to_vault: file written to correct vault path; mock filesystem."""
-
-    def test_move_to_vault_writes_file(self):
-        """ファイルが vault_path の正しい位置に書き込まれること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item = _make_markdown_item()
-            item["genre"] = "engineer"
-            item["vault_path"] = "Vaults/エンジニア/"
-            item["final_path"] = "Vaults/エンジニア/Python asyncio の仕組み.md"
-            partitioned_input = _make_partitioned_input({"item-write": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            # File should be written
-            expected_file = Path(tmpdir) / "Vaults/エンジニア/Python asyncio の仕組み.md"
-            self.assertTrue(expected_file.exists(), f"File not found: {expected_file}")
-
-            # File content should match
-            written_content = expected_file.read_text(encoding="utf-8")
-            self.assertEqual(written_content, item["content"])
-
-    def test_move_to_vault_creates_directories(self):
-        """Vault ディレクトリが存在しない場合、自動作成されること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item = _make_markdown_item()
-            item["genre"] = "economy"
-            item["vault_path"] = "Vaults/経済/"
-            item["final_path"] = "Vaults/経済/投資戦略.md"
-            partitioned_input = _make_partitioned_input({"item-mkdir": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            expected_dir = Path(tmpdir) / "Vaults/経済"
-            self.assertTrue(expected_dir.is_dir())
-
-    def test_move_to_vault_multiple_items(self):
-        """複数アイテムがそれぞれ正しい Vault に書き込まれること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item_eng = _make_markdown_item(
-                item_id="eng",
-                title="API設計",
-                output_filename="API設計.md",
-            )
-            item_eng["genre"] = "engineer"
-            item_eng["vault_path"] = "Vaults/エンジニア/"
-            item_eng["final_path"] = "Vaults/エンジニア/API設計.md"
-
-            item_biz = _make_markdown_item(
-                item_id="biz",
-                title="マネジメント入門",
-                output_filename="マネジメント入門.md",
-            )
-            item_biz["genre"] = "business"
-            item_biz["vault_path"] = "Vaults/ビジネス/"
-            item_biz["final_path"] = "Vaults/ビジネス/マネジメント入門.md"
-
-            items = {"eng": item_eng, "biz": item_biz}
-            partitioned_input = _make_partitioned_input(items)
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            eng_file = Path(tmpdir) / "Vaults/エンジニア/API設計.md"
-            biz_file = Path(tmpdir) / "Vaults/ビジネス/マネジメント入門.md"
-            self.assertTrue(eng_file.exists())
-            self.assertTrue(biz_file.exists())
-
-    def test_move_to_vault_returns_organized_items(self):
-        """move_to_vault が OrganizedItem dict を返すこと。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item = _make_markdown_item()
-            item["genre"] = "engineer"
-            item["vault_path"] = "Vaults/エンジニア/"
-            item["final_path"] = "Vaults/エンジニア/Python asyncio の仕組み.md"
-            partitioned_input = _make_partitioned_input({"item-ret": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            self.assertIsInstance(result, dict)
-            self.assertEqual(len(result), 1)
-
-            organized_item = list(result.values())[0]
-            # OrganizedItem should have required fields from E-4 data model
-            self.assertIn("item_id", organized_item)
-            self.assertIn("file_id", organized_item)
-            self.assertIn("genre", organized_item)
-            self.assertIn("vault_path", organized_item)
-            self.assertIn("final_path", organized_item)
-            self.assertIn("output_filename", organized_item)
-
-    def test_move_to_vault_utf8_encoding(self):
-        """日本語コンテンツが UTF-8 で正しく書き込まれること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            content = (
-                "---\n"
-                "title: 日本語テスト\n"
-                "normalized: true\n"
-                "---\n"
-                "\n"
-                "日本語のコンテンツ: 漢字、ひらがな、カタカナ。\n"
-                "特殊文字: &, <, >, ', \"\n"
-            )
-            item = _make_markdown_item(
-                title="日本語テスト",
-                content=content,
-                output_filename="日本語テスト.md",
-            )
-            item["genre"] = "other"
-            item["vault_path"] = "Vaults/その他/"
-            item["final_path"] = "Vaults/その他/日本語テスト.md"
-            partitioned_input = _make_partitioned_input({"item-utf8": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            written_file = Path(tmpdir) / "Vaults/その他/日本語テスト.md"
-            written_content = written_file.read_text(encoding="utf-8")
-            self.assertIn("漢字、ひらがな、カタカナ", written_content)
 
 
 # ============================================================

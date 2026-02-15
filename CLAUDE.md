@@ -1,799 +1,114 @@
 # Obsidian Knowledge Base
 
-個人ナレッジベース。Vault は `Vaults/` に集約。
+LLM 会話履歴を Obsidian ナレッジベースに変換するパイプライン。
 
 ## プロジェクト方針
 
 | 方針 | 説明 |
 |------|------|
-| **後方互換性は考慮しない** | レガシー構造の維持、deprecation period、移行パスの提供は不要。破壊的変更を躊躇なく行う |
-| **シンプルさ優先** | 冗長な構造より、明確で簡潔な設計を選択する |
+| **後方互換性は考慮しない** | 破壊的変更を躊躇なく行う |
+| **シンプルさ優先** | 冗長な構造より、明確で簡潔な設計を選択 |
+| **レガシーコード修正禁止** | `src/converter/` は修正不可。`src/obsidian_etl/` のみ修正対象 |
 
 ## フォルダ構成
 
 ```
-Obsidian/
-├── Vaults/                    # コンテンツ（Vault）
-│   ├── エンジニア/            # エンジニアリング・技術知識
-│   ├── ビジネス/              # ビジネス関連書籍・ノート
-│   ├── 経済/                  # 経済・時事ネタ
-│   ├── 日常/                  # 日常生活・雑記・趣味
-│   ├── その他/                # 上記に該当しないが価値のあるコンテンツ
-│   └── ClaudedocKnowledges/   # プロダクト別ナレッジ（手動管理）
+obsidian-importer/
+├── data/                      # Kedro データレイヤー
+│   ├── 01_raw/                # 入力（ZIP）
+│   ├── 02_intermediate/       # パース済み
+│   ├── 03_primary/            # LLM 処理済み
+│   └── 07_model_output/       # 最終 Markdown
+│       ├── notes/             # 通常出力
+│       ├── review/            # レビュー対象（圧縮率低）
+│       ├── organized/         # ジャンル分類済み
+│       └── organized_review/  # 分類済みレビュー対象
 │
-├── .staging/                  # 作業領域
-│   ├── @session/              # セッション管理（ETLパイプライン）
-│   │   └── YYYYMMDD_HHMMSS/   # Session（日付フォルダ）
-│   │       ├── session.json   # セッションメタデータ
-│   │       ├── import/        # Phase: import
-│   │       │   ├── phase.json
-│   │       │   ├── extract/   # Stage: Extract (input/output)
-│   │       │   ├── transform/ # Stage: Transform (output)
-│   │       │   └── load/      # Stage: Load (output)
-│   │       └── organize/      # Phase: organize
-│   │           ├── phase.json
-│   │           ├── extract/
-│   │           ├── transform/
-│   │           └── load/
-│   ├── @plan/                 # 計画・設計ドキュメント
-│   ├── @test/                 # テスト用フィクスチャ
-│   └── @dust/                 # ゴミ箱
-│
-├── src/                       # ソースコード
-│   ├── etl/                   # ETL パイプライン（tenacity ベース）
-│   │   ├── core/              # コア機能（Session, Phase, Stage, Step, Retry）
-│   │   │   ├── status.py      # ステータス Enum（Session/Phase/Stage/Step/Item）
-│   │   │   ├── types.py       # 型定義（PhaseType, StageType）
-│   │   │   ├── models.py      # データモデル（ProcessingItem, StepResult, etc.）
-│   │   │   ├── retry.py       # tenacity ベースのリトライ機能
-│   │   │   ├── session.py     # セッション管理
-│   │   │   ├── phase.py       # フェーズ管理
-│   │   │   ├── stage.py       # ステージ基底クラス（JSONL ログ、DEBUG 出力、エラー詳細出力）
-│   │   │   ├── step.py        # ステップトラッカー
-│   │   │   └── config.py      # 設定（debug モード等）
-│   │   ├── phases/            # Phase 実装（import, organize）
-│   │   ├── stages/            # Stage 実装（extract, transform, load）
-│   │   │   ├── extract/       # Extract Stage（ClaudeExtractor）
-│   │   │   ├── transform/     # Transform Stage（KnowledgeTransformer）
-│   │   │   └── load/          # Load Stage（SessionLoader）
-│   │   ├── utils/             # ユーティリティモジュール（Ollama、ナレッジ抽出）
-│   │   │   ├── ollama.py      # Ollama API クライアント
-│   │   │   ├── knowledge_extractor.py  # 知識抽出（LLM 呼び出し）
-│   │   │   ├── chunker.py     # 大規模会話チャンク分割
-│   │   │   ├── file_id.py     # ファイル ID 生成（SHA256 ハッシュ）
-│   │   │   └── error_writer.py # エラー詳細ファイル出力
-│   │   ├── prompts/           # LLM プロンプトテンプレート
-│   │   │   ├── knowledge_extraction.txt  # ナレッジ抽出プロンプト
-│   │   │   └── summary_translation.txt   # 要約翻訳プロンプト
-│   │   ├── tests/             # ユニットテスト
-│   │   ├── cli.py             # CLI エントリポイント
-│   │   └── __main__.py        # python -m src.etl 用
-│   ├── converter/             # 変換スクリプト（レガシー、段階的に etl へ移行）
-│   │   ├── scripts/           # Python スクリプト
-│   │   │   ├── llm_import/    # LLM会話インポートパイプライン
-│   │   │   ├── normalizer/    # Obsidianファイル正規化パイプライン
-│   │   │   └── *.py           # 単体スクリプト
-│   │   └── .venv/             # Python 仮想環境
-│   └── rag/                   # RAG機能（セマンティック検索・Q&A）
-│
-├── .claude/                   # Claude Code 設定
-├── .serena/                   # Serena MCP 設定
-├── .specify/                  # Speckit 設定
-├── Makefile                   # ビルド・テスト
-└── CLAUDE.md                  # プロジェクト指示
-```
-
-## 主要ジャンル（自動振り分け対象）
-
-| ジャンル | Vault | 内容 |
-|---------|-------|------|
-| エンジニア | `Vaults/エンジニア/` | 技術文書、プログラミング、アーキテクチャ |
-| ビジネス | `Vaults/ビジネス/` | ビジネス書の要約、スキル、マネジメント |
-| 経済 | `Vaults/経済/` | 経済ニュース、時事ネタ、市場分析 |
-| 日常 | `Vaults/日常/` | 日常生活、雑記、趣味 |
-| その他 | `Vaults/その他/` | 上記に該当しないが価値のあるコンテンツ |
-
----
-
-## Kedro パイプライン用語定義
-
-Kedro ベースのパイプライン処理で使用する用語。
-
-| 用語 | 説明 | 例 |
-|------|------|-----------|
-| **Pipeline** | 処理全体を包含する DAG（有向非巡回グラフ） | `import_claude`, `import_openai`, `import_github` |
-| **Node** | 単一の処理単位（純粋関数） | `parse_claude_json`, `extract_knowledge`, `classify_genre` |
-| **Dataset** | ノード間で受け渡される型付きデータ | `parsed_items`, `transformed_items`, `markdown_notes` |
-| **DataCatalog** | データセットの永続化先の宣言的定義 | `conf/base/catalog.yml` |
-
-### データレイヤー構成
-
-```
-data/                                # Kedro データレイヤー
-├── 01_raw/                          # 入力データ（プロバイダー固有形式）
-│   ├── claude/                      # Claude エクスポート ZIP
-│   ├── openai/                      # ChatGPT エクスポート ZIP
-│   └── github/                      # GitHub Jekyll ブログ（git clone 自動取得）
-├── 02_intermediate/                 # Extract 出力（パース済みアイテム）
-│   └── parsed/
-├── 03_primary/                      # Transform 出力（LLM 処理済み）
-│   └── transformed/
-└── 07_model_output/                 # 最終 Markdown（Vault 配置前）
-    ├── notes/                       # 通常出力（圧縮率OK）
-    ├── review/                      # レビュー出力（圧縮率低）
-    ├── organized/                   # 通常出力（ジャンル分類済み）
-    └── organized_review/            # レビュー出力（ジャンル分類済み）
-```
-
-### Resume（冪等再実行）
-
-Kedro パイプラインは冪等性を持つため、同じコマンドの再実行により自動的に Resume 動作する。
-
-- PartitionedDataset の `overwrite=false` により、出力ファイルが存在するアイテムはスキップ
-- 出力ファイルが存在しないアイテムのみ再処理
-- LLM 呼び出しなど高コストな処理の不要な再実行を回避
-
----
-
-## 開発スクリプト構成
-
-### `src/converter/scripts/llm_import/`
-
-Claude会話エクスポートをObsidianノートに変換するパイプライン。
-
-```
-llm_import/
-├── cli.py                 # CLIエントリポイント
-├── base.py                # 基底クラス
-├── providers/
-│   └── claude/            # Claude固有のパーサー
-│       ├── parser.py      # 会話パーサー
-│       └── config.py      # 設定
-├── common/
-│   ├── ollama.py          # Ollama API クライアント
-│   ├── chunker.py         # 大規模ファイルチャンク処理
-│   ├── file_id.py         # ファイルID生成（ハッシュベース）
-│   ├── retry.py           # リトライロジック
-│   ├── error_writer.py    # エラーログ出力
-│   ├── state.py           # 状態管理
-│   ├── session_logger.py  # セッションログ
-│   ├── folder_manager.py  # フォルダ管理
-│   └── knowledge_extractor.py  # ナレッジ抽出
-└── prompts/               # LLMプロンプトテンプレート
-```
-
-### `src/converter/scripts/normalizer/`
-
-Obsidianファイルの正規化・整形パイプライン。
-
-```
-normalizer/
-├── __main__.py            # CLIエントリポイント
-├── config.py              # 設定
-├── models.py              # データモデル
-├── cli/                   # CLI関連
-│   ├── commands.py        # コマンド実装
-│   ├── parser.py          # 引数パーサー
-│   ├── status.py          # ステータス表示
-│   └── metrics.py         # メトリクス収集
-├── pipeline/              # パイプライン処理
-│   ├── runner.py          # パイプライン実行
-│   ├── stages.py          # 処理ステージ定義
-│   └── prompts.py         # LLMプロンプト
-├── processing/            # ファイル処理
-│   ├── single.py          # 単一ファイル処理
-│   └── batch.py           # バッチ処理
-├── validators/            # バリデーション
-│   ├── title.py           # タイトル検証
-│   ├── tags.py            # タグ検証
-│   ├── format.py          # フォーマット検証
-│   └── metadata.py        # メタデータ検証
-├── detection/             # 検出ロジック
-│   └── english.py         # 英語コンテンツ検出
-├── io/                    # 入出力
-│   ├── files.py           # ファイル操作
-│   ├── session.py         # セッション管理
-│   └── ollama.py          # Ollama API
-├── state/                 # 状態管理
-│   └── manager.py         # 状態マネージャー
-└── output/                # 出力フォーマット
-    ├── diff.py            # 差分表示
-    └── formatters.py      # フォーマッター
+├── src/obsidian_etl/          # Kedro パイプライン（現行）
+├── src/converter/             # レガシー（修正禁止）
+├── src/rag/                   # RAG 機能
+├── conf/                      # Kedro 設定
+├── tests/                     # テスト
+└── Makefile                   # ビルド・テスト
 ```
 
 ---
 
-## Custom Commands
+## Kedro パイプライン
 
-### Kedro パイプライン
-
-Kedro ベースのパイプラインは `kedro` コマンドまたは `make kedro-*` で実行。
-
-#### Claude 会話インポート
-
-Claude エクスポート ZIP から知識を抽出して Obsidian ノートに変換し、Vault に配置。
+### 基本コマンド
 
 ```bash
-# 1. Claude エクスポート ZIP を配置
-cp ~/Downloads/data-2026-*.zip data/01_raw/claude/
+# 初回セットアップ
+make setup
 
-# 2. パイプライン実行（デフォルト: claude）
+# パイプライン実行（デフォルト: Claude）
 kedro run
 
-# または明示的に指定
-kedro run --pipeline=import_claude
-
-# 処理件数制限
-kedro run --pipeline=import_claude --params='{"import.limit": 10}'
-
-# 部分実行（特定ノードから）
-kedro run --pipeline=import_claude --from-nodes=extract_knowledge
-
-# 部分実行（特定ノードまで）
-kedro run --pipeline=import_claude --to-nodes=format_markdown
-```
-
-**Claude 特有の処理:**
-
-- **ZIP 読み込み**: `conversations.json` を自動抽出
-- **会話パース**: UUID ベースで会話を識別
-- **チャンク分割**: 25000文字超の会話を複数ファイルに分割
-- **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
-
-#### ChatGPT 会話インポート
-
-ChatGPT エクスポート ZIP から知識を抽出。
-
-```bash
-# 1. ChatGPT エクスポート ZIP を配置
-# ChatGPT 設定 → Data controls → Export data
-# メールで届く ZIP ファイルをダウンロード
-cp ~/Downloads/chatgpt-export-*.zip data/01_raw/openai/
-
-# 2. パイプライン実行
-kedro run --pipeline=import_openai
-
-# または provider パラメータで指定
-kedro run --params='{"import.provider": "openai"}'
-```
-
-**ChatGPT 特有の処理:**
-
-- **ZIP 読み込み**: `conversations.json` を自動抽出
-- **ツリー走査**: ChatGPT の mapping 構造を chronological order に変換
-- **マルチモーダル**: 画像は `[Image: file-id]`, 音声は `[Audio: filename]` プレースホルダー
-- **role 変換**: `user` → `human`, `assistant` → `assistant`, `system`/`tool` は除外
-- **チャンク分割**: 25000文字超の会話を複数ファイルに分割
-- **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
-
-#### GitHub Jekyll ブログインポート
-
-GitHub Jekyll ブログを git clone してインポート。
-
-```bash
-# URL 指定してパイプライン実行
-kedro run --pipeline=import_github \
-  --params='{"github_url": "https://github.com/rengotaku/rengotaku.github.io/tree/master/test_posts"}'
-
-# または provider パラメータで指定
-kedro run --params='{"import.provider": "github", "github_url": "https://github.com/user/repo/tree/master/_posts"}'
-```
-
-**GitHub Jekyll 特有の処理:**
-
-- **git clone**: `--depth 1` + sparse-checkout で対象パスのみ高速取得
-- **Jekyll frontmatter 変換**: `date` → `created`, `tags`/`categories`/`keywords` → `tags` に統合
-- **日付抽出優先順位**: frontmatter.date → ファイル名（YYYY-MM-DD-*） → タイトル正規表現 → 本文正規表現 → 現在日時
-- **タグ抽出**: frontmatter.tags/categories/keywords + 本文中の #hashtag を統合
-- **スキップ処理**: `draft: true` または `private: true` のファイルは自動除外
-- **file_id 生成**: SHA256 ハッシュで重複管理（Resume モード対応）
-
-#### dispatch 型パイプライン
-
-`import.provider` パラメータ（デフォルト: `claude`）で適切なパイプラインに自動 dispatch。
-
-```bash
-# デフォルト（claude）
-kedro run
-
-# OpenAI パイプラインに dispatch
-kedro run --params='{"import.provider": "openai"}'
-
-# GitHub パイプラインに dispatch
-kedro run --params='{"import.provider": "github", "github_url": "https://github.com/user/repo/tree/master/_posts"}'
-
-# 個別パイプライン名でも実行可能
+# プロバイダー指定
 kedro run --pipeline=import_claude
 kedro run --pipeline=import_openai
 kedro run --pipeline=import_github
+
+# 処理件数制限
+kedro run --params='{"import.limit": 10}'
+
+# 部分実行
+kedro run --from-nodes=extract_knowledge
+kedro run --to-nodes=format_markdown
 ```
 
-#### Resume（冪等再実行）
+### データフロー
 
-同じコマンドの再実行により、完了済みアイテムをスキップして失敗分のみ再処理。
-
-```bash
-# 前回失敗した処理の再実行（同じコマンド）
-kedro run
-
-# PartitionedDataset の overwrite=false により:
-# - 出力ファイルが存在するアイテム → スキップ
-# - 出力ファイルが存在しないアイテム → 再処理
-# - LLM 呼び出しなど高コストな処理の不要な再実行を回避
+```
+data/01_raw/*.zip → data/02_intermediate/parsed/*.json
+                  → data/03_primary/transformed/*.json
+                  → data/07_model_output/notes/*.md
+                  → data/07_model_output/organized/*.md
 ```
 
-#### DAG 可視化
-
-パイプラインの依存関係をグラフで可視化。
-
-```bash
-# DAG 可視化サーバー起動
-kedro viz
-make kedro-viz
-
-# ブラウザで http://localhost:4141 にアクセス
-```
-
-#### テスト実行
-
-```bash
-# 全テスト実行
-make test
-make kedro-test
-
-# カバレッジ計測
-make coverage
-```
-
-#### E2Eテスト（ゴールデンファイル比較）
-
-パイプライン出力をゴールデンファイル（期待される正解）と比較して E2E テストを実行。
-
-```bash
-# E2Eテスト実行（ゴールデンファイルと比較）
-make test-e2e
-
-# ゴールデンファイルの生成・更新
-make test-e2e-update-golden
-```
-
-**前提条件:**
-- Ollama が起動していること（LLM 処理が必要なため）
-
-**test-e2e の動作:**
-1. テストデータ（`tests/fixtures/claude_test.zip`）を使用
-2. パイプラインを `format_markdown` まで実行
-3. 出力を `tests/fixtures/golden/*.md` と比較
-4. 類似度 80% 以上で成功判定
-
-**test-e2e-update-golden の動作:**
-1. パイプラインを実行して最新の出力を生成
-2. 出力を `tests/fixtures/golden/` にコピー
-3. ゴールデンファイルとして保存
-
-**ゴールデンファイル更新のタイミング:**
-- LLM モデル変更後
-- プロンプト変更後
-- パイプラインロジック変更後
-- 既存のゴールデンファイルが正しくない場合
-
-**主要機能:**
+### 主要機能
 
 | 機能 | 説明 |
 |------|------|
-| Ollama 知識抽出 | LLM で会話からタイトル、要約、タグを自動抽出 |
-| 冪等 Resume | 再実行で完了済みをスキップ、失敗分のみ再処理 |
-| file_id 追跡 | SHA256 ハッシュで重複検出・更新管理 |
-| チャンク分割 | 25000文字超の会話を複数ファイルに分割 |
-| 英語 Summary 翻訳 | 英語 Summary を日本語に自動翻訳 |
-| マルチモーダル対応 | ChatGPT の画像・音声をプレースホルダー処理 |
-| DAG 可視化 | ノード依存関係のグラフィカル表示 |
-| 部分実行 | 特定ノード範囲のみ実行可能 |
-| 圧縮率検証 | 過度な圧縮を検出し、レビューフォルダに出力 |
+| Ollama 知識抽出 | LLM でタイトル、要約、タグを自動抽出 |
+| 冪等 Resume | 再実行で完了済みスキップ（PartitionedDataset） |
+| file_id 追跡 | SHA256 ハッシュで重複検出 |
+| チャンク分割 | 25000文字超を複数ファイルに分割 |
+| 圧縮率検証 | 過度な圧縮を検出し `review/` に出力 |
 
-**スキップ条件:**
+### プロバイダー別処理
 
-- メッセージ数 < 3（MIN_MESSAGES）: 短すぎる会話をスキップ
+**Claude**: ZIP → `conversations.json` 抽出 → UUID で会話識別
 
-**エッジケース対応:**
+**ChatGPT**: ZIP → mapping 構造を chronological order に変換 → 画像/音声はプレースホルダー
 
-- 空の conversations.json: 警告ログを出力して正常終了
-- 破損した ZIP ファイル: エラーメッセージを出力して終了
-- タイトル欠損: 最初のユーザーメッセージから生成
-- タイムスタンプ欠損: 現在日時にフォールバック
-
-**データフロー:**
-
-```
-data/01_raw/claude/*.zip           ← 入力（Claude エクスポート ZIP）
-    ↓ [extract_claude pipeline - parse_claude_zip]
-data/02_intermediate/parsed/*.json ← パース済みアイテム
-    ↓ [transform pipeline]
-data/03_primary/transformed/*.json ← LLM 処理済みアイテム
-    ↓ [transform pipeline - format_markdown]
-data/07_model_output/notes/*.md    ← 最終 Markdown
-    ↓ [organize pipeline]
-Vaults/エンジニア/*.md             ← Vault 配置
-```
-Total Processing Time: 53761ms
-Overall Change: 1964 → 1219 chars (ratio: 0.621)
-```
-
-**使用例:**
-
-- 処理時間のボトルネック特定
-- 各ステップでの content 変化量の確認
-- チャンク分割されたアイテムの追跡
-- LLM 処理の効果測定
-
-**エラー詳細表示（`SHOW_ERROR_DETAILS=1`）:**
-
-`--show-error-details` フラグを使用すると、`error_details.jsonl` からエラー詳細を表示します。
-
-| 項目 | 説明 |
-|------|------|
-| Timestamp | エラー発生時刻 |
-| Stage | ステージ名（transform, load など） |
-| Step | ステップ名（extract_knowledge など） |
-| Error Type | 例外クラス名 |
-| Error Message | エラーメッセージ |
-| Backtrace | フルスタックトレース（20行まで表示） |
-| Metadata | LLM プロンプト/出力などの追加情報（500文字まで表示） |
-
-```bash
-# エラー詳細を表示
-make item-trace SESSION=20260126_144122 TARGET=ERROR SHOW_ERROR_DETAILS=1
-```
-
-**注意:**
-
-- `debug/steps.jsonl` が存在するセッションのみ対応
-- セッション実行時に `--debug` または `DEBUG=1` が必須
-
-#### 終了コード
-
-| Code | 意味 |
-|------|------|
-| 0 | 成功 |
-| 1 | 一般エラー |
-| 2 | 入力ファイル/セッションが見つからない |
-| 3 | Ollama 接続エラー |
-| 4 | 部分成功（一部失敗） |
-| 5 | 全件失敗 |
-
----
-
-## 圧縮率検証とレビュー出力
-
-Kedro パイプラインでは、LLM による情報圧縮が過度でないかを自動検証し、基準未達のファイルをレビューフォルダに出力します。
-
-### 圧縮率のしきい値
-
-元コンテンツのサイズに応じて、以下のしきい値を適用:
-
-| 元サイズ | しきい値 | 説明 |
-|---------|---------|------|
-| 10,000文字以上 | 10% | 大規模会話は圧縮余地が大きい |
-| 5,000-9,999文字 | 15% | 中規模会話は適度な圧縮 |
-| 5,000文字未満 | 20% | 小規模会話は情報を多く残す |
-
-### レビュー出力フォルダ
-
-圧縮率がしきい値を下回ったファイルは以下のフォルダに出力されます:
-
-```
-data/07_model_output/
-├── review/                      # transform パイプライン出力（レビュー対象）
-└── organized_review/            # organize パイプライン出力（ジャンル分類済み）
-```
-
-### frontmatter の review_reason フィールド
-
-レビュー対象ファイルには `review_reason` フィールドが追加されます:
-
-```yaml
----
-title: 会話のタイトル
-created: 2025-12-02
-tags:
-  - タグ1
-summary: 要約
-source_provider: claude
-file_id: abc123
-normalized: true
-review_reason: "extract_knowledge: body_ratio=3.3% < threshold=10.0%"
-genre: business
-topic: トピック名
----
-```
-
-**review_reason のフォーマット**:
-- `<ノード名>: body_ratio=<実際の圧縮率>% < threshold=<しきい値>%`
-- 例: `"extract_knowledge: body_ratio=3.3% < threshold=10.0%"`
-
-### 手動レビューと復帰
-
-レビューフォルダのファイルは、手動で内容を確認し、問題なければ通常フォルダに移動します:
-
-```bash
-# レビュー対象ファイルの確認
-ls data/07_model_output/review/
-ls data/07_model_output/organized_review/
-
-# 問題なければ通常フォルダに移動
-mv data/07_model_output/review/*.md data/07_model_output/notes/
-mv data/07_model_output/organized_review/*.md data/07_model_output/organized/
-```
-
----
-
-## ファイル正規化ルール
-
-### 正規化ステータス
-
-frontmatter の `normalized` プロパティで判別:
-
-```yaml
----
-title: ファイルのタイトル
-normalized: true    # 正規化済み
-created: 2022-10-17
-file_id: abc123     # ファイル追跡用ID（ハッシュ）
----
-```
-
-| 状態 | `normalized` |
-|------|--------------|
-| **正規化済み** | `true` |
-| **未正規化** | `false` または未設定 |
-
-### 正規化時の処理
-
-1. **frontmatter 追加/更新**:
-   - `title`: ファイルのタイトル
-   - `created`: 作成日（Jekyll形式から抽出 or 現在日）
-   - `tags`: 適切なタグ
-   - `normalized: true`
-   - `file_id`: ファイル追跡用ハッシュ（自動生成）
-
-2. **不要フィールド削除**:
-   - `draft`, `private`, `slug`, `lastmod`, `keywords` (Jekyll特有)
-
-3. **ファイル名**: タイトルのみに変更
-   - Before: `2022-10-17-Online-DDL-of-mysql.md`
-   - After: `Online DDL of mysql.md`
-
-### 未正規化ファイルの検出
-
-```bash
-# normalizedプロパティがないファイルを検出
-grep -rL "normalized: true" --include="*.md" .
-```
-
----
-
-## Obsidian Markdown Conventions
-
-### 1. YAML Frontmatter (Required)
-
-```yaml
----
-title: ファイルのタイトル
-tags:
-  - タグ1
-  - タグ2
-created: YYYY-MM-DD
-related:
-  - "[[関連ファイル1]]"
-  - "[[関連ファイル2]]"
----
-```
-
-### 2. Internal Links
-
-- Wiki-style: `[[ファイル名]]`
-- Display text: `[[ファイル名|表示テキスト]]`
-- Heading link: `[[ファイル名#見出し]]`
-
-### 3. Callouts
-
-```markdown
-> [!quote] 引用
-> メッセージ
-
-> [!note] メモ
-> 補足情報
-
-> [!warning] 警告
-> 注意事項
-
-> [!tip] ヒント
-> 役立つ情報
-
-> [!example] 例
-> 具体例
-```
-
-### 4. Structure
-
-- `##` メインセクション
-- `###` サブセクション
-- `####` 詳細トピック
-- 末尾に「関連」セクションで内部リンク
-
-### 5. Formatting
-
-- 空行は最大1行
-- ネストはタブでインデント
-- 強調は `**太字**`
-- リストは `-` を使用
-
-### 6. Tags
-
-- frontmatter 内に記載（インライン `#tag` は避ける）
-- Vault 共通タグ例:
-  - `#status/draft`, `#status/done`
-  - `#type/note`, `#type/summary`, `#type/reference`
-
----
-
-## ジャンル別振り分け基準
-
-### エンジニア へ振り分け
-
-- プログラミング言語、フレームワーク
-- システム設計、アーキテクチャ
-- DevOps、インフラ
-- 技術的なベストプラクティス
-
-### ビジネス へ振り分け
-
-- ビジネス書の要約・メモ
-- コミュニケーション、話し方
-- マネジメント、リーダーシップ
-- キャリア、自己啓発
-
-### 経済 へ振り分け
-
-- 経済ニュース、市場動向
-- 企業分析、業界動向
-- 投資、金融
-- 政策、規制
-
-### 日常 へ振り分け
-
-- 日常生活のメモ
-- 趣味、娯楽
-- 雑記、アイデア
-
-### その他 へ振り分け
-
-- 上記カテゴリに明確に該当しないもの
-- 複数カテゴリにまたがるもの
-- 分類が困難だが価値のあるコンテンツ
-
-### ClaudedocKnowledges（自動振り分け対象外）
-
-手動管理のみ。プロダクト固有のナレッジベース。
-
----
-
-## Claude 作業時のルール
-
-- 各 Vault の CLAUDE.md があればそちらを優先
-- ファイル移動前に既存構造を確認
-- 日本語ファイル名可
-- 大量ファイル処理時は確認を求める
-- **Python スクリプト実行時は必ず venv を使用**: `.venv/bin/python` または `make` コマンド
-- **レガシーコード (`src/converter/`) は一切修正しない**: Kedro パイプライン (`src/obsidian_etl/`) のみを修正対象とする
-
----
-
-## エラー記録機能
-
-ETL パイプライン実行時、エラーが発生すると以下の2箇所に記録されます：
-
-### 1. `pipeline_stages.jsonl` - 基本情報
-
-各アイテムの処理結果を記録。エラー時は `status: "failed"` と `error_message` が記録されます。
-
-```jsonl
-{
-  "timestamp": "2026-01-26T08:00:00.000000+00:00",
-  "session_id": "20260126_080000",
-  "filename": "conversation.json",
-  "stage": "transform",
-  "step": "extract_knowledge",
-  "timing_ms": 5000,
-  "status": "failed",
-  "error_message": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
-}
-```
-
-**記録内容:**
-- エラーステータス (`status: "failed"`)
-- エラーメッセージ (`error_message`)
-- 処理時間、文字数変化などの基本メトリクス
-
-### 2. `error_details.jsonl` - 詳細情報
-
-エラーの詳細情報をデバッグ用に記録。`item_id` で引き当て可能。
-
-```jsonl
-{
-  "timestamp": "2026-01-26T08:00:00.000000",
-  "session_id": "20260126_080000",
-  "item_id": "conversation_12345",
-  "stage": "transform",
-  "step": "extract_knowledge",
-  "error_type": "JSONDecodeError",
-  "error_message": "Expecting value: line 1 column 1 (char 0)",
-  "backtrace": "Traceback (most recent call last):\n  File ...",
-  "metadata": {
-    "conversation_title": "...",
-    "llm_prompt": "...",
-    "llm_output": "..."
-  }
-}
-```
-
-**記録内容:**
-- 例外タイプ (`error_type`)
-- エラーメッセージ (`error_message`)
-- フルバックトレース (`backtrace`)
-- LLM プロンプト・出力などのメタデータ
-
-### エラートレース
-
-`make item-trace` コマンドで、エラーが発生したアイテムの処理履歴を確認できます：
-
-```bash
-# エラーアイテムすべてをトレース
-make item-trace SESSION=20260126_080000 TARGET=ERROR
-
-# 特定アイテムをトレース
-make item-trace SESSION=20260126_080000 ITEM=conversation_12345
-```
-
----
-
-## 初回セットアップ
-
-**重要**: 初回実行前に、必ず `make setup` を実行してください。
-
-```bash
-# Python venv作成 + 依存関係インストール + データディレクトリ作成
-make setup
-```
-
-このコマンドは以下を実行します：
-- Python仮想環境 (`.venv/`) の作成
-- 依存パッケージのインストール
-- **Kedroデータディレクトリの作成** (`data/01_raw/`, `data/02_intermediate/`, `data/03_primary/`, `data/07_model_output/`)
-
-初回セットアップ後、`kedro run` で正常に動作します。
+**GitHub Jekyll**: git clone → frontmatter 変換（`date` → `created`）
 
 ---
 
 ## 開発・テスト
 
-**テストフレームワーク**: Python 標準ライブラリの `unittest` を使用（pytest 不使用）
-
-**テスト実行は Makefile を使用する**:
-
 ```bash
-make test      # 全テスト実行（ユニット + 統合）
-make check     # Python 構文チェック
-make lint      # コード品質チェック (ruff)
+make test       # 全テスト実行
+make coverage   # カバレッジ計測（≥80%）
+make lint       # コード品質チェック (ruff)
+make kedro-viz  # DAG 可視化
+make test-e2e   # E2E テスト（ゴールデンファイル比較）
 ```
 
-| ターゲット | 説明 |
-|-----------|------|
-| `make test` | ユニットテスト（Kedro パイプライン） |
-| `make coverage` | テストカバレッジ計測（≥80%） |
-| `make kedro-run` | Kedro パイプライン実行 |
-| `make kedro-test` | Kedro テスト実行 |
-| `make kedro-viz` | DAG 可視化 |
+### 終了コード
+
+| Code | 意味 |
+|------|------|
+| 0 | 成功 |
+| 1 | 一般エラー |
+| 2 | 入力ファイル未発見 |
+| 3 | Ollama 接続エラー |
+| 4 | 部分成功 |
+| 5 | 全件失敗 |
+
+---
 
 ## 技術スタック
 
@@ -804,24 +119,76 @@ make lint      # コード品質チェック (ruff)
 | LLM | Ollama API（ローカル） |
 | データ形式 | Markdown, JSON, JSONL |
 | テスト | unittest（標準ライブラリ） |
-| Lint | ruff（オプション） |
-| ファイル追跡 | file_id（SHA256ハッシュベース） |
+| Lint | ruff |
+
+---
+
+## Obsidian Markdown Conventions
+
+### YAML Frontmatter (必須)
+
+```yaml
+---
+title: タイトル
+tags:
+  - タグ1
+created: YYYY-MM-DD
+normalized: true
+file_id: abc123
+---
+```
+
+### 記法
+
+- 内部リンク: `[[ファイル名]]`, `[[ファイル名|表示]]`, `[[ファイル名#見出し]]`
+- Callouts: `> [!note]`, `> [!warning]`, `> [!tip]`, `> [!example]`
+- 見出し: `##` メイン, `###` サブ, `####` 詳細
+- リスト: `-` を使用、ネストはタブ
+
+### 正規化ルール
+
+1. **frontmatter**: `title`, `created`, `tags`, `normalized: true`, `file_id` を追加
+2. **不要フィールド削除**: `draft`, `private`, `slug`, `lastmod`, `keywords`
+3. **ファイル名**: タイトルのみ（日付プレフィックス削除）
+
+---
+
+## ジャンル別振り分け
+
+| ジャンル | 内容 |
+|---------|------|
+| エンジニア | プログラミング、システム設計、DevOps、技術ベストプラクティス |
+| ビジネス | ビジネス書、コミュニケーション、マネジメント、キャリア |
+| 経済 | 経済ニュース、企業分析、投資、金融、政策 |
+| 日常 | 日常生活、趣味、雑記 |
+| その他 | 上記に該当しない価値あるコンテンツ |
+
+---
+
+## 圧縮率検証
+
+| 元サイズ | しきい値 |
+|---------|---------|
+| 10,000文字以上 | 10% |
+| 5,000-9,999文字 | 15% |
+| 5,000文字未満 | 20% |
+
+しきい値未達のファイルは `review/` に出力され、`review_reason` フィールドが追加される。
+
+---
+
+## Claude 作業時のルール
+
+- 各 Vault の CLAUDE.md があればそちらを優先
+- ファイル移動前に既存構造を確認
+- 日本語ファイル名可
+- 大量ファイル処理時は確認を求める
+- **Python 実行は venv 使用**: `.venv/bin/python` または `make`
+- **レガシーコード修正禁止**: `src/converter/` は修正不可
 
 ## Active Technologies
-- Python 3.11+ + haystack-ai, ollama-haystack, qdrant-haystack (001-rag-migration-plan)
-- Qdrant (ローカルファイル永続化 @ `data/qdrant/`) (001-rag-migration-plan)
-- Python 3.11+ + Kedro 1.1.1, kedro-datasets, tenacity 8.x, PyYAML 6.0+, requests 2.28+ (044-kedro-migration)
-- ファイルシステム（JSON, JSONL, Markdown）、Kedro DataCatalog（PartitionedDataset） (044-kedro-migration)
-- Python 3.13 + Kedro 1.1.1 + kedro 1.1.1, kedro-datasets (PartitionedDataset, json, text), tenacity 8.x (045-fix-kedro-input)
-- ファイルシステム（JSON, JSONL, Markdown, ZIP）、Kedro DataCatalog (045-fix-kedro-input)
-- Python 3.11+ + 標準ライブラリのみ (`difflib`, `yaml`, `unittest`)、Kedro 1.1.1 (046-e2e-output-validation)
-- ファイルシステム（Markdown, JSON） (046-e2e-output-validation)
-- Python 3.11+ + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, tenacity 8.x, difflib (stdlib) (047-e2e-full-pipeline)
-- ファイルシステム (Markdown, JSON, JSONL)、Kedro DataCatalog (PartitionedDataset) (047-e2e-full-pipeline)
-- Python 3.11+ + Kedro 1.1.1, kedro-datasets, requests (Ollama API) (049-output-quality-improve)
-- ファイルシステム (JSON, JSONL, Markdown)、Kedro PartitionedDataset (050-fix-content-compression)
-- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, tenacity 8.x, requests 2.28+ (051-ollama-params-config)
-- ファイルシステム（YAML, JSON, JSONL, Markdown）、Kedro DataCatalog (PartitionedDataset) (051-ollama-params-config)
+- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+ (052-improve-summary-quality)
+- ファイルシステム (Markdown, JSON, JSONL)、Kedro PartitionedDataset (052-improve-summary-quality)
 
 ## Recent Changes
-- 044-kedro-migration: Migrated from custom ETL pipeline (`src/etl/`) to Kedro 1.1.1. Removed session management, introduced DAG-based pipelines (import_claude, import_openai, import_github), idempotent resume via PartitionedDataset
+- 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+

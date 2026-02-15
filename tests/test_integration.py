@@ -233,13 +233,6 @@ class TestE2EClaudeImport(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
@@ -414,13 +407,6 @@ class TestResumeAfterFailure(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
@@ -684,13 +670,6 @@ class TestPartialRunFromTo(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
@@ -940,13 +919,6 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
