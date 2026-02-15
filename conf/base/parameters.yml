@@ -54,27 +54,11 @@ import:
   chunk_size: 25000  # Characters before splitting into chunks
   chunk_enabled: true
 
-  # Legacy Ollama settings (DEPRECATED: use ollama.defaults instead)
-  # Kept for backward compatibility
-  ollama:
-    model: "gemma3:12b"
-    base_url: "http://localhost:11434"
-    timeout: 120
-    temperature: 0.2
-    max_retries: 3
-
 # ============================================================
 # Organize Parameters
 # ============================================================
 
 organize:
-  # Legacy Ollama settings (DEPRECATED: use ollama.defaults instead)
-  # Kept for backward compatibility
-  ollama:
-    model: "gemma3:12b"
-    base_url: "http://localhost:11434"
-    timeout: 60
-
   # Vault path mapping (genre -> relative path)
   vaults:
     engineer: "Vaults/エンジニア/"
