@@ -49,6 +49,33 @@ class CompressionResult:
     node_name: str
 
 
+def min_output_chars(original_size: int) -> int:
+    """最小出力文字数を計算
+
+    Args:
+        original_size: 元コンテンツのサイズ (文字数)
+
+    Returns:
+        最小出力文字数。max(original_size * 0.2, 300) を返す。
+        ただし original_size が 0 の場合は 0 を返す。
+
+    Examples:
+        >>> min_output_chars(1000)
+        300
+        >>> min_output_chars(2000)
+        400
+        >>> min_output_chars(100)
+        300
+        >>> min_output_chars(5000)
+        1000
+        >>> min_output_chars(0)
+        0
+    """
+    if original_size == 0:
+        return 0
+    return max(int(original_size * 0.2), 300)
+
+
 def get_threshold(original_size: int) -> float:
     """元サイズに応じたしきい値を返す
 
@@ -59,22 +86,27 @@ def get_threshold(original_size: int) -> float:
         しきい値 (0.0-1.0 の float)
             - 10,000文字以上: 0.10 (10%)
             - 5,000-9,999文字: 0.15 (15%)
-            - 5,000文字未満: 0.20 (20%)
+            - 1,000-4,999文字: 0.20 (20%)
+            - 1,000文字未満: 0.30 (30%, 緩和)
 
     Examples:
         >>> get_threshold(10000)
         0.10
         >>> get_threshold(5000)
         0.15
-        >>> get_threshold(4999)
+        >>> get_threshold(1000)
         0.20
+        >>> get_threshold(999)
+        0.30
     """
     if original_size >= 10000:
         return 0.10  # 10%
     elif original_size >= 5000:
         return 0.15  # 15%
-    else:
+    elif original_size >= 1000:
         return 0.20  # 20%
+    else:
+        return 0.30  # 30% (relaxed for very short conversations)
 
 
 def validate_compression(

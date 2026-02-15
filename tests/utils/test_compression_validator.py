@@ -55,10 +55,11 @@ class TestGetThreshold(unittest.TestCase):
         # Upper boundary: 4999
         self.assertEqual(get_threshold(4999), 0.20)
 
-        # Small values
+        # Small values (>= 1000)
         self.assertEqual(get_threshold(1000), 0.20)
-        self.assertEqual(get_threshold(100), 0.20)
-        self.assertEqual(get_threshold(1), 0.20)
+        # Very small values (< 1000) are relaxed to 30%
+        self.assertEqual(get_threshold(100), 0.30)
+        self.assertEqual(get_threshold(1), 0.30)
 
 
 class TestValidateCompression(unittest.TestCase):

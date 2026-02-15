@@ -65,17 +65,17 @@
 
 ### 実装 (GREEN)
 
-- [ ] T012 Read RED tests: specs/052-improve-summary-quality/red-tests/ph2-test.md
-- [ ] T013 [US1] Add V2 qualitative instructions to src/obsidian_etl/utils/prompts/knowledge_extraction.txt (verified in verification-results.md)
-- [ ] T013.1 [US1] Update validate_compression in src/obsidian_etl/utils/compression_validator.py to enforce min(original*0.2, 300) threshold
-- [ ] T013.2 [US1] Update get_threshold in src/obsidian_etl/utils/compression_validator.py to relax threshold for <1000 chars (e.g., 30%)
-- [ ] T013.3 [US1] Add code block preservation instructions to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
-- [ ] T014 Verify `make test` PASS (GREEN)
+- [x] T012 Read RED tests: specs/052-improve-summary-quality/red-tests/ph2-test.md
+- [x] T013 [US1] Add V2 qualitative instructions to src/obsidian_etl/utils/prompts/knowledge_extraction.txt (verified in verification-results.md)
+- [x] T013.1 [US1] Update validate_compression in src/obsidian_etl/utils/compression_validator.py to enforce min(original*0.2, 300) threshold
+- [x] T013.2 [US1] Update get_threshold in src/obsidian_etl/utils/compression_validator.py to relax threshold for <1000 chars (e.g., 30%)
+- [x] T013.3 [US1] Add code block preservation instructions to src/obsidian_etl/utils/prompts/knowledge_extraction.txt
+- [x] T014 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T015 Verify `make test` passes all tests (no regressions)
-- [ ] T016 Generate phase output: specs/052-improve-summary-quality/tasks/ph2-output.md
+- [x] T015 Verify `make test` passes all tests (no regressions)
+- [x] T016 Generate phase output: specs/052-improve-summary-quality/tasks/ph2-output.md
 
 **Checkpoint**: User Story 1 should be fully functional - プロンプト改善完了
 
