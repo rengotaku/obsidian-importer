@@ -34,12 +34,12 @@
 
 **Purpose**: 既存実装の確認と変更準備
 
-- [ ] T001 Read current prompt in src/obsidian_etl/utils/prompts/knowledge_extraction.txt
-- [ ] T002 [P] Read extract_knowledge node in src/obsidian_etl/pipelines/transform/nodes.py
-- [ ] T003 [P] Read existing tests in tests/pipelines/transform/test_nodes.py
-- [ ] T004 [P] List files in data/07_model_output/organized/ for golden file candidates
-- [ ] T005 [P] List files in data/07_model_output/review/ for golden file candidates
-- [ ] T006 Generate phase output: specs/052-improve-summary-quality/tasks/ph1-output.md
+- [X] T001 Read current prompt in src/obsidian_etl/utils/prompts/knowledge_extraction.txt
+- [X] T002 [P] Read extract_knowledge node in src/obsidian_etl/pipelines/transform/nodes.py
+- [X] T003 [P] Read existing tests in tests/pipelines/transform/test_nodes.py
+- [X] T004 [P] List files in data/07_model_output/organized/ for golden file candidates
+- [X] T005 [P] List files in data/07_model_output/review/ for golden file candidates
+- [X] T006 Generate phase output: specs/052-improve-summary-quality/tasks/ph1-output.md
 
 ---
 
