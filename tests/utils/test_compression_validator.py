@@ -229,5 +229,141 @@ class TestCompressionResultDataclass(unittest.TestCase):
         self.assertTrue(is_dataclass(CompressionResult))
 
 
+# ============================================================
+# Phase 2 RED Tests: Dynamic Min Characters Validation (052-improve-summary-quality)
+# ============================================================
+
+
+class TestMinCharactersValidation(unittest.TestCase):
+    """min_output_chars: Validates minimum output character count.
+
+    Tests for FR-002: システムは、まとめの最低文字数を動的に検証しなければならない
+    （元の会話の20%以上 or 300文字以上のいずれか大きい方）
+
+    This function should be added to compression_validator.py:
+    - min_output_chars(original_size: int) -> int
+    """
+
+    def test_min_output_chars_small_conversation(self):
+        """小さな会話では300文字が最低ライン。
+
+        FR-002: min(original*0.2, 300) の大きい方を返す
+
+        Example: original=500 -> 500*0.2=100 < 300 -> min=300
+        """
+        from obsidian_etl.utils.compression_validator import min_output_chars
+
+        # 500 chars * 0.2 = 100, but 300 is larger
+        self.assertEqual(min_output_chars(500), 300)
+
+        # 1000 chars * 0.2 = 200, but 300 is larger
+        self.assertEqual(min_output_chars(1000), 300)
+
+        # 1500 chars * 0.2 = 300, equal to minimum
+        self.assertEqual(min_output_chars(1500), 300)
+
+    def test_min_output_chars_large_conversation(self):
+        """大きな会話では20%が最低ライン。
+
+        FR-002: min(original*0.2, 300) の大きい方を返す
+
+        Example: original=2000 -> 2000*0.2=400 > 300 -> min=400
+        """
+        from obsidian_etl.utils.compression_validator import min_output_chars
+
+        # 2000 chars * 0.2 = 400 > 300
+        self.assertEqual(min_output_chars(2000), 400)
+
+        # 5000 chars * 0.2 = 1000 > 300
+        self.assertEqual(min_output_chars(5000), 1000)
+
+        # 10000 chars * 0.2 = 2000 > 300
+        self.assertEqual(min_output_chars(10000), 2000)
+
+    def test_min_output_chars_boundary(self):
+        """境界値でのテスト。
+
+        1500 chars -> 1500*0.2 = 300 = minimum (boundary)
+        """
+        from obsidian_etl.utils.compression_validator import min_output_chars
+
+        # Exactly at boundary: 1500 * 0.2 = 300
+        self.assertEqual(min_output_chars(1500), 300)
+
+        # Just below boundary: 1499 * 0.2 = 299.8 < 300
+        self.assertEqual(min_output_chars(1499), 300)
+
+        # Just above boundary: 1501 * 0.2 = 300.2 > 300
+        self.assertEqual(min_output_chars(1501), 300)  # rounds to int
+
+    def test_min_output_chars_zero_original(self):
+        """元の会話が空の場合、0を返す。
+
+        Edge case: 空の会話に対してはしきい値なし
+        """
+        from obsidian_etl.utils.compression_validator import min_output_chars
+
+        self.assertEqual(min_output_chars(0), 0)
+
+
+class TestShortConversationThreshold(unittest.TestCase):
+    """get_threshold: Short conversation (<1000 chars) threshold relaxation.
+
+    Tests for Edge Case: 元の会話が極端に短い場合（1,000 文字未満）、圧縮率のしきい値を緩和する
+
+    Current behavior:
+    - <5000 chars -> 20%
+
+    Expected new behavior:
+    - <1000 chars -> 30% (relaxed)
+    - 1000-4999 chars -> 20% (current)
+    """
+
+    def test_get_threshold_very_short_relaxed(self):
+        """1,000文字未満の場合、しきい値が30% (0.30) に緩和されること。
+
+        Edge Case: 短い会話では圧縮率のしきい値を緩和する
+
+        Expected: <1000 chars -> 0.30 (30%)
+        """
+        from obsidian_etl.utils.compression_validator import get_threshold
+
+        # Very short conversations should have relaxed threshold
+        self.assertEqual(get_threshold(999), 0.30)
+        self.assertEqual(get_threshold(500), 0.30)
+        self.assertEqual(get_threshold(100), 0.30)
+        self.assertEqual(get_threshold(1), 0.30)
+
+    def test_get_threshold_boundary_1000(self):
+        """1,000文字ちょうどの場合、しきい値が20% (0.20) であること。
+
+        Boundary: exactly 1000 chars -> 0.20 (not relaxed)
+        """
+        from obsidian_etl.utils.compression_validator import get_threshold
+
+        # Exactly 1000 should use normal threshold
+        self.assertEqual(get_threshold(1000), 0.20)
+
+        # Above 1000 should also use normal threshold
+        self.assertEqual(get_threshold(1001), 0.20)
+
+    def test_get_threshold_maintains_existing_behavior(self):
+        """既存のしきい値が維持されること（1000文字以上）。
+
+        Verify existing thresholds are not changed:
+        - 5000-9999 chars -> 15%
+        - 10000+ chars -> 10%
+        """
+        from obsidian_etl.utils.compression_validator import get_threshold
+
+        # Medium conversations: 15%
+        self.assertEqual(get_threshold(5000), 0.15)
+        self.assertEqual(get_threshold(7500), 0.15)
+
+        # Large conversations: 10%
+        self.assertEqual(get_threshold(10000), 0.10)
+        self.assertEqual(get_threshold(20000), 0.10)
+
+
 if __name__ == "__main__":
     unittest.main()

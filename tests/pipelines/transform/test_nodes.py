@@ -1699,5 +1699,150 @@ class TestTranslateSummaryUsesOllamaConfig(unittest.TestCase):
         self.assertEqual(call_kwargs["timeout"], 120)
 
 
+# ============================================================
+# Phase 2 RED Tests: Prompt Quality Improvements (052-improve-summary-quality)
+# ============================================================
+
+
+class TestPromptQualityInstructions(unittest.TestCase):
+    """Prompt quality tests for User Story 1 - まとめ品質の向上.
+
+    Tests for FR-001, FR-003, FR-004, FR-005:
+    - FR-001: Prompt includes "理由や背景も含めて説明する" instruction
+    - FR-003: Prompt includes table preservation instruction
+    - FR-004: Prompt includes specific values preservation (数値・日付・固有名詞)
+    - FR-005: Prompt includes analysis/recommendation structuring instruction
+    """
+
+    def setUp(self):
+        """Load the prompt file content."""
+        prompt_path = (
+            Path(__file__).parent.parent.parent.parent
+            / "src"
+            / "obsidian_etl"
+            / "utils"
+            / "prompts"
+            / "knowledge_extraction.txt"
+        )
+        with open(prompt_path, encoding="utf-8") as f:
+            self.prompt_content = f.read()
+
+    def test_prompt_includes_reason_instruction(self):
+        """プロンプトに「理由・背景」の説明指示が含まれること。
+
+        FR-001: システムは、まとめ生成時に「理由や背景も含めて説明する」指示をプロンプトに含めなければならない
+
+        Expected keywords in prompt:
+        - 理由・背景 or 理由や背景
+        - なぜそうなるか
+        """
+        # Check for reason/background instruction
+        reason_keywords = ["理由・背景", "理由や背景", "なぜそうなるか"]
+        has_reason_instruction = any(keyword in self.prompt_content for keyword in reason_keywords)
+
+        self.assertTrue(
+            has_reason_instruction,
+            f"Prompt should include reason/background instruction. "
+            f"Expected one of: {reason_keywords}. "
+            f"Prompt content length: {len(self.prompt_content)} chars",
+        )
+
+    def test_prompt_includes_table_preservation(self):
+        """プロンプトに表形式データの保持指示が含まれること。
+
+        FR-003: システムは、表形式のデータがある場合、表形式を保持してまとめに含めなければならない
+
+        Expected keywords in prompt:
+        - 表形式データの保持 or 表形式を保持
+        - Markdown 表形式
+        """
+        # Check for table preservation instruction
+        table_keywords = ["表形式データの保持", "表形式を保持", "Markdown 表形式で保持"]
+        has_table_instruction = any(keyword in self.prompt_content for keyword in table_keywords)
+
+        self.assertTrue(
+            has_table_instruction,
+            f"Prompt should include table preservation instruction. "
+            f"Expected one of: {table_keywords}. "
+            f"Prompt content length: {len(self.prompt_content)} chars",
+        )
+
+    def test_prompt_includes_code_preservation(self):
+        """プロンプトにコードブロック保持の強化指示が含まれること。
+
+        Edge Case: コード主体の会話では、コードブロックを適切に保持しつつ解説を追加する
+
+        Expected: Prompt should have explicit code block preservation instruction
+        beyond the existing "省略禁止" section. Should include:
+        - コードブロック保持 or コードブロックを完全に保持
+        - 重要なコードは省略せず
+        """
+        # The prompt already has some code instructions, but we need explicit
+        # preservation emphasis for code-heavy conversations
+        code_preservation_keywords = [
+            "コードブロック保持",
+            "コードブロックを完全に保持",
+            "重要なコードは省略せず",
+            "コード主体",
+        ]
+        has_code_preservation = any(
+            keyword in self.prompt_content for keyword in code_preservation_keywords
+        )
+
+        self.assertTrue(
+            has_code_preservation,
+            f"Prompt should include explicit code block preservation instruction. "
+            f"Expected one of: {code_preservation_keywords}. "
+            f"Prompt content length: {len(self.prompt_content)} chars",
+        )
+
+    def test_prompt_includes_analysis_structuring(self):
+        """プロンプトに分析・推奨の構造化指示が含まれること。
+
+        FR-005: システムは、元の会話に分析や推奨がある場合、それらを構造化してまとめに含めなければならない
+
+        Expected keywords in prompt:
+        - 分析・考察の記述 or 分析・推奨
+        - パターン・傾向
+        - 推奨・アドバイス
+        """
+        # Check for analysis/recommendation structuring instruction
+        analysis_keywords = [
+            "分析・考察の記述",
+            "分析・推奨",
+            "パターン・傾向",
+            "推奨・アドバイス",
+        ]
+        has_analysis_instruction = any(
+            keyword in self.prompt_content for keyword in analysis_keywords
+        )
+
+        self.assertTrue(
+            has_analysis_instruction,
+            f"Prompt should include analysis/recommendation structuring instruction. "
+            f"Expected one of: {analysis_keywords}. "
+            f"Prompt content length: {len(self.prompt_content)} chars",
+        )
+
+    def test_prompt_includes_specific_values_preservation(self):
+        """プロンプトに数値・日付・固有名詞の省略禁止指示が含まれること。
+
+        FR-004: システムは、具体的な数値・日付・固有名詞を省略せずにまとめに含めなければならない
+
+        Expected keywords in prompt:
+        - 数値・日付は省略せず or 数値・日付・固有名詞
+        """
+        # Check for specific values preservation instruction
+        values_keywords = ["数値・日付は省略せず", "数値・日付・固有名詞", "具体的な数値"]
+        has_values_instruction = any(keyword in self.prompt_content for keyword in values_keywords)
+
+        self.assertTrue(
+            has_values_instruction,
+            f"Prompt should include specific values preservation instruction. "
+            f"Expected one of: {values_keywords}. "
+            f"Prompt content length: {len(self.prompt_content)} chars",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

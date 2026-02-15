@@ -55,13 +55,13 @@
 
 ### テスト実装 (RED)
 
-- [ ] T008 [P] [US1] Implement test_prompt_includes_reason_instruction in tests/pipelines/transform/test_nodes.py
-- [ ] T009 [P] [US1] Implement test_prompt_includes_table_preservation in tests/pipelines/transform/test_nodes.py
-- [ ] T009.1 [P] [US1] Implement test_min_characters_validation in tests/utils/test_compression_validator.py (FR-002: min(original*0.2, 300))
-- [ ] T009.2 [P] [US1] Implement test_short_conversation_threshold in tests/utils/test_compression_validator.py (Edge Case: <1000文字でしきい値緩和)
-- [ ] T009.3 [P] [US1] Implement test_prompt_includes_code_preservation in tests/pipelines/transform/test_nodes.py (Edge Case: コードブロック保持)
-- [ ] T010 Verify `make test` FAIL (RED)
-- [ ] T011 Generate RED output: specs/052-improve-summary-quality/red-tests/ph2-test.md
+- [x] T008 [P] [US1] Implement test_prompt_includes_reason_instruction in tests/pipelines/transform/test_nodes.py
+- [x] T009 [P] [US1] Implement test_prompt_includes_table_preservation in tests/pipelines/transform/test_nodes.py
+- [x] T009.1 [P] [US1] Implement test_min_characters_validation in tests/utils/test_compression_validator.py (FR-002: min(original*0.2, 300))
+- [x] T009.2 [P] [US1] Implement test_short_conversation_threshold in tests/utils/test_compression_validator.py (Edge Case: <1000文字でしきい値緩和)
+- [x] T009.3 [P] [US1] Implement test_prompt_includes_code_preservation in tests/pipelines/transform/test_nodes.py (Edge Case: コードブロック保持)
+- [x] T010 Verify `make test` FAIL (RED)
+- [x] T011 Generate RED output: specs/052-improve-summary-quality/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
