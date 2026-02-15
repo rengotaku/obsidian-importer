@@ -89,17 +89,17 @@
 
 ### 入力
 
-- [ ] T017 Read previous phase output: specs/052-improve-summary-quality/tasks/ph2-output.md
+- [x] T017 Read previous phase output: specs/052-improve-summary-quality/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T018 [P] [US3] Create tests/fixtures/golden/ directory
-- [ ] T019 [P] [US3] Create tests/fixtures/golden/README.md with file list template
-- [ ] T020 [P] [US3] Implement test_golden_files_exist in tests/test_e2e_golden.py
-- [ ] T021 [P] [US3] Implement test_golden_files_meet_compression_threshold in tests/test_e2e_golden.py
-- [ ] T022 [P] [US3] Implement test_golden_files_preserve_table_structure in tests/test_e2e_golden.py
-- [ ] T023 Verify `make test` FAIL (RED)
-- [ ] T024 Generate RED output: specs/052-improve-summary-quality/red-tests/ph3-test.md
+- [x] T018 [P] [US3] Create tests/fixtures/golden/ directory
+- [x] T019 [P] [US3] Create tests/fixtures/golden/README.md with file list template
+- [x] T020 [P] [US3] Implement test_golden_files_exist in tests/test_e2e_golden.py
+- [x] T021 [P] [US3] Implement test_golden_files_meet_compression_threshold in tests/test_e2e_golden.py
+- [x] T022 [P] [US3] Implement test_golden_files_preserve_table_structure in tests/test_e2e_golden.py
+- [x] T023 Verify `make test` FAIL (RED)
+- [x] T024 Generate RED output: specs/052-improve-summary-quality/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 
