@@ -1427,5 +1427,277 @@ class TestExtractKnowledgeSummaryLength(unittest.TestCase):
         self.assertNotIn("Long summary", warning_messages)
 
 
+# ============================================================
+# Phase 5 RED Tests: Integration - extract_knowledge and translate_summary
+# use get_ollama_config for parameter retrieval
+# ============================================================
+
+
+class TestExtractKnowledgeUsesOllamaConfig(unittest.TestCase):
+    """extract_knowledge: Uses get_ollama_config for parameter retrieval.
+
+    Tests for Phase 5 - Integration
+    Verify that knowledge_extractor.extract_knowledge uses get_ollama_config
+    to retrieve Ollama parameters instead of direct params.get("ollama", {}).
+    """
+
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            for pattern in ["conv-*.json", "item-*.json", "config-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        self.setUp()
+
+    @patch("obsidian_etl.utils.knowledge_extractor.get_ollama_config")
+    @patch("obsidian_etl.utils.knowledge_extractor.call_ollama")
+    def test_extract_knowledge_uses_config(self, mock_call_ollama, mock_get_config):
+        """extract_knowledge が get_ollama_config を使用してパラメーターを取得すること。
+
+        Phase 5 - Integration:
+        Verify that knowledge_extractor.extract_knowledge calls
+        get_ollama_config(params, "extract_knowledge") to retrieve config.
+
+        When extract_knowledge is called:
+        - get_ollama_config should be called with params and "extract_knowledge"
+        - The returned OllamaConfig should be used for call_ollama
+        """
+        from obsidian_etl.utils.knowledge_extractor import extract_knowledge
+        from obsidian_etl.utils.ollama_config import OllamaConfig
+
+        # Setup mock config
+        mock_config = OllamaConfig(
+            model="gemma3:12b",
+            base_url="http://localhost:11434",
+            timeout=300,
+            temperature=0.2,
+            num_predict=16384,
+        )
+        mock_get_config.return_value = mock_config
+
+        # Setup mock call_ollama response
+        mock_call_ollama.return_value = (
+            "```yaml\ntitle: Test\nsummary: Test summary\n```\nTest content",
+            None,
+        )
+
+        # Prepare params with function-specific config
+        params = {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                    "num_predict": -1,
+                },
+                "functions": {
+                    "extract_knowledge": {
+                        "num_predict": 16384,
+                        "timeout": 300,
+                    },
+                },
+            }
+        }
+
+        # Call extract_knowledge
+        result, error = extract_knowledge(
+            content="Human: Test\n\nAssistant: Response",
+            conversation_name="Test conversation",
+            created_at="2026-01-15T10:00:00",
+            source_provider="claude",
+            params=params,
+        )
+
+        # Verify get_ollama_config was called with correct arguments
+        mock_get_config.assert_called_once_with(params, "extract_knowledge")
+
+    @patch("obsidian_etl.utils.knowledge_extractor.get_ollama_config")
+    @patch("obsidian_etl.utils.knowledge_extractor.call_ollama")
+    def test_extract_knowledge_num_predict_applied(self, mock_call_ollama, mock_get_config):
+        """extract_knowledge が num_predict=16384 を Ollama API に渡すこと。
+
+        Phase 5 - Integration:
+        Verify that extract_knowledge passes the configured num_predict value
+        (16384 for extract_knowledge) to call_ollama.
+
+        From contracts/parameters.yml:
+        - extract_knowledge.num_predict: 16384
+        - This should be passed to call_ollama as num_predict parameter
+        """
+        from obsidian_etl.utils.knowledge_extractor import extract_knowledge
+        from obsidian_etl.utils.ollama_config import OllamaConfig
+
+        # Setup mock config with num_predict=16384
+        mock_config = OllamaConfig(
+            model="gemma3:12b",
+            base_url="http://localhost:11434",
+            timeout=300,
+            temperature=0.2,
+            num_predict=16384,
+        )
+        mock_get_config.return_value = mock_config
+
+        # Setup mock call_ollama response
+        mock_call_ollama.return_value = (
+            "```yaml\ntitle: Test\nsummary: Test summary\n```\nTest content",
+            None,
+        )
+
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b"},
+                "functions": {
+                    "extract_knowledge": {"num_predict": 16384, "timeout": 300},
+                },
+            }
+        }
+
+        # Call extract_knowledge
+        result, error = extract_knowledge(
+            content="Human: Test\n\nAssistant: Response",
+            conversation_name="Test conversation",
+            created_at="2026-01-15T10:00:00",
+            source_provider="claude",
+            params=params,
+        )
+
+        # Verify call_ollama was called with num_predict=16384
+        mock_call_ollama.assert_called_once()
+        call_kwargs = mock_call_ollama.call_args[1]
+
+        self.assertEqual(call_kwargs["num_predict"], 16384)
+        self.assertEqual(call_kwargs["timeout"], 300)
+        self.assertEqual(call_kwargs["model"], "gemma3:12b")
+
+
+class TestTranslateSummaryUsesOllamaConfig(unittest.TestCase):
+    """translate_summary: Uses get_ollama_config for parameter retrieval.
+
+    Tests for Phase 5 - Integration
+    Verify that knowledge_extractor.translate_summary uses get_ollama_config
+    to retrieve Ollama parameters instead of direct params.get("ollama", {}).
+    """
+
+    @patch("obsidian_etl.utils.knowledge_extractor.get_ollama_config")
+    @patch("obsidian_etl.utils.knowledge_extractor.call_ollama")
+    def test_translate_summary_uses_config(self, mock_call_ollama, mock_get_config):
+        """translate_summary が get_ollama_config を使用してパラメーターを取得すること。
+
+        Phase 5 - Integration:
+        Verify that knowledge_extractor.translate_summary calls
+        get_ollama_config(params, "translate_summary") to retrieve config.
+
+        When translate_summary is called:
+        - get_ollama_config should be called with params and "translate_summary"
+        - The returned OllamaConfig should be used for call_ollama
+        """
+        from obsidian_etl.utils.knowledge_extractor import translate_summary
+        from obsidian_etl.utils.ollama_config import OllamaConfig
+
+        # Setup mock config
+        mock_config = OllamaConfig(
+            model="gemma3:12b",
+            base_url="http://localhost:11434",
+            timeout=120,
+            temperature=0.2,
+            num_predict=1024,
+        )
+        mock_get_config.return_value = mock_config
+
+        # Setup mock call_ollama response
+        mock_call_ollama.return_value = (
+            "```yaml\nsummary: テスト要約\n```",
+            None,
+        )
+
+        # Prepare params with function-specific config
+        params = {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                    "num_predict": -1,
+                },
+                "functions": {
+                    "translate_summary": {
+                        "num_predict": 1024,
+                    },
+                },
+            }
+        }
+
+        # Call translate_summary
+        result, error = translate_summary(
+            summary="The user asked about Python asyncio.",
+            params=params,
+        )
+
+        # Verify get_ollama_config was called with correct arguments
+        mock_get_config.assert_called_once_with(params, "translate_summary")
+
+    @patch("obsidian_etl.utils.knowledge_extractor.get_ollama_config")
+    @patch("obsidian_etl.utils.knowledge_extractor.call_ollama")
+    def test_translate_summary_num_predict_applied(self, mock_call_ollama, mock_get_config):
+        """translate_summary が num_predict=1024 を Ollama API に渡すこと。
+
+        Phase 5 - Integration:
+        Verify that translate_summary passes the configured num_predict value
+        (1024 for translate_summary) to call_ollama.
+
+        From contracts/parameters.yml:
+        - translate_summary.num_predict: 1024
+        - This should be passed to call_ollama as num_predict parameter
+        """
+        from obsidian_etl.utils.knowledge_extractor import translate_summary
+        from obsidian_etl.utils.ollama_config import OllamaConfig
+
+        # Setup mock config with num_predict=1024
+        mock_config = OllamaConfig(
+            model="gemma3:12b",
+            base_url="http://localhost:11434",
+            timeout=120,
+            temperature=0.2,
+            num_predict=1024,
+        )
+        mock_get_config.return_value = mock_config
+
+        # Setup mock call_ollama response
+        mock_call_ollama.return_value = (
+            "```yaml\nsummary: テスト要約\n```",
+            None,
+        )
+
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b"},
+                "functions": {
+                    "translate_summary": {"num_predict": 1024},
+                },
+            }
+        }
+
+        # Call translate_summary
+        result, error = translate_summary(
+            summary="The user asked about Python asyncio.",
+            params=params,
+        )
+
+        # Verify call_ollama was called with num_predict=1024
+        mock_call_ollama.assert_called_once()
+        call_kwargs = mock_call_ollama.call_args[1]
+
+        self.assertEqual(call_kwargs["num_predict"], 1024)
+        self.assertEqual(call_kwargs["model"], "gemma3:12b")
+        self.assertEqual(call_kwargs["timeout"], 120)
+
+
 if __name__ == "__main__":
     unittest.main()

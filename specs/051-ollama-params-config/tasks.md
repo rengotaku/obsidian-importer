@@ -164,27 +164,27 @@
 
 ### 入力
 
-- [ ] T054 Read previous phase output: specs/051-ollama-params-config/tasks/ph4-output.md
+- [x] T054 Read previous phase output: specs/051-ollama-params-config/tasks/ph4-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T055 [P] Add test_extract_knowledge_uses_get_ollama_config in tests/pipelines/transform/test_nodes.py
-- [ ] T056 [P] Add test_translate_summary_uses_get_ollama_config in tests/pipelines/transform/test_nodes.py
-- [ ] T057 Verify `make test` FAIL (RED)
-- [ ] T058 Generate RED output: specs/051-ollama-params-config/red-tests/ph5-test.md
+- [x] T055 [P] Add test_extract_knowledge_uses_get_ollama_config in tests/pipelines/transform/test_nodes.py
+- [x] T056 [P] Add test_translate_summary_uses_get_ollama_config in tests/pipelines/transform/test_nodes.py
+- [x] T057 Verify `make test` FAIL (RED)
+- [x] T058 Generate RED output: specs/051-ollama-params-config/red-tests/ph5-test.md
 
 ### 実装 (GREEN)
 
-- [ ] T059 Read RED tests: specs/051-ollama-params-config/red-tests/ph5-test.md
-- [ ] T060 [P] Import get_ollama_config in src/obsidian_etl/utils/knowledge_extractor.py
-- [ ] T061 [P] Update extract_knowledge() to use get_ollama_config in src/obsidian_etl/utils/knowledge_extractor.py
-- [ ] T062 [P] Update translate_summary() to use get_ollama_config in src/obsidian_etl/utils/knowledge_extractor.py
-- [ ] T063 Verify `make test` PASS (GREEN)
+- [x] T059 Read RED tests: specs/051-ollama-params-config/red-tests/ph5-test.md
+- [x] T060 [P] Import get_ollama_config in src/obsidian_etl/utils/knowledge_extractor.py
+- [x] T061 [P] Update extract_knowledge() to use get_ollama_config in src/obsidian_etl/utils/knowledge_extractor.py
+- [x] T062 [P] Update translate_summary() to use get_ollama_config in src/obsidian_etl/utils/knowledge_extractor.py
+- [x] T063 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T064 Verify `make test` passes all tests
-- [ ] T065 Generate phase output: specs/051-ollama-params-config/tasks/ph5-output.md
+- [x] T064 Verify `make test` passes all tests
+- [x] T065 Generate phase output: specs/051-ollama-params-config/tasks/ph5-output.md
 
 **Checkpoint**: All LLM functions use unified parameter retrieval
 
