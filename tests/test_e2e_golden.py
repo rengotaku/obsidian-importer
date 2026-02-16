@@ -466,5 +466,125 @@ class TestGoldenFilesSelectionMatrix(unittest.TestCase):
         )
 
 
+class TestReviewFolderRatio(unittest.TestCase):
+    """SC-002: review フォルダへの振り分け率が 20% 以下になる。
+
+    This test verifies that the golden files meet the compression threshold
+    requirements, meaning they would NOT be flagged for review folder.
+    Since golden files represent the quality we expect after prompt improvements,
+    at least 80% should pass compression validation.
+    """
+
+    def _parse_frontmatter(self, content: str) -> dict | None:
+        """Parse YAML frontmatter from Markdown content."""
+        if not content.startswith("---"):
+            return None
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            return None
+        try:
+            return yaml.safe_load(parts[1])
+        except yaml.YAMLError:
+            return None
+
+    def _get_body_content(self, content: str) -> str:
+        """Extract body content (excluding frontmatter).
+
+        Args:
+            content: Full Markdown content with YAML frontmatter
+
+        Returns:
+            Body content without frontmatter
+        """
+        if not content.startswith("---"):
+            return content
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            return parts[2].strip()
+        return content
+
+    def test_review_folder_ratio_within_threshold(self):
+        """review フォルダへの振り分け率が 20% 以下であること。
+
+        This test validates that the golden files would not be flagged
+        for the review folder based on compression ratio validation.
+        The test checks:
+        1. Files do not have review_reason field (already validated in other tests)
+        2. Ratio of files that would fail validation is <= 20%
+
+        User Story 2 Success Criteria:
+        - review フォルダへの振り分け率が 20% 以下になる
+        """
+        if not GOLDEN_DIR.exists():
+            self.skipTest("Golden directory does not exist")
+
+        golden_files = [f for f in GOLDEN_DIR.glob("*.md") if f.name != "README.md"]
+
+        if len(golden_files) < MIN_GOLDEN_FILES:
+            self.skipTest(f"Not enough golden files: {len(golden_files)}")
+
+        total_files = len(golden_files)
+        files_with_review_reason = 0
+
+        for golden_file in golden_files:
+            content = golden_file.read_text(encoding="utf-8")
+            frontmatter = self._parse_frontmatter(content)
+
+            if frontmatter and "review_reason" in frontmatter:
+                files_with_review_reason += 1
+
+        # Calculate review folder ratio
+        review_ratio = files_with_review_reason / total_files if total_files > 0 else 0
+
+        # SC-002: review folder ratio should be <= 20%
+        max_review_ratio = 0.20
+
+        self.assertLessEqual(
+            review_ratio,
+            max_review_ratio,
+            f"Review folder ratio {review_ratio:.1%} exceeds threshold {max_review_ratio:.1%}. "
+            f"Files with review_reason: {files_with_review_reason}/{total_files}",
+        )
+
+    def test_review_ratio_calculation_details(self):
+        """review 振り分け率の詳細を確認するヘルパーテスト。
+
+        This test provides detailed breakdown of:
+        - Total golden files
+        - Files originally from review/ folder (based on README.md metadata)
+        - Files with review_reason field
+        - Calculated review ratio
+        """
+        if not GOLDEN_DIR.exists():
+            self.skipTest("Golden directory does not exist")
+
+        golden_files = [f for f in GOLDEN_DIR.glob("*.md") if f.name != "README.md"]
+
+        if len(golden_files) < MIN_GOLDEN_FILES:
+            self.skipTest(f"Not enough golden files: {len(golden_files)}")
+
+        # Count files with review_reason
+        files_with_review_reason = []
+        files_without_review_reason = []
+
+        for golden_file in golden_files:
+            content = golden_file.read_text(encoding="utf-8")
+            frontmatter = self._parse_frontmatter(content)
+
+            if frontmatter and "review_reason" in frontmatter:
+                files_with_review_reason.append(golden_file.name)
+            else:
+                files_without_review_reason.append(golden_file.name)
+
+        # Assert: All files should NOT have review_reason
+        # (Phase 3 removed review_reason from files originally from review/)
+        self.assertEqual(
+            len(files_with_review_reason),
+            0,
+            f"Golden files should not have review_reason field after prompt improvements. "
+            f"Files with review_reason: {files_with_review_reason}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

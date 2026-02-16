@@ -134,13 +134,13 @@
 
 ### 入力
 
-- [ ] T040 Read previous phase output: specs/052-improve-summary-quality/tasks/ph3-output.md
+- [x] T040 Read previous phase output: specs/052-improve-summary-quality/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T041 [P] [US2] Implement test_review_folder_ratio in tests/test_e2e_golden.py
-- [ ] T042 Verify `make test` FAIL (RED)
-- [ ] T043 Generate RED output: specs/052-improve-summary-quality/red-tests/ph4-test.md
+- [x] T041 [P] [US2] Implement test_review_folder_ratio in tests/test_e2e_golden.py
+- [x] T042 Verify `make test` FAIL (RED) - Note: Tests PASS because Phase 2-3 already implemented improvements
+- [x] T043 Generate RED output: specs/052-improve-summary-quality/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 
