@@ -1,16 +1,10 @@
 """Tests for Organize pipeline nodes.
 
-Phase 4 RED tests: classify_genre, normalize_frontmatter, clean_content,
-determine_vault_path, move_to_vault nodes.
-Phase 2 RED tests (047-e2e-full-pipeline): extract_topic, embed_frontmatter_fields nodes.
-
-These tests verify:
+Tests verify:
 - Keyword-based genre classification (engineer, business, economy, daily, other)
 - Default genre fallback when no keyword matches
 - Frontmatter normalization (normalized=True, clean unnecessary fields)
 - Content cleanup (excess blank lines, formatting)
-- Genre-to-vault path mapping from params
-- File writing to correct vault path (mock filesystem)
 - Topic extraction from content (LLM-based, lowercase normalized)
 - Frontmatter embedding of genre, topic, summary (no file I/O)
 """
@@ -26,10 +20,8 @@ from unittest.mock import MagicMock, patch
 from obsidian_etl.pipelines.organize.nodes import (
     classify_genre,
     clean_content,
-    determine_vault_path,
     embed_frontmatter_fields,
     extract_topic,
-    move_to_vault,
     normalize_frontmatter,
 )
 
@@ -83,13 +75,6 @@ def _make_markdown_item(
 def _make_organize_params() -> dict:
     """Helper to create organize params matching parameters.yml."""
     return {
-        "vaults": {
-            "engineer": "Vaults/エンジニア/",
-            "business": "Vaults/ビジネス/",
-            "economy": "Vaults/経済/",
-            "daily": "Vaults/日常/",
-            "other": "Vaults/その他/",
-        },
         "genre_keywords": {
             "engineer": [
                 "プログラミング",
@@ -521,236 +506,6 @@ class TestCleanContent(unittest.TestCase):
 
 
 # ============================================================
-# determine_vault_path node tests
-# ============================================================
-
-
-class TestDetermineVaultPath(unittest.TestCase):
-    """determine_vault_path: genre -> vault path mapping from params."""
-
-    def test_determine_vault_path_engineer(self):
-        """genre='engineer' が 'Vaults/エンジニア/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "engineer"
-        partitioned_input = _make_partitioned_input({"item-eng": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertIn("vault_path", determined_item)
-        self.assertEqual(determined_item["vault_path"], "Vaults/エンジニア/")
-
-    def test_determine_vault_path_business(self):
-        """genre='business' が 'Vaults/ビジネス/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "business"
-        partitioned_input = _make_partitioned_input({"item-biz": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/ビジネス/")
-
-    def test_determine_vault_path_economy(self):
-        """genre='economy' が 'Vaults/経済/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "economy"
-        partitioned_input = _make_partitioned_input({"item-eco": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/経済/")
-
-    def test_determine_vault_path_daily(self):
-        """genre='daily' が 'Vaults/日常/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "daily"
-        partitioned_input = _make_partitioned_input({"item-daily": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/日常/")
-
-    def test_determine_vault_path_other(self):
-        """genre='other' が 'Vaults/その他/' にマッピングされること。"""
-        item = _make_markdown_item()
-        item["genre"] = "other"
-        partitioned_input = _make_partitioned_input({"item-other": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/その他/")
-
-    def test_determine_vault_path_includes_final_path(self):
-        """final_path が vault_path + output_filename で構成されること。"""
-        item = _make_markdown_item(output_filename="Python asyncio の仕組み.md")
-        item["genre"] = "engineer"
-        partitioned_input = _make_partitioned_input({"item-final": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertIn("final_path", determined_item)
-        expected_path = "Vaults/エンジニア/Python asyncio の仕組み.md"
-        self.assertEqual(determined_item["final_path"], expected_path)
-
-    def test_determine_vault_path_unknown_genre_fallback(self):
-        """未知のジャンルが 'other' の Vault にフォールバックすること。"""
-        item = _make_markdown_item()
-        item["genre"] = "unknown_genre"
-        partitioned_input = _make_partitioned_input({"item-unknown": item})
-        params = _make_organize_params()
-
-        result = determine_vault_path(partitioned_input, params)
-
-        determined_item = list(result.values())[0]
-        self.assertEqual(determined_item["vault_path"], "Vaults/その他/")
-
-
-# ============================================================
-# move_to_vault node tests
-# ============================================================
-
-
-class TestMoveToVault(unittest.TestCase):
-    """move_to_vault: file written to correct vault path; mock filesystem."""
-
-    def test_move_to_vault_writes_file(self):
-        """ファイルが vault_path の正しい位置に書き込まれること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item = _make_markdown_item()
-            item["genre"] = "engineer"
-            item["vault_path"] = "Vaults/エンジニア/"
-            item["final_path"] = "Vaults/エンジニア/Python asyncio の仕組み.md"
-            partitioned_input = _make_partitioned_input({"item-write": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            # File should be written
-            expected_file = Path(tmpdir) / "Vaults/エンジニア/Python asyncio の仕組み.md"
-            self.assertTrue(expected_file.exists(), f"File not found: {expected_file}")
-
-            # File content should match
-            written_content = expected_file.read_text(encoding="utf-8")
-            self.assertEqual(written_content, item["content"])
-
-    def test_move_to_vault_creates_directories(self):
-        """Vault ディレクトリが存在しない場合、自動作成されること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item = _make_markdown_item()
-            item["genre"] = "economy"
-            item["vault_path"] = "Vaults/経済/"
-            item["final_path"] = "Vaults/経済/投資戦略.md"
-            partitioned_input = _make_partitioned_input({"item-mkdir": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            expected_dir = Path(tmpdir) / "Vaults/経済"
-            self.assertTrue(expected_dir.is_dir())
-
-    def test_move_to_vault_multiple_items(self):
-        """複数アイテムがそれぞれ正しい Vault に書き込まれること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item_eng = _make_markdown_item(
-                item_id="eng",
-                title="API設計",
-                output_filename="API設計.md",
-            )
-            item_eng["genre"] = "engineer"
-            item_eng["vault_path"] = "Vaults/エンジニア/"
-            item_eng["final_path"] = "Vaults/エンジニア/API設計.md"
-
-            item_biz = _make_markdown_item(
-                item_id="biz",
-                title="マネジメント入門",
-                output_filename="マネジメント入門.md",
-            )
-            item_biz["genre"] = "business"
-            item_biz["vault_path"] = "Vaults/ビジネス/"
-            item_biz["final_path"] = "Vaults/ビジネス/マネジメント入門.md"
-
-            items = {"eng": item_eng, "biz": item_biz}
-            partitioned_input = _make_partitioned_input(items)
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            eng_file = Path(tmpdir) / "Vaults/エンジニア/API設計.md"
-            biz_file = Path(tmpdir) / "Vaults/ビジネス/マネジメント入門.md"
-            self.assertTrue(eng_file.exists())
-            self.assertTrue(biz_file.exists())
-
-    def test_move_to_vault_returns_organized_items(self):
-        """move_to_vault が OrganizedItem dict を返すこと。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            item = _make_markdown_item()
-            item["genre"] = "engineer"
-            item["vault_path"] = "Vaults/エンジニア/"
-            item["final_path"] = "Vaults/エンジニア/Python asyncio の仕組み.md"
-            partitioned_input = _make_partitioned_input({"item-ret": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            self.assertIsInstance(result, dict)
-            self.assertEqual(len(result), 1)
-
-            organized_item = list(result.values())[0]
-            # OrganizedItem should have required fields from E-4 data model
-            self.assertIn("item_id", organized_item)
-            self.assertIn("file_id", organized_item)
-            self.assertIn("genre", organized_item)
-            self.assertIn("vault_path", organized_item)
-            self.assertIn("final_path", organized_item)
-            self.assertIn("output_filename", organized_item)
-
-    def test_move_to_vault_utf8_encoding(self):
-        """日本語コンテンツが UTF-8 で正しく書き込まれること。"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            content = (
-                "---\n"
-                "title: 日本語テスト\n"
-                "normalized: true\n"
-                "---\n"
-                "\n"
-                "日本語のコンテンツ: 漢字、ひらがな、カタカナ。\n"
-                "特殊文字: &, <, >, ', \"\n"
-            )
-            item = _make_markdown_item(
-                title="日本語テスト",
-                content=content,
-                output_filename="日本語テスト.md",
-            )
-            item["genre"] = "other"
-            item["vault_path"] = "Vaults/その他/"
-            item["final_path"] = "Vaults/その他/日本語テスト.md"
-            partitioned_input = _make_partitioned_input({"item-utf8": item})
-            params = _make_organize_params()
-            params["base_path"] = tmpdir
-
-            result = move_to_vault(partitioned_input, params)
-
-            written_file = Path(tmpdir) / "Vaults/その他/日本語テスト.md"
-            written_content = written_file.read_text(encoding="utf-8")
-            self.assertIn("漢字、ひらがな、カタカナ", written_content)
-
-
-# ============================================================
 # extract_topic node tests (Phase 2 - 047-e2e-full-pipeline)
 # ============================================================
 
@@ -1018,6 +773,133 @@ class TestEmbedFrontmatterFields(unittest.TestCase):
 # ============================================================
 
 
+# ============================================================
+# embed_frontmatter_fields review_reason tests (Phase 5 - 050)
+# ============================================================
+
+
+class TestEmbedFrontmatterWithReviewReason(unittest.TestCase):
+    """embed_frontmatter_fields: embed review_reason into frontmatter.
+
+    Tests for User Story 2 - レビューフォルダ出力 (050-fix-content-compression)
+    review_reason が frontmatter に埋め込まれることを検証。
+    """
+
+    def test_embed_frontmatter_with_review_reason(self):
+        """review_reason が frontmatter に埋め込まれること。
+
+        FR-010: システムは review_reason を frontmatter に埋め込まなければならない
+        Format: review_reason: "extract_knowledge: body_ratio=X.X% < threshold=Y.Y%"
+        """
+        content = (
+            "---\n"
+            "title: 要レビュー記事\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - テスト\n"
+            "source_provider: claude\n"
+            "file_id: review12345678\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "内容が少ないテスト記事。\n"
+        )
+        item = _make_markdown_item(content=content)
+        item["genre"] = "engineer"
+        item["topic"] = "test"
+        item["review_reason"] = "extract_knowledge: body_ratio=5.0% < threshold=10.0%"
+        item["metadata"]["summary"] = "テスト要約"
+        partitioned_input = _make_partitioned_input({"item-review": item})
+        params = _make_organize_params()
+
+        result = embed_frontmatter_fields(partitioned_input, params)
+
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 1)
+        embedded_content = list(result.values())[0]
+
+        # review_reason should be in frontmatter
+        self.assertIn("review_reason:", embedded_content)
+        self.assertIn("extract_knowledge:", embedded_content)
+        self.assertIn("body_ratio=5.0%", embedded_content)
+        self.assertIn("threshold=10.0%", embedded_content)
+
+    def test_embed_frontmatter_without_review_reason(self):
+        """review_reason がない場合は frontmatter に含まれないこと。
+
+        review_reason が item にない場合、frontmatter には review_reason フィールドが含まれない。
+        """
+        content = (
+            "---\n"
+            "title: 通常記事\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - テスト\n"
+            "source_provider: claude\n"
+            "file_id: normal12345678\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "正常な内容の記事。\n"
+        )
+        item = _make_markdown_item(content=content)
+        item["genre"] = "engineer"
+        item["topic"] = "test"
+        # No review_reason
+        item["metadata"]["summary"] = "テスト要約"
+        partitioned_input = _make_partitioned_input({"item-normal": item})
+        params = _make_organize_params()
+
+        result = embed_frontmatter_fields(partitioned_input, params)
+
+        embedded_content = list(result.values())[0]
+
+        # review_reason should NOT be in frontmatter
+        self.assertNotIn("review_reason:", embedded_content)
+
+        # Other fields should still be present
+        self.assertIn("genre: engineer", embedded_content)
+        self.assertIn("topic: test", embedded_content)
+
+    def test_embed_frontmatter_review_reason_format(self):
+        """review_reason のフォーマットが正しいこと。
+
+        Format: "node_name: body_ratio=X.X% < threshold=Y.Y%"
+        例: "extract_knowledge: body_ratio=3.8% < threshold=10.0%"
+        """
+        content = (
+            "---\n"
+            "title: フォーマット確認\n"
+            "created: 2026-01-15\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "テスト内容。\n"
+        )
+        item = _make_markdown_item(content=content)
+        item["genre"] = "other"
+        item["topic"] = ""
+        item["review_reason"] = "extract_knowledge: body_ratio=3.8% < threshold=10.0%"
+        item["metadata"]["summary"] = ""
+        partitioned_input = _make_partitioned_input({"item-fmt": item})
+        params = _make_organize_params()
+
+        result = embed_frontmatter_fields(partitioned_input, params)
+
+        embedded_content = list(result.values())[0]
+
+        # Verify the exact format is preserved in frontmatter
+        # The value should be quoted in YAML due to special characters (%, <, :)
+        self.assertIn("review_reason:", embedded_content)
+        # The actual content should contain the ratio info
+        self.assertIn("body_ratio=3.8%", embedded_content)
+        self.assertIn("threshold=10.0%", embedded_content)
+
+
 class TestIdempotentOrganize(unittest.TestCase):
     """classify_genre: existing output partitions -> skip items, no re-classify."""
 
@@ -1085,6 +967,140 @@ class TestIdempotentOrganize(unittest.TestCase):
         result = classify_genre(partitioned_input, params)
 
         self.assertEqual(len(result), 2)
+
+
+# ============================================================
+# extract_topic Ollama config tests (Phase 4 - 051-ollama-params-config)
+# ============================================================
+
+
+class TestExtractTopicUsesOllamaConfig(unittest.TestCase):
+    """extract_topic: verify integration with get_ollama_config.
+
+    These tests verify that _extract_topic_via_llm uses get_ollama_config
+    to retrieve function-specific parameters and passes them correctly
+    to the Ollama API.
+    """
+
+    def test_extract_topic_uses_config(self):
+        """_extract_topic_via_llm が get_ollama_config を呼び出すこと。
+
+        Verify that _extract_topic_via_llm calls get_ollama_config(params, "extract_topic")
+        to retrieve the configuration.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nPythonの非同期処理について解説します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b", "timeout": 120},
+                "functions": {
+                    "extract_topic": {"model": "llama3.2:3b", "num_predict": 64, "timeout": 30}
+                },
+            }
+        }
+
+        # Mock get_ollama_config to verify it's called
+        with patch("obsidian_etl.pipelines.organize.nodes.get_ollama_config") as mock_get_config:
+            # Return a mock config that has required attributes
+            from obsidian_etl.utils.ollama_config import OllamaConfig
+
+            mock_get_config.return_value = OllamaConfig(
+                model="llama3.2:3b",
+                base_url="http://localhost:11434",
+                timeout=30,
+                temperature=0.2,
+                num_predict=64,
+            )
+
+            # Also mock the actual API call to avoid network calls
+            with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+                mock_call_ollama.return_value = ("python", None)
+                _extract_topic_via_llm(content, params)
+
+            # Verify get_ollama_config was called with correct arguments
+            mock_get_config.assert_called_once_with(params, "extract_topic")
+
+    def test_extract_topic_uses_correct_model(self):
+        """extract_topic が設定されたモデルを使用すること。
+
+        Verify that the model from ollama.functions.extract_topic is used
+        in the API call.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nAWSのLambda関数について解説します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b"},
+                "functions": {"extract_topic": {"model": "llama3.2:3b"}},
+            }
+        }
+
+        # Mock call_ollama to capture the arguments
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+            mock_call_ollama.return_value = ("aws", None)
+            _extract_topic_via_llm(content, params)
+
+            # Verify call_ollama was called with the correct model
+            mock_call_ollama.assert_called_once()
+            call_kwargs = mock_call_ollama.call_args
+            # Check that model argument is "llama3.2:3b" (from functions.extract_topic)
+            self.assertEqual(call_kwargs.kwargs.get("model"), "llama3.2:3b")
+
+    def test_extract_topic_uses_correct_timeout(self):
+        """extract_topic が設定されたタイムアウトを使用すること。
+
+        Verify that the timeout from ollama.functions.extract_topic is used
+        in the API call.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nReact Nativeでモバイルアプリを開発します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b", "timeout": 120},
+                "functions": {"extract_topic": {"timeout": 30}},
+            }
+        }
+
+        # Mock call_ollama to capture the arguments
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+            mock_call_ollama.return_value = ("mobile development", None)
+            _extract_topic_via_llm(content, params)
+
+            # Verify call_ollama was called with the correct timeout
+            mock_call_ollama.assert_called_once()
+            call_kwargs = mock_call_ollama.call_args
+            # Check that timeout argument is 30 (from functions.extract_topic)
+            self.assertEqual(call_kwargs.kwargs.get("timeout"), 30)
+
+    def test_extract_topic_num_predict_applied(self):
+        """extract_topic が num_predict を Ollama API に渡すこと。
+
+        Verify that num_predict from ollama.functions.extract_topic is passed
+        to the Ollama API call.
+        """
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        content = "## 要約\n\nDockerコンテナについて解説します。"
+        params = {
+            "ollama": {
+                "defaults": {"model": "gemma3:12b", "num_predict": -1},
+                "functions": {"extract_topic": {"num_predict": 64}},
+            }
+        }
+
+        # Mock call_ollama to capture the arguments
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
+            mock_call_ollama.return_value = ("docker", None)
+            _extract_topic_via_llm(content, params)
+
+            # Verify call_ollama was called with the correct num_predict
+            mock_call_ollama.assert_called_once()
+            call_kwargs = mock_call_ollama.call_args
+            # Check that num_predict argument is 64 (from functions.extract_topic)
+            self.assertEqual(call_kwargs.kwargs.get("num_predict"), 64)
 
 
 if __name__ == "__main__":

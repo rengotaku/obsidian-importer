@@ -15,9 +15,10 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-import requests
 import yaml
 
+from obsidian_etl.utils.ollama import call_ollama
+from obsidian_etl.utils.ollama_config import get_ollama_config
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
@@ -104,7 +105,18 @@ def classify_genre(
             if frontmatter_match:
                 frontmatter_text = frontmatter_match.group(1)
                 body = frontmatter_match.group(2)
-                frontmatter = yaml.safe_load(frontmatter_text) or {}
+                # Parse YAML frontmatter with error handling
+                try:
+                    frontmatter = yaml.safe_load(frontmatter_text) or {}
+                except yaml.YAMLError as e:
+                    # If YAML parse fails, try to extract key fields manually
+                    logger.warning(f"YAML parse error for {key}: {e}")
+                    frontmatter = {}
+                    for line in frontmatter_text.split("\n"):
+                        if line.startswith("title:"):
+                            frontmatter["title"] = line.split(":", 1)[1].strip().strip('"')
+                        elif line.startswith("tags:"):
+                            frontmatter["tags"] = []
                 # Convert date objects to strings for JSON serialization
                 from datetime import date, datetime
 
@@ -221,9 +233,7 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
     Returns:
         str | None: Extracted topic or None on failure
     """
-    ollama_config = params.get("ollama", {})
-    model = ollama_config.get("model", "llama3.2:3b")
-    base_url = ollama_config.get("base_url", "http://localhost:11434")
+    config = get_ollama_config(params, "extract_topic")
 
     # Extract body text (skip frontmatter)
     body = content
@@ -234,14 +244,9 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
         except ValueError:
             pass
 
-    # Build prompt
-    prompt = f"""この会話から主題（トピック）を1つ抽出してください。
-
-会話内容:
-{body[:1000]}
-
-主題をカテゴリレベル（1-3単語）で答えてください。
-具体的な商品名・料理名・固有名詞ではなく、上位概念で答えてください。
+    # Build prompts
+    system_prompt = """あなたはトピック分類の専門家です。会話内容から主題を1つ抽出してください。
+主題はカテゴリレベル（1-3単語）で答え、具体的な商品名・料理名・固有名詞ではなく、上位概念で答えてください。
 
 例:
 - バナナプリンの作り方 → 離乳食
@@ -250,20 +255,28 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
 
 抽出できない場合は空文字を返してください。"""
 
+    user_message = f"""会話内容:
+{body[:1000]}
+
+主題を1-3単語で答えてください。"""
+
     # Call Ollama API
-    try:
-        response = requests.post(
-            f"{base_url}/api/generate",
-            json={"model": model, "prompt": prompt, "stream": False},
-            timeout=60,
-        )
-        response.raise_for_status()
-        result = response.json()
-        topic = result.get("response", "").strip()
-        return topic if topic else None
-    except Exception as e:
-        logger.warning(f"Failed to extract topic via LLM: {e}")
+    response, error = call_ollama(
+        system_prompt,
+        user_message,
+        model=config.model,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        temperature=config.temperature,
+        num_predict=config.num_predict,
+    )
+
+    if error:
+        logger.warning(f"Failed to extract topic via LLM: {error}")
         return None
+
+    topic = response.strip()
+    return topic if topic else None
 
 
 @timed_node
@@ -420,51 +433,14 @@ def _clean_text(text: str) -> str:
 
 
 @timed_node
-def determine_vault_path(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
-    """Determine vault path based on genre.
-
-    Args:
-        partitioned_input: Items with genre field
-        params: Parameters dict with vaults mapping
-
-    Returns:
-        dict[str, dict]: Items with vault_path and final_path fields
-
-    Mapping:
-    - genre -> vault_path (from params["vaults"])
-    - final_path = vault_path + output_filename
-    - Unknown genre -> fallback to 'other' vault
-    """
-    vaults = params.get("vaults", {})
-    result = {}
-
-    for key, load_func in partitioned_input.items():
-        item = load_func()
-        genre = item.get("genre", "other")
-        output_filename = item.get("output_filename", "unknown.md")
-
-        # Map genre to vault path (fallback to 'other')
-        vault_path = vaults.get(genre, vaults.get("other", "Vaults/その他/"))
-
-        # Construct final path
-        final_path = vault_path + output_filename
-
-        item["vault_path"] = vault_path
-        item["final_path"] = final_path
-        result[key] = item
-
-    return result
-
-
-@timed_node
 def embed_frontmatter_fields(
     partitioned_input: dict[str, Callable],
     params: dict,
 ) -> dict[str, str]:
-    """Embed genre, topic, summary into frontmatter content.
+    """Embed genre, topic, summary, review_reason into frontmatter content.
 
     Args:
-        partitioned_input: Items with content, genre, topic, and metadata
+        partitioned_input: Items with content, genre, topic, metadata, and optional review_reason
         params: Parameters dict (unused)
 
     Returns:
@@ -485,6 +461,10 @@ def embed_frontmatter_fields(
         content = item.get("content", "")
         genre = item.get("genre", "other")
         topic = item.get("topic", "")
+        # Check for review_reason in item or in metadata (for review path)
+        review_reason = item.get("review_reason")
+        if not review_reason and "metadata" in item:
+            review_reason = item["metadata"].get("review_reason")
 
         # Extract summary from metadata (may be in metadata or generated_metadata)
         summary = ""
@@ -494,7 +474,9 @@ def embed_frontmatter_fields(
             summary = item["generated_metadata"]["summary"]
 
         # Embed fields in frontmatter
-        updated_content = _embed_fields_in_frontmatter(content, genre, topic, summary)
+        updated_content = _embed_fields_in_frontmatter(
+            content, genre, topic, summary, review_reason
+        )
 
         # Use partition key as output key (already sanitized filename from format_markdown)
         result[key] = updated_content
@@ -507,6 +489,7 @@ def _embed_fields_in_frontmatter(
     genre: str,
     topic: str,
     summary: str,
+    review_reason: str | None = None,
 ) -> str:
     """Helper to embed fields into frontmatter.
 
@@ -515,6 +498,7 @@ def _embed_fields_in_frontmatter(
         genre: Genre classification
         topic: Topic (may be empty)
         summary: Summary text (may be empty)
+        review_reason: Review reason (optional, only for items flagged for review)
 
     Returns:
         str: Markdown with updated frontmatter
@@ -527,6 +511,8 @@ def _embed_fields_in_frontmatter(
             "genre": genre,
             "topic": topic,
         }
+        if review_reason:
+            fm["review_reason"] = review_reason
         fm_lines = ["---"]
         for k, v in fm.items():
             fm_lines.append(f"{k}: {_yaml_quote(v)}")
@@ -546,6 +532,8 @@ def _embed_fields_in_frontmatter(
         frontmatter["summary"] = summary
         frontmatter["genre"] = genre
         frontmatter["topic"] = topic
+        if review_reason:
+            frontmatter["review_reason"] = review_reason
 
         # Rebuild content with updated frontmatter
         # Manual formatting to match expected format (2-space indent for list items)
@@ -567,66 +555,3 @@ def _embed_fields_in_frontmatter(
         logger.warning(f"Failed to parse frontmatter: {e}")
         # Return original content if parsing fails
         return content
-
-
-@timed_node
-def move_to_vault(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
-    """Write files to vault directories.
-
-    Args:
-        partitioned_input: Items with final_path and content
-        params: Parameters dict with base_path
-
-    Returns:
-        dict[str, dict]: OrganizedItem dicts (E-4 data model)
-
-    File writing logic:
-    - Write content to base_path + final_path
-    - Create directories if they don't exist (mkdir -p)
-    - Use UTF-8 encoding
-    - Return OrganizedItem dict with required fields
-    """
-    base_path = Path(params.get("base_path", "."))
-    result = {}
-
-    for key, load_func in partitioned_input.items():
-        item = load_func()
-        final_path = item.get("final_path", "")
-        content = item.get("content", "")
-
-        if not final_path:
-            logger.warning(f"Item {key} has no final_path, skipping")
-            continue
-
-        # Construct full file path
-        full_path = base_path / final_path
-
-        # Create parent directories
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Write file (UTF-8 encoding)
-        try:
-            full_path.write_text(content, encoding="utf-8")
-            logger.info(f"Wrote file: {full_path}")
-        except Exception as e:
-            logger.error(f"Failed to write {full_path}: {e}")
-            continue
-
-        # Return OrganizedItem (E-4 data model)
-        organized_item = {
-            "item_id": item.get("item_id", key),
-            "file_id": item.get("file_id", ""),
-            "genre": item.get("genre", "other"),
-            "vault_path": item.get("vault_path", ""),
-            "final_path": final_path,
-            "output_filename": item.get("output_filename", ""),
-            "content": content,  # Include content in case it's needed downstream
-        }
-
-        # Preserve metadata if present
-        if "metadata" in item:
-            organized_item["metadata"] = item["metadata"]
-
-        result[key] = organized_item
-
-    return result

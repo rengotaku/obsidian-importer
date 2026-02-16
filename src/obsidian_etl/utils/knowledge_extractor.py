@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 
 from obsidian_etl.utils.ollama import call_ollama, parse_markdown_response
+from obsidian_etl.utils.ollama_config import get_ollama_config
 
 logger = logging.getLogger(__name__)
 
@@ -78,15 +79,16 @@ def translate_summary(summary: str, params: dict) -> tuple[str | None, str | Non
         Tuple of (translated_summary, error_message).
     """
     prompt = load_prompt(SUMMARY_PROMPT_PATH)
-    ollama_params = params.get("ollama", {})
+    config = get_ollama_config(params, "translate_summary")
 
     response, error = call_ollama(
         prompt,
         f"以下の英語サマリーを日本語に翻訳してください:\n\n{summary}",
-        model=ollama_params.get("model", "gemma3:12b"),
-        base_url=ollama_params.get("base_url", "http://localhost:11434"),
-        timeout=ollama_params.get("timeout", 120),
-        temperature=ollama_params.get("temperature", 0.2),
+        model=config.model,
+        base_url=config.base_url,
+        num_predict=config.num_predict,
+        timeout=config.timeout,
+        temperature=config.temperature,
     )
 
     if error:
@@ -120,7 +122,7 @@ def extract_knowledge(
         knowledge_dict contains: title, summary, summary_content.
     """
     prompt = load_prompt(KNOWLEDGE_PROMPT_PATH)
-    ollama_params = params.get("ollama", {})
+    config = get_ollama_config(params, "extract_knowledge")
 
     # Build user message
     user_message = _build_user_message(content, conversation_name, created_at, source_provider)
@@ -128,10 +130,11 @@ def extract_knowledge(
     response, error = call_ollama(
         prompt,
         user_message,
-        model=ollama_params.get("model", "gemma3:12b"),
-        base_url=ollama_params.get("base_url", "http://localhost:11434"),
-        timeout=ollama_params.get("timeout", 120),
-        temperature=ollama_params.get("temperature", 0.2),
+        model=config.model,
+        base_url=config.base_url,
+        num_predict=config.num_predict,
+        timeout=config.timeout,
+        temperature=config.temperature,
     )
 
     if error:

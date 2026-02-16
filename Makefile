@@ -10,7 +10,7 @@ COMMA := ,
 
 .PHONY: help setup setup-dev test coverage check lint clean
 .PHONY: rag-index rag-search rag-ask rag-status
-.PHONY: test-e2e test-e2e-update-golden test-clean
+.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
 .PHONY: run kedro-run kedro-test kedro-viz
 
 # ═══════════════════════════════════════════════════════════
@@ -33,6 +33,8 @@ help:
 	@echo "  kedro-test     Kedro テスト実行"
 	@echo "  kedro-viz      DAG 可視化"
 	@echo "  test-e2e       E2Eテスト（ゴールデンファイル比較、閾値80%）"
+	@echo "  test-e2e-golden"
+	@echo "                 ゴールデンファイル品質テスト（圧縮率、構造保持）"
 	@echo "  test-e2e-update-golden"
 	@echo "                 ゴールデンファイル生成・更新（LLMモデル/プロンプト変更時）"
 	@echo "  test-clean     E2Eテスト用データ削除"
@@ -218,6 +220,15 @@ test-e2e-update-golden:
 	@echo "  ✅ Golden files updated in tests/fixtures/golden/"
 	@echo "  Remember to commit the updated golden files!"
 	@echo "═══════════════════════════════════════════════════════════"
+
+# ゴールデンファイル品質テスト
+test-e2e-golden:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  Golden File Quality Tests"
+	@echo "═══════════════════════════════════════════════════════════"
+	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m unittest tests.test_e2e_golden -v
+	@echo ""
+	@echo "✅ Golden file tests passed"
 
 # ═══════════════════════════════════════════════════════════
 # Testing

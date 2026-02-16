@@ -21,6 +21,7 @@ def call_ollama(
     model: str = "gemma3:12b",
     base_url: str = "http://localhost:11434",
     num_ctx: int = 65536,
+    num_predict: int = -1,
     temperature: float = 0.2,
     timeout: int = 120,
 ) -> tuple[str, str | None]:
@@ -32,6 +33,7 @@ def call_ollama(
         model: Model name.
         base_url: Ollama server base URL.
         num_ctx: Context window size.
+        num_predict: Maximum output tokens (-1 = unlimited, default).
         temperature: Sampling temperature.
         timeout: Request timeout in seconds.
 
@@ -48,7 +50,7 @@ def call_ollama(
             {"role": "user", "content": user_message},
         ],
         "stream": False,
-        "options": {"num_ctx": num_ctx, "temperature": temperature},
+        "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
     }
 
     try:
@@ -125,7 +127,12 @@ def parse_markdown_response(response: str) -> tuple[dict, str | None]:
     # Split sections
     title, summary, tags, summary_content = _split_markdown_sections(text)
 
-    return {"title": title, "summary": summary, "tags": tags, "summary_content": summary_content}, None
+    return {
+        "title": title,
+        "summary": summary,
+        "tags": tags,
+        "summary_content": summary_content,
+    }, None
 
 
 def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
@@ -146,6 +153,7 @@ def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
     first_heading_text = ""
     first_heading_level = 0
     has_h1 = False
+    in_code_block = False
 
     def _flush_section() -> None:
         nonlocal title, summary, tags, summary_content
@@ -160,6 +168,17 @@ def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
             summary_content = body
 
     for line in lines:
+        # Track code block state (``` toggles in/out of code block)
+        if line.strip().startswith("```"):
+            in_code_block = not in_code_block
+            section_lines.append(line)
+            continue
+
+        # Skip heading detection inside code blocks
+        if in_code_block:
+            section_lines.append(line)
+            continue
+
         heading_match = re.match(r"^(#{1,6})\s+(.+)$", line)
 
         if heading_match:

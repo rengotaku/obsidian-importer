@@ -108,6 +108,17 @@ markdown_notes:
     kedro-viz:
       layer: model_output
 
+review_notes:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/review
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+
 classified_items:
   type: partitions.PartitionedDataset
   path: data/07_model_output/classified
@@ -195,3 +206,4 @@ organized_notes:
   metadata:
     kedro-viz:
       layer: model_output
+

@@ -6,6 +6,9 @@ This pipeline handles genre classification and frontmatter embedding:
 - normalize_frontmatter: Clean frontmatter fields
 - clean_content: Remove excess blank lines
 - embed_frontmatter_fields: Embed genre, topic, summary into frontmatter
+
+Review notes (items with low compression ratios) are output directly by
+format_markdown to review_notes without further processing.
 """
 
 from __future__ import annotations

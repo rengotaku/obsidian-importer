@@ -24,6 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 from obsidian_etl.utils import knowledge_extractor
+from obsidian_etl.utils.compression_validator import validate_compression
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
@@ -140,16 +141,64 @@ def extract_knowledge(
         )
 
         if error or not knowledge:
-            logger.warning(f"LLM extraction failed for {partition_id}: {error}. Item excluded.")
+            logger.warning(f"LLM extraction failed for {partition_id}: {error}. Marked for review.")
             failed += 1
+            # Mark for review with error details
+            item["review_reason"] = f"LLM extraction failed: {error}"
+            item["review_node"] = "extract_knowledge"
+            item["generated_metadata"] = {
+                "title": item.get("conversation_name", partition_id),
+                "summary": "",
+                "summary_content": "",
+                "tags": [],
+            }
+            # Save to streaming output (prevents re-processing)
+            streaming_file = output_dir / f"{partition_id}.json"
+            streaming_file.write_text(json.dumps(item, ensure_ascii=False, indent=2))
+            output[partition_id] = item
             continue
 
         # Check for empty summary_content
         summary_content = knowledge.get("summary_content", "")
         if _is_empty_content(summary_content):
-            logger.warning(f"Empty summary_content for {partition_id}. Item excluded.")
+            logger.warning(f"Empty summary_content for {partition_id}. Marked for review.")
             skipped_empty += 1
+            # Mark for review
+            item["review_reason"] = "LLM returned empty summary_content"
+            item["review_node"] = "extract_knowledge"
+            item["generated_metadata"] = {
+                "title": knowledge.get("title", item.get("conversation_name", partition_id)),
+                "summary": knowledge.get("summary", ""),
+                "summary_content": "",
+                "tags": knowledge.get("tags", []),
+            }
+            # Save to streaming output (prevents re-processing)
+            streaming_file = output_dir / f"{partition_id}.json"
+            streaming_file.write_text(json.dumps(item, ensure_ascii=False, indent=2))
+            output[partition_id] = item
             continue
+
+        # Check content compression ratio using compression_validator
+        compression_result = validate_compression(
+            original_content=item["content"],
+            output_content=summary_content,
+            body_content=summary_content,  # For extract_knowledge, body = summary_content
+            node_name="extract_knowledge",
+        )
+
+        if not compression_result.is_valid:
+            # Add review_reason and review_node to item (don't exclude)
+            review_reason = (
+                f"{compression_result.node_name}: "
+                f"body_ratio={compression_result.body_ratio:.1%} < "
+                f"threshold={compression_result.threshold:.1%}"
+            )
+            item["review_reason"] = review_reason
+            item["review_node"] = compression_result.node_name
+            logger.warning(
+                f"Low content ratio for {partition_id}: {review_reason}. Item marked for review."
+            )
+            # DO NOT continue - process the item normally
 
         # Check if summary is in English and translate if needed
         summary = knowledge.get("summary", "")
@@ -262,21 +311,25 @@ def generate_metadata(
 @timed_node
 def format_markdown(
     partitioned_input: dict[str, Callable],
-) -> dict[str, dict]:
+) -> tuple[dict[str, str], dict[str, str]]:
     """Format items as Markdown with YAML frontmatter.
 
     Creates final Markdown output:
     - YAML frontmatter from metadata (including summary)
     - Body from generated_metadata.summary_content
     - Output filename from sanitized title
+    - Split by review_reason: items with review_reason go to review dict
 
     Args:
         partitioned_input: Dict of partition_id -> callable that loads item with metadata.
 
     Returns:
-        Dict of sanitized_filename -> item with "content" field containing Markdown.
+        Tuple of (normal_output, review_output):
+        - normal_output: Dict of sanitized_filename -> markdown content (no review_reason)
+        - review_output: Dict of sanitized_filename -> markdown content (with review_reason)
     """
-    output = {}
+    normal_output = {}
+    review_output = {}
 
     for partition_id, load_func in partitioned_input.items():
         item = load_func()
@@ -299,8 +352,12 @@ def format_markdown(
             else "tags: []"
         )
 
-        # Escape title for YAML (special chars like : # [ ] { } need quoting)
-        title = metadata.get("title", "").replace('"', '\\"')
+        # Sanitize title for YAML and filename safety
+        # Replace backslashes with forward slashes (common in file paths)
+        # Then escape remaining special chars for YAML double-quoted string
+        title = metadata.get("title", "")
+        title = title.replace("\\", "/")  # Normalize path separators
+        title = title.replace('"', '\\"')  # Escape quotes for YAML
 
         # Get summary for frontmatter (may be empty)
         summary = metadata.get("summary", "")
@@ -321,6 +378,16 @@ def format_markdown(
             f"normalized: {str(metadata.get('normalized', True)).lower()}",
         ]
 
+        # Add review fields to frontmatter if present
+        review_reason = item.get("review_reason")
+        review_node = item.get("review_node")
+        if review_reason:
+            # Escape review_reason for YAML
+            review_reason_escaped = review_reason.replace("\\", "\\\\").replace('"', '\\"')
+            frontmatter_parts.append(f'review_reason: "{review_reason_escaped}"')
+        if review_node:
+            frontmatter_parts.append(f"review_node: {review_node}")
+
         frontmatter_yaml = "\n".join(frontmatter_parts) + "\n"
 
         # Build body (only summary_content now, summary is in frontmatter)
@@ -337,12 +404,23 @@ def format_markdown(
         title = metadata.get("title", "")
         filename = _sanitize_filename(title, item["file_id"])
 
-        # Store content string (TextDataset expects str, not dict)
-        output[filename] = markdown_content
+        # Split by review_reason
+        if review_reason:
+            # Include original content for review items
+            original_content = item.get("content", "")
+            review_markdown = (
+                f"{markdown_content}\n\n---\n\n## 元のコンテンツ\n\n{original_content}"
+            )
+            review_output[filename] = review_markdown
+        else:
+            normal_output[filename] = markdown_content
 
-    logger.info(f"format_markdown: processed {len(output)} items")
+    logger.info(
+        f"format_markdown: processed {len(normal_output) + len(review_output)} items "
+        f"(normal={len(normal_output)}, review={len(review_output)})"
+    )
 
-    return output
+    return normal_output, review_output
 
 
 def _sanitize_filename(title: str, file_id: str) -> str:

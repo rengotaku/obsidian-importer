@@ -111,11 +111,43 @@ def _make_claude_conversation(
 
 
 def _make_mock_ollama_response(title: str = "Python asyncio の仕組み") -> dict:
-    """Create a mock Ollama LLM response for knowledge extraction."""
+    """Create a mock Ollama LLM response for knowledge extraction.
+
+    The summary_content must be large enough to pass compression ratio check.
+    For content <5000 chars, threshold is 20%. Input is ~800 chars per conversation,
+    so we need at least 160 chars of body content.
+    """
+    # Make body content large enough to pass 20% threshold
+    body_content = """## asyncio の概要
+
+asyncio は Python の非同期 I/O フレームワークです。イベントループを使用して、
+並行処理を効率的に実行します。
+
+### 主な特徴
+
+- async/await 構文による直感的な非同期プログラミング
+- イベントループによる効率的なタスク管理
+- Future と Task による並行処理の制御
+- コルーチンベースの設計パターン
+
+### 使用例
+
+```python
+import asyncio
+
+async def main():
+    await asyncio.sleep(1)
+    print("Hello, asyncio!")
+
+asyncio.run(main())
+```
+
+この例では、非同期関数 main を定義し、asyncio.run で実行しています。"""
+
     return {
         "title": title,
         "summary": "Python asyncio ライブラリの非同期処理について",
-        "summary_content": "## asyncio の概要\n\nasyncio は Python の非同期 I/O フレームワークです。",
+        "summary_content": body_content,
         "tags": ["Python", "asyncio", "非同期処理"],
     }
 
@@ -183,6 +215,7 @@ class TestE2EClaudeImport(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),  # Phase 2: renamed from organized_items
                 "organized_items": PartitionedMemoryDataset(),  # Legacy compatibility
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -200,13 +233,6 @@ class TestE2EClaudeImport(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
@@ -361,6 +387,9 @@ class TestResumeAfterFailure(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "vault_determined_items": PartitionedMemoryDataset(),
                 "organized_items": PartitionedMemoryDataset(),
+                "organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
+                "topic_extracted_items": PartitionedMemoryDataset(),
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -378,13 +407,6 @@ class TestResumeAfterFailure(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
@@ -399,7 +421,7 @@ class TestResumeAfterFailure(unittest.TestCase):
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
     def test_resume_after_failure(self, mock_extract):
-        """1回目で一部失敗、2回目で失敗分のみ再処理されること。"""
+        """1回目で一部失敗、2回目は全てスキップ（失敗分はreviewに出力済み）。"""
         call_count = [0]
 
         def first_run_side_effect(*args, **kwargs):
@@ -416,17 +438,21 @@ class TestResumeAfterFailure(unittest.TestCase):
         pipeline = self.pipelines["import_claude"]
         catalog = self._build_catalog()
 
-        # First run: 3 items parsed, but 1 fails at extract_knowledge
+        # First run: 3 items parsed, 1 fails at extract_knowledge
         self.runner.run(pipeline, catalog)
 
         # After first run: 2 items succeed through to organized_notes
         first_run_organized = catalog.load("organized_notes")
         self.assertEqual(len(first_run_organized), 2, "First run should produce 2 organized notes")
 
+        # Failed item goes to review_notes
+        first_run_review = catalog.load("review_notes")
+        self.assertEqual(len(first_run_review), 1, "First run should produce 1 review note")
+
         first_run_llm_calls = mock_extract.call_count
         self.assertEqual(first_run_llm_calls, 3, "First run should call LLM 3 times")
 
-        # Reset mock for second run: all items succeed
+        # Reset mock for second run
         mock_extract.reset_mock()
         mock_extract.return_value = (
             _make_mock_ollama_response(title="リカバリアイテム"),
@@ -434,22 +460,28 @@ class TestResumeAfterFailure(unittest.TestCase):
         )
 
         # Second run with same catalog (existing outputs are preserved)
-        # The failed item should be re-processed, succeeded items should be skipped
+        # All items are already processed (2 success + 1 review), so no LLM calls
         self.runner.run(pipeline, catalog)
 
-        # LLM should only be called for the 1 failed item (not for the 2 that already succeeded)
+        # LLM should NOT be called - all items already processed
         self.assertEqual(
             mock_extract.call_count,
-            1,
-            "Second run should only call LLM for the 1 failed item",
+            0,
+            "Second run should not call LLM - all items already processed (including review)",
         )
 
-        # After second run: all 3 items should be organized
+        # After second run: counts remain the same
         second_run_organized = catalog.load("organized_notes")
         self.assertEqual(
             len(second_run_organized),
-            3,
-            "Second run should produce 3 organized notes total",
+            2,
+            "Second run should still have 2 organized notes",
+        )
+        second_run_review = catalog.load("review_notes")
+        self.assertEqual(
+            len(second_run_review),
+            1,
+            "Second run should still have 1 review note",
         )
 
 
@@ -620,6 +652,7 @@ class TestPartialRunFromTo(unittest.TestCase):
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "params:import": MemoryDataset(
                     {
                         "provider": "claude",
@@ -637,13 +670,6 @@ class TestPartialRunFromTo(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
@@ -875,6 +901,7 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 "normalized_items": PartitionedMemoryDataset(),
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
+                "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "params:import": MemoryDataset(
                     {
                         "provider": "openai",
@@ -892,13 +919,6 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 ),
                 "params:organize": MemoryDataset(
                     {
-                        "vaults": {
-                            "engineer": "Vaults/エンジニア/",
-                            "business": "Vaults/ビジネス/",
-                            "economy": "Vaults/経済/",
-                            "daily": "Vaults/日常/",
-                            "other": "Vaults/その他/",
-                        },
                         "genre_keywords": {
                             "engineer": ["Python", "asyncio", "フレームワーク", "API"],
                             "business": ["ビジネス", "マネジメント"],
