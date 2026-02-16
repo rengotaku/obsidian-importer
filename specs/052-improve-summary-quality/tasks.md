@@ -164,19 +164,19 @@
 
 ### 入力
 
-- [ ] T050 Read previous phase output: specs/052-improve-summary-quality/tasks/ph4-output.md
+- [x] T050 Read previous phase output: specs/052-improve-summary-quality/tasks/ph4-output.md
 
 ### 実装
 
-- [ ] T051 [P] Update CLAUDE.md with golden file documentation
-- [ ] T052 [P] Add make test-e2e-golden target to Makefile
-- [ ] T053 Run quickstart.md validation scenarios
+- [x] T051 [P] Update CLAUDE.md with golden file documentation
+- [x] T052 [P] Add make test-e2e-golden target to Makefile
+- [x] T053 Run quickstart.md validation scenarios
 
 ### 検証
 
-- [ ] T054 Run `make test` to verify all tests pass after cleanup
-- [ ] T055 Verify `make coverage` ≥80%
-- [ ] T056 Generate phase output: specs/052-improve-summary-quality/tasks/ph5-output.md
+- [x] T054 Run `make test` to verify all tests pass after cleanup
+- [x] T055 Verify `make coverage` ≥80%
+- [x] T056 Generate phase output: specs/052-improve-summary-quality/tasks/ph5-output.md
 
 ---
 

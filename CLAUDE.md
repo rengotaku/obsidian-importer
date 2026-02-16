@@ -90,12 +90,34 @@ data/01_raw/*.zip → data/02_intermediate/parsed/*.json
 ## 開発・テスト
 
 ```bash
-make test       # 全テスト実行
-make coverage   # カバレッジ計測（≥80%）
-make lint       # コード品質チェック (ruff)
-make kedro-viz  # DAG 可視化
-make test-e2e   # E2E テスト（ゴールデンファイル比較）
+make test            # 全テスト実行
+make coverage        # カバレッジ計測（≥80%）
+make lint            # コード品質チェック (ruff)
+make kedro-viz       # DAG 可視化
+make test-e2e        # E2E テスト（ゴールデンファイル比較）
+make test-e2e-golden # ゴールデンファイル品質テスト
 ```
+
+### ゴールデンファイル
+
+**場所**: `tests/fixtures/golden/`
+
+**目的**: LLM まとめ品質の継続的検証
+
+**ファイル数**: 10 件（カテゴリ別選定）
+
+**カテゴリ**:
+- 技術系（小・中・大）
+- ビジネス系（小・中）
+- 日常系（小）
+- 表形式データ（中・大）
+- コード含む（小・中）
+
+**品質基準**:
+- 圧縮率しきい値を満たす（10-20%、サイズ依存）
+- 表形式データが Markdown テーブルで保持
+- コードブロックが保持
+- review フォルダに振り分けられない品質
 
 ### 終了コード
 
