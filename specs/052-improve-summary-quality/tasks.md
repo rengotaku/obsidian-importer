@@ -144,15 +144,15 @@
 
 ### 実装 (GREEN)
 
-- [ ] T044 Read RED tests: specs/052-improve-summary-quality/red-tests/ph4-test.md
-- [ ] T045 [US2] Verify prompt improvements reduce review ratio (already implemented in Phase 2)
-- [ ] T046 [US2] Run pipeline with test data and measure review ratio
-- [ ] T047 Verify `make test` PASS (GREEN)
+- [x] T044 Read RED tests: specs/052-improve-summary-quality/red-tests/ph4-test.md
+- [x] T045 [US2] Verify prompt improvements reduce review ratio (already implemented in Phase 2)
+- [x] T046 [US2] Run pipeline with test data and measure review ratio
+- [x] T047 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T048 Verify `make test` passes all tests
-- [ ] T049 Generate phase output: specs/052-improve-summary-quality/tasks/ph4-output.md
+- [x] T048 Verify `make test` passes all tests
+- [x] T049 Generate phase output: specs/052-improve-summary-quality/tasks/ph4-output.md
 
 **Checkpoint**: User Story 2 should be fully functional - 振り分け率改善確認
 
