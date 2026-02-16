@@ -221,11 +221,9 @@ data/qdrant/
 !data/qdrant/.gitkeep
 
 # Kedro data layers (runtime data)
-data/01_raw/
-data/02_intermediate/
-data/03_primary/
-data/07_model_output/
-data/test/
+data/
+!data/.gitkeep
+data*/
 logs/
 
 # Kedro local config
