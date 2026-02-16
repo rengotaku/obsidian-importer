@@ -13,18 +13,18 @@ Golden files are selected based on:
 
 | No | File | Type | Size | Source | Notes |
 |----|------|------|------|--------|-------|
-| 1 | (TBD) | Technical | Small | organized | |
-| 2 | (TBD) | Technical | Medium | organized | |
-| 3 | (TBD) | Technical | Large | review | |
-| 4 | (TBD) | Business | Small | organized | |
-| 5 | (TBD) | Business | Medium | organized | |
-| 6 | (TBD) | Daily | Small | organized | |
-| 7 | (TBD) | Table | Medium | review | |
-| 8 | (TBD) | Table | Large | review | |
-| 9 | (TBD) | Code | Small | organized | |
-| 10 | (TBD) | Code | Medium | review | |
+| 1 | Automatic1111 positive prompt 設定.md | Technical | Small (2.4KB) | organized | Stable Diffusion settings |
+| 2 | API GatewayとLoad Balancerの違い.md | Technical | Medium (3.9KB) | organized | AWS architecture, has tables |
+| 3 | Claude CLI 設定確認問題.md | Technical | Large (14.7KB) | review | CLI troubleshooting, code blocks |
+| 4 | 8ヶ月の赤ちゃん飛行機搭乗時の睡眠対策.md | Business | Small (1.8KB) | organized | Baby travel tips |
+| 5 | 9ヶ月の赤ちゃんとの飛行機搭乗のコツ.md | Business | Medium (3.5KB) | organized | Parenting advice |
+| 6 | 3Dプリンターでオリジナルグッズを作る.md | Daily | Small (1.9KB) | organized | 3D printing hobby |
+| 7 | 9ヶ月赤ちゃんのおやつとバナナプリン.md | Table | Medium (3.1KB) | organized | Baby food recipes, has tables |
+| 8 | 千葉のSwitch2販売実績.md | Table | Large (12.4KB) | review | Sales data analysis, has tables |
+| 9 | Bash Alias 設定トラブルシューティング.md | Code | Small (2.4KB) | organized | Shell scripting, code blocks |
+| 10 | 0b75ea4aa423.md | Code | Medium (5.6KB) | review | NISA investment guide, code examples |
 
-**Total**: 10 files required (currently 3)
+**Total**: 10 files (meeting requirements)
 
 ## Validation Requirements
 

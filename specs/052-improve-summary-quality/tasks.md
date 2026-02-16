@@ -103,24 +103,24 @@
 
 ### 実装 (GREEN)
 
-- [ ] T025 Read RED tests: specs/052-improve-summary-quality/red-tests/ph3-test.md
-- [ ] T026 [P] [US3] Select and copy golden file: 技術系・小 from organized/
-- [ ] T027 [P] [US3] Select and copy golden file: 技術系・中 from organized/
-- [ ] T028 [P] [US3] Select and copy golden file: 技術系・大 from review/
-- [ ] T029 [P] [US3] Select and copy golden file: ビジネス系・小 from organized/
-- [ ] T030 [P] [US3] Select and copy golden file: ビジネス系・中 from organized/
-- [ ] T031 [P] [US3] Select and copy golden file: 日常系・小 from organized/
-- [ ] T032 [P] [US3] Select and copy golden file: 表形式・中 from review/
-- [ ] T033 [P] [US3] Select and copy golden file: 表形式・大 (千葉のSwitch2販売実績.md) from review/
-- [ ] T034 [P] [US3] Select and copy golden file: コード含む・小 from organized/
-- [ ] T035 [P] [US3] Select and copy golden file: コード含む・中 from review/
-- [ ] T036 [US3] Update tests/fixtures/golden/README.md with actual file list
-- [ ] T037 Verify `make test` PASS (GREEN)
+- [x] T025 Read RED tests: specs/052-improve-summary-quality/red-tests/ph3-test.md
+- [x] T026 [P] [US3] Select and copy golden file: 技術系・小 from organized/
+- [x] T027 [P] [US3] Select and copy golden file: 技術系・中 from organized/
+- [x] T028 [P] [US3] Select and copy golden file: 技術系・大 from review/
+- [x] T029 [P] [US3] Select and copy golden file: ビジネス系・小 from organized/
+- [x] T030 [P] [US3] Select and copy golden file: ビジネス系・中 from organized/
+- [x] T031 [P] [US3] Select and copy golden file: 日常系・小 from organized/
+- [x] T032 [P] [US3] Select and copy golden file: 表形式・中 from organized/
+- [x] T033 [P] [US3] Select and copy golden file: 表形式・大 (千葉のSwitch2販売実績.md) from review/
+- [x] T034 [P] [US3] Select and copy golden file: コード含む・小 from organized/
+- [x] T035 [P] [US3] Select and copy golden file: コード含む・中 from review/
+- [x] T036 [US3] Update tests/fixtures/golden/README.md with actual file list
+- [x] T037 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T038 Verify `make test` passes all tests (including regressions from US1)
-- [ ] T039 Generate phase output: specs/052-improve-summary-quality/tasks/ph3-output.md
+- [x] T038 Verify `make test` passes all tests (including regressions from US1)
+- [x] T039 Generate phase output: specs/052-improve-summary-quality/tasks/ph3-output.md
 
 **Checkpoint**: User Story 3 should be fully functional - ゴールデンファイルとE2Eテスト完了
 
