@@ -51,7 +51,7 @@
 
 ### 入力
 
-- [ ] T007 Read previous phase output: specs/052-improve-summary-quality/tasks/ph1-output.md
+- [X] T007 Read previous phase output: specs/052-improve-summary-quality/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
