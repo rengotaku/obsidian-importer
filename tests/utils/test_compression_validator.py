@@ -16,50 +16,50 @@ class TestGetThreshold(unittest.TestCase):
     """get_threshold: original_size -> threshold percentage."""
 
     def test_get_threshold_large(self):
-        """10,000文字以上の場合、しきい値が10% (0.10) であること。
+        """10,000文字以上の場合、しきい値が5% (0.05) であること。
 
-        FR-005: 10,000文字以上の会話は 10% の圧縮率しきい値を使用する
+        FR-005: 10,000文字以上の会話は 5% の圧縮率しきい値を使用する
         """
         from obsidian_etl.utils.compression_validator import get_threshold
 
         # Boundary: exactly 10000
-        self.assertEqual(get_threshold(10000), 0.10)
+        self.assertEqual(get_threshold(10000), 0.05)
 
         # Above boundary
-        self.assertEqual(get_threshold(15000), 0.10)
-        self.assertEqual(get_threshold(100000), 0.10)
+        self.assertEqual(get_threshold(15000), 0.05)
+        self.assertEqual(get_threshold(100000), 0.05)
 
     def test_get_threshold_medium(self):
-        """5,000〜9,999文字の場合、しきい値が15% (0.15) であること。
+        """5,000〜9,999文字の場合、しきい値が10% (0.10) であること。
 
-        FR-006: 5,000〜9,999文字の会話は 15% の圧縮率しきい値を使用する
+        FR-006: 5,000〜9,999文字の会話は 10% の圧縮率しきい値を使用する
         """
         from obsidian_etl.utils.compression_validator import get_threshold
 
         # Boundary: exactly 5000
-        self.assertEqual(get_threshold(5000), 0.15)
+        self.assertEqual(get_threshold(5000), 0.10)
 
         # Within range
-        self.assertEqual(get_threshold(7500), 0.15)
+        self.assertEqual(get_threshold(7500), 0.10)
 
         # Upper boundary: 9999
-        self.assertEqual(get_threshold(9999), 0.15)
+        self.assertEqual(get_threshold(9999), 0.10)
 
     def test_get_threshold_small(self):
-        """5,000文字未満の場合、しきい値が20% (0.20) であること。
+        """1,000〜4,999文字の場合、しきい値が10% (0.10) であること。
 
-        FR-007: 5,000文字未満の会話は 20% の圧縮率しきい値を使用する
+        FR-007: 1,000〜4,999文字の会話は 10% の圧縮率しきい値を使用する
         """
         from obsidian_etl.utils.compression_validator import get_threshold
 
         # Upper boundary: 4999
-        self.assertEqual(get_threshold(4999), 0.20)
+        self.assertEqual(get_threshold(4999), 0.10)
 
         # Small values (>= 1000)
-        self.assertEqual(get_threshold(1000), 0.20)
-        # Very small values (< 1000) are relaxed to 30%
-        self.assertEqual(get_threshold(100), 0.30)
-        self.assertEqual(get_threshold(1), 0.30)
+        self.assertEqual(get_threshold(1000), 0.10)
+        # Very small values (< 1000) are relaxed to 15%
+        self.assertEqual(get_threshold(100), 0.15)
+        self.assertEqual(get_threshold(1), 0.15)
 
 
 class TestValidateCompression(unittest.TestCase):
@@ -68,14 +68,14 @@ class TestValidateCompression(unittest.TestCase):
     def test_validate_compression_valid(self):
         """圧縮率が基準を満たす場合、is_valid=True が返ること。
 
-        Example: original=10000, body=1500 -> body_ratio=15% >= threshold=10%
+        Example: original=10000, body=1500 -> body_ratio=15% >= threshold=5%
         """
         from obsidian_etl.utils.compression_validator import (
             CompressionResult,
             validate_compression,
         )
 
-        # 10000 chars original, 1500 body (15% ratio) >= 10% threshold
+        # 10000 chars original, 1500 body (15% ratio) >= 5% threshold
         original_content = "a" * 10000
         output_content = "b" * 2000  # includes frontmatter
         body_content = "c" * 1500  # 15% of original
@@ -93,24 +93,24 @@ class TestValidateCompression(unittest.TestCase):
         self.assertEqual(result.body_size, 1500)
         self.assertAlmostEqual(result.ratio, 0.20, places=2)  # 2000/10000
         self.assertAlmostEqual(result.body_ratio, 0.15, places=2)  # 1500/10000
-        self.assertAlmostEqual(result.threshold, 0.10, places=2)
+        self.assertAlmostEqual(result.threshold, 0.05, places=2)
         self.assertTrue(result.is_valid)
         self.assertEqual(result.node_name, "extract_knowledge")
 
     def test_validate_compression_invalid(self):
         """圧縮率が基準を満たさない場合、is_valid=False が返ること。
 
-        Example: original=10000, body=500 -> body_ratio=5% < threshold=10%
+        Example: original=10000, body=400 -> body_ratio=4% < threshold=5%
         """
         from obsidian_etl.utils.compression_validator import (
             CompressionResult,
             validate_compression,
         )
 
-        # 10000 chars original, 500 body (5% ratio) < 10% threshold
+        # 10000 chars original, 400 body (4% ratio) < 5% threshold
         original_content = "a" * 10000
-        output_content = "b" * 800  # includes frontmatter
-        body_content = "c" * 500  # Only 5% of original
+        output_content = "b" * 600  # includes frontmatter
+        body_content = "c" * 400  # Only 4% of original
 
         result = validate_compression(
             original_content=original_content,
@@ -121,11 +121,11 @@ class TestValidateCompression(unittest.TestCase):
 
         self.assertIsInstance(result, CompressionResult)
         self.assertEqual(result.original_size, 10000)
-        self.assertEqual(result.output_size, 800)
-        self.assertEqual(result.body_size, 500)
-        self.assertAlmostEqual(result.ratio, 0.08, places=2)  # 800/10000
-        self.assertAlmostEqual(result.body_ratio, 0.05, places=2)  # 500/10000
-        self.assertAlmostEqual(result.threshold, 0.10, places=2)
+        self.assertEqual(result.output_size, 600)
+        self.assertEqual(result.body_size, 400)
+        self.assertAlmostEqual(result.ratio, 0.06, places=2)  # 600/10000
+        self.assertAlmostEqual(result.body_ratio, 0.04, places=2)  # 400/10000
+        self.assertAlmostEqual(result.threshold, 0.05, places=2)
         self.assertFalse(result.is_valid)
         self.assertEqual(result.node_name, "extract_knowledge")
 
@@ -189,8 +189,8 @@ class TestValidateCompressionBodyNone(unittest.TestCase):
         self.assertEqual(result.body_size, 1000)  # Uses output_size
         self.assertAlmostEqual(result.ratio, 0.20, places=2)
         self.assertAlmostEqual(result.body_ratio, 0.20, places=2)
-        self.assertAlmostEqual(result.threshold, 0.15, places=2)
-        self.assertTrue(result.is_valid)  # 20% >= 15%
+        self.assertAlmostEqual(result.threshold, 0.10, places=2)
+        self.assertTrue(result.is_valid)  # 20% >= 10%
         self.assertEqual(result.node_name, "format_markdown")
 
 
@@ -312,58 +312,57 @@ class TestShortConversationThreshold(unittest.TestCase):
 
     Tests for Edge Case: 元の会話が極端に短い場合（1,000 文字未満）、圧縮率のしきい値を緩和する
 
-    Current behavior:
-    - <5000 chars -> 20%
-
-    Expected new behavior:
-    - <1000 chars -> 30% (relaxed)
-    - 1000-4999 chars -> 20% (current)
+    Current behavior (after 2026-02-17 update):
+    - <1000 chars -> 15% (relaxed)
+    - 1000-4999 chars -> 10%
+    - 5000-9999 chars -> 10%
+    - 10000+ chars -> 5%
     """
 
     def test_get_threshold_very_short_relaxed(self):
-        """1,000文字未満の場合、しきい値が30% (0.30) に緩和されること。
+        """1,000文字未満の場合、しきい値が15% (0.15) に緩和されること。
 
         Edge Case: 短い会話では圧縮率のしきい値を緩和する
 
-        Expected: <1000 chars -> 0.30 (30%)
+        Expected: <1000 chars -> 0.15 (15%)
         """
         from obsidian_etl.utils.compression_validator import get_threshold
 
         # Very short conversations should have relaxed threshold
-        self.assertEqual(get_threshold(999), 0.30)
-        self.assertEqual(get_threshold(500), 0.30)
-        self.assertEqual(get_threshold(100), 0.30)
-        self.assertEqual(get_threshold(1), 0.30)
+        self.assertEqual(get_threshold(999), 0.15)
+        self.assertEqual(get_threshold(500), 0.15)
+        self.assertEqual(get_threshold(100), 0.15)
+        self.assertEqual(get_threshold(1), 0.15)
 
     def test_get_threshold_boundary_1000(self):
-        """1,000文字ちょうどの場合、しきい値が20% (0.20) であること。
+        """1,000文字ちょうどの場合、しきい値が10% (0.10) であること。
 
-        Boundary: exactly 1000 chars -> 0.20 (not relaxed)
+        Boundary: exactly 1000 chars -> 0.10 (not relaxed)
         """
         from obsidian_etl.utils.compression_validator import get_threshold
 
         # Exactly 1000 should use normal threshold
-        self.assertEqual(get_threshold(1000), 0.20)
+        self.assertEqual(get_threshold(1000), 0.10)
 
         # Above 1000 should also use normal threshold
-        self.assertEqual(get_threshold(1001), 0.20)
+        self.assertEqual(get_threshold(1001), 0.10)
 
     def test_get_threshold_maintains_existing_behavior(self):
         """既存のしきい値が維持されること（1000文字以上）。
 
-        Verify existing thresholds are not changed:
-        - 5000-9999 chars -> 15%
-        - 10000+ chars -> 10%
+        Verify thresholds (after 2026-02-17 update):
+        - 5000-9999 chars -> 10%
+        - 10000+ chars -> 5%
         """
         from obsidian_etl.utils.compression_validator import get_threshold
 
-        # Medium conversations: 15%
-        self.assertEqual(get_threshold(5000), 0.15)
-        self.assertEqual(get_threshold(7500), 0.15)
+        # Medium conversations: 10%
+        self.assertEqual(get_threshold(5000), 0.10)
+        self.assertEqual(get_threshold(7500), 0.10)
 
-        # Large conversations: 10%
-        self.assertEqual(get_threshold(10000), 0.10)
-        self.assertEqual(get_threshold(20000), 0.10)
+        # Large conversations: 5%
+        self.assertEqual(get_threshold(10000), 0.05)
+        self.assertEqual(get_threshold(20000), 0.05)
 
 
 if __name__ == "__main__":
