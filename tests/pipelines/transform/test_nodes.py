@@ -1101,10 +1101,10 @@ class TestExtractKnowledgeReviewReason(unittest.TestCase):
         - Format: "extract_knowledge: body_ratio=X.X% < threshold=Y.Y%"
         - Item should NOT be excluded (still in output)
         """
-        # Create a large original content (10000+ chars -> threshold 10%)
-        # LLM returns small summary_content that results in < 10% ratio
-        large_content = "A" * 10000  # 10000 chars -> threshold = 10%
-        small_summary = "B" * 500  # 500 chars = 5% of 10000 (below 10% threshold)
+        # Create a large original content (10000+ chars -> threshold 5%)
+        # LLM returns small summary_content that results in < 5% ratio
+        large_content = "A" * 10000  # 10000 chars -> threshold = 5%
+        small_summary = "B" * 400  # 400 chars = 4% of 10000 (below 5% threshold)
 
         mock_llm_extract.return_value = (
             {
@@ -1140,9 +1140,9 @@ class TestExtractKnowledgeReviewReason(unittest.TestCase):
         self.assertIn("extract_knowledge", review_reason)
         self.assertIn("body_ratio=", review_reason)
         self.assertIn("threshold=", review_reason)
-        # Should contain actual percentages (5.0% < 10.0%)
+        # Should contain actual percentages (4.0% < 5.0%)
+        self.assertIn("4.0%", review_reason)
         self.assertIn("5.0%", review_reason)
-        self.assertIn("10.0%", review_reason)
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
     def test_extract_knowledge_no_review_reason_when_valid(self, mock_llm_extract):

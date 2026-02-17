@@ -84,29 +84,32 @@ def get_threshold(original_size: int) -> float:
 
     Returns:
         しきい値 (0.0-1.0 の float)
-            - 10,000文字以上: 0.10 (10%)
-            - 5,000-9,999文字: 0.15 (15%)
-            - 1,000-4,999文字: 0.20 (20%)
-            - 1,000文字未満: 0.30 (30%, 緩和)
+            - 10,000文字以上: 0.05 (5%)
+            - 5,000-9,999文字: 0.10 (10%)
+            - 1,000-4,999文字: 0.10 (10%)
+            - 1,000文字未満: 0.15 (15%, 緩和)
+
+        Note:
+            閾値は検証結果に基づき2026-02-17に緩和。
+            会話形式の元データは冗長性が高く、
+            適切な要約でも低い圧縮率になるため。
 
     Examples:
         >>> get_threshold(10000)
-        0.10
+        0.05
         >>> get_threshold(5000)
-        0.15
+        0.1
         >>> get_threshold(1000)
-        0.20
+        0.1
         >>> get_threshold(999)
-        0.30
+        0.15
     """
     if original_size >= 10000:
+        return 0.05  # 5%
+    elif original_size >= 5000 or original_size >= 1000:
         return 0.10  # 10%
-    elif original_size >= 5000:
-        return 0.15  # 15%
-    elif original_size >= 1000:
-        return 0.20  # 20%
     else:
-        return 0.30  # 30% (relaxed for very short conversations)
+        return 0.15  # 15% (relaxed for very short conversations)
 
 
 def validate_compression(
