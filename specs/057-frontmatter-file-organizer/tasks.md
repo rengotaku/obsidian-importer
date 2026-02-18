@@ -103,14 +103,14 @@
 
 ### テスト実装 (RED)
 
-- [ ] T034 [P] [US2] Implement test_get_destination_path for target path calculation in tests/test_organize_files.py
-- [ ] T035 [P] [US2] Implement test_get_destination_unclassified for missing genre/topic in tests/test_organize_files.py
-- [ ] T036 [P] [US2] Implement test_move_file_success for successful file move in tests/test_organize_files.py
-- [ ] T037 [P] [US2] Implement test_move_file_creates_directory for auto folder creation in tests/test_organize_files.py
-- [ ] T038 [P] [US2] Implement test_move_file_skip_existing for duplicate file skip in tests/test_organize_files.py
-- [ ] T039 [P] [US2] Implement test_organize_files_summary for success/skip/error counts in tests/test_organize_files.py
-- [ ] T040 Verify `make test` FAIL (RED)
-- [ ] T041 Generate RED output: specs/057-frontmatter-file-organizer/red-tests/ph3-test.md
+- [x] T034 [P] [US2] Implement test_get_destination_path for target path calculation in tests/test_organize_files.py
+- [x] T035 [P] [US2] Implement test_get_destination_unclassified for missing genre/topic in tests/test_organize_files.py
+- [x] T036 [P] [US2] Implement test_move_file_success for successful file move in tests/test_organize_files.py
+- [x] T037 [P] [US2] Implement test_move_file_creates_directory for auto folder creation in tests/test_organize_files.py
+- [x] T038 [P] [US2] Implement test_move_file_skip_existing for duplicate file skip in tests/test_organize_files.py
+- [x] T039 [P] [US2] Implement test_organize_files_summary for success/skip/error counts in tests/test_organize_files.py
+- [x] T040 Verify `make test` FAIL (RED)
+- [x] T041 Generate RED output: specs/057-frontmatter-file-organizer/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 

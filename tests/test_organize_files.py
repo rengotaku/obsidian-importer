@@ -258,5 +258,291 @@ class TestPreview(unittest.TestCase):
             )
 
 
+class TestGetDestinationPath(unittest.TestCase):
+    """get_destination_path() のテスト (Phase 3 RED)."""
+
+    def setUp(self):
+        """テスト用設定を準備."""
+        from scripts.organize_files import get_destination_path
+
+        self.get_destination_path = get_destination_path
+        self.config = {
+            "genre_mapping": {
+                "engineer": "エンジニア",
+                "business": "ビジネス",
+                "economy": "経済",
+                "daily": "日常",
+                "other": "その他",
+            },
+            "unclassified_folder": "unclassified",
+        }
+
+    def test_get_destination_path(self):
+        """genre と topic から正しいターゲットパスが計算されること."""
+        output_dir = Path("/tmp/test_output")
+        frontmatter = {"genre": "engineer", "topic": "Python"}
+        filename = "test_article.md"
+
+        result = self.get_destination_path(self.config, frontmatter, filename, output_dir)
+
+        expected = output_dir / "エンジニア" / "Python" / "test_article.md"
+        self.assertEqual(result, expected)
+
+    def test_get_destination_path_economy(self):
+        """economy ジャンルが経済フォルダにマッピングされること."""
+        output_dir = Path("/tmp/test_output")
+        frontmatter = {"genre": "economy", "topic": "スマートフォン"}
+        filename = "example.md"
+
+        result = self.get_destination_path(self.config, frontmatter, filename, output_dir)
+
+        expected = output_dir / "経済" / "スマートフォン" / "example.md"
+        self.assertEqual(result, expected)
+
+    def test_get_destination_path_special_topic(self):
+        """topic の特殊文字がサニタイズされること."""
+        output_dir = Path("/tmp/test_output")
+        frontmatter = {"genre": "engineer", "topic": "C/C++:Tips"}
+        filename = "coding.md"
+
+        result = self.get_destination_path(self.config, frontmatter, filename, output_dir)
+
+        expected = output_dir / "エンジニア" / "C_C++_Tips" / "coding.md"
+        self.assertEqual(result, expected)
+
+    def test_get_destination_unclassified_no_genre(self):
+        """genre がない場合 unclassified フォルダに振り分けられること."""
+        output_dir = Path("/tmp/test_output")
+        frontmatter = {"title": "No Genre Article"}
+        filename = "no_genre.md"
+
+        result = self.get_destination_path(self.config, frontmatter, filename, output_dir)
+
+        expected = output_dir / "unclassified" / "no_genre.md"
+        self.assertEqual(result, expected)
+
+    def test_get_destination_unclassified_empty_genre(self):
+        """genre が空文字列の場合 unclassified フォルダに振り分けられること."""
+        output_dir = Path("/tmp/test_output")
+        frontmatter = {"genre": "", "topic": "Something"}
+        filename = "empty_genre.md"
+
+        result = self.get_destination_path(self.config, frontmatter, filename, output_dir)
+
+        expected = output_dir / "unclassified" / "empty_genre.md"
+        self.assertEqual(result, expected)
+
+    def test_get_destination_no_topic(self):
+        """topic がない場合 genre フォルダ直下に配置されること."""
+        output_dir = Path("/tmp/test_output")
+        frontmatter = {"genre": "daily"}
+        filename = "no_topic.md"
+
+        result = self.get_destination_path(self.config, frontmatter, filename, output_dir)
+
+        expected = output_dir / "日常" / "no_topic.md"
+        self.assertEqual(result, expected)
+
+
+class TestMoveFile(unittest.TestCase):
+    """move_file() のテスト (Phase 3 RED)."""
+
+    def setUp(self):
+        """テスト用に move_file をインポート."""
+        from scripts.organize_files import move_file
+
+        self.move_file = move_file
+
+    def test_move_file_success(self):
+        """ファイルが正常に移動されること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "source.md"
+            dest_dir = Path(tmpdir) / "dest"
+            dest_dir.mkdir()
+            dest = dest_dir / "source.md"
+
+            source.write_text("---\ntitle: Test\n---\nContent\n", encoding="utf-8")
+
+            result = self.move_file(source, dest)
+
+            self.assertFalse(source.exists(), "source ファイルが残っている")
+            self.assertTrue(dest.exists(), "dest ファイルが作成されていない")
+            self.assertEqual(
+                dest.read_text(encoding="utf-8"),
+                "---\ntitle: Test\n---\nContent\n",
+            )
+            self.assertEqual(result, "success")
+
+    def test_move_file_creates_directory(self):
+        """振り分け先ディレクトリが存在しない場合、自動作成されること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "source.md"
+            dest = Path(tmpdir) / "new_dir" / "sub_dir" / "source.md"
+
+            source.write_text("---\ntitle: Test\n---\nContent\n", encoding="utf-8")
+
+            result = self.move_file(source, dest)
+
+            self.assertTrue(dest.parent.exists(), "ディレクトリが作成されていない")
+            self.assertTrue(dest.exists(), "ファイルが移動されていない")
+            self.assertFalse(source.exists(), "source ファイルが残っている")
+            self.assertEqual(result, "success")
+
+    def test_move_file_skip_existing(self):
+        """振り分け先に同名ファイルが存在する場合、スキップすること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "source.md"
+            dest_dir = Path(tmpdir) / "dest"
+            dest_dir.mkdir()
+            dest = dest_dir / "source.md"
+
+            source.write_text("New content", encoding="utf-8")
+            dest.write_text("Existing content", encoding="utf-8")
+
+            result = self.move_file(source, dest)
+
+            self.assertTrue(source.exists(), "source ファイルが削除された")
+            self.assertEqual(
+                dest.read_text(encoding="utf-8"),
+                "Existing content",
+                "既存ファイルが上書きされた",
+            )
+            self.assertEqual(result, "skipped")
+
+    def test_move_file_source_not_found(self):
+        """存在しない source ファイルでエラーが返ること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir) / "nonexistent.md"
+            dest = Path(tmpdir) / "dest" / "nonexistent.md"
+
+            result = self.move_file(source, dest)
+
+            self.assertEqual(result, "error")
+
+
+class TestOrganizeFiles(unittest.TestCase):
+    """organize_files() のテスト (Phase 3 RED)."""
+
+    def setUp(self):
+        """テスト用に organize_files をインポート."""
+        from scripts.organize_files import organize_files
+
+        self.organize_files = organize_files
+        self.config = {
+            "genre_mapping": {
+                "engineer": "エンジニア",
+                "business": "ビジネス",
+                "economy": "経済",
+                "daily": "日常",
+                "other": "その他",
+            },
+            "unclassified_folder": "unclassified",
+        }
+
+    def test_organize_files_summary(self):
+        """処理サマリーに success/skip/error の件数が正しく含まれること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "input"
+            output_dir = Path(tmpdir) / "output"
+            input_dir.mkdir()
+
+            # engineer ファイル2件
+            for i in range(2):
+                f = input_dir / f"eng{i}.md"
+                f.write_text(
+                    f"---\ntitle: Eng{i}\ngenre: engineer\ntopic: Python\n---\nContent\n",
+                    encoding="utf-8",
+                )
+
+            # business ファイル1件
+            biz = input_dir / "biz.md"
+            biz.write_text(
+                "---\ntitle: Biz\ngenre: business\ntopic: Management\n---\nContent\n",
+                encoding="utf-8",
+            )
+
+            # genre なしファイル1件
+            noclass = input_dir / "noclass.md"
+            noclass.write_text(
+                "---\ntitle: NoClass\n---\nContent\n",
+                encoding="utf-8",
+            )
+
+            summary = self.organize_files(self.config, input_dir, output_dir)
+
+            # ProcessingSummary の検証
+            self.assertEqual(summary["total"], 4)
+            self.assertEqual(summary["success"], 4)
+            self.assertEqual(summary["skipped"], 0)
+            self.assertEqual(summary["error"], 0)
+            self.assertIn("by_genre", summary)
+
+    def test_organize_files_with_existing_dest(self):
+        """振り分け先に同名ファイルが既に存在する場合 skipped としてカウントされること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "input"
+            output_dir = Path(tmpdir) / "output"
+            input_dir.mkdir()
+
+            # ファイル作成
+            src = input_dir / "dup.md"
+            src.write_text(
+                "---\ntitle: Dup\ngenre: engineer\ntopic: Python\n---\nContent\n",
+                encoding="utf-8",
+            )
+
+            # 振り分け先に同名ファイルを事前配置
+            dest_dir = output_dir / "エンジニア" / "Python"
+            dest_dir.mkdir(parents=True)
+            existing = dest_dir / "dup.md"
+            existing.write_text("Existing", encoding="utf-8")
+
+            summary = self.organize_files(self.config, input_dir, output_dir)
+
+            self.assertEqual(summary["total"], 1)
+            self.assertEqual(summary["skipped"], 1)
+            self.assertEqual(summary["success"], 0)
+
+    def test_organize_files_empty_input(self):
+        """入力ディレクトリが空の場合、全カウント0のサマリーが返ること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "input"
+            output_dir = Path(tmpdir) / "output"
+            input_dir.mkdir()
+
+            summary = self.organize_files(self.config, input_dir, output_dir)
+
+            self.assertEqual(summary["total"], 0)
+            self.assertEqual(summary["success"], 0)
+            self.assertEqual(summary["skipped"], 0)
+            self.assertEqual(summary["error"], 0)
+
+    def test_organize_files_genre_counts(self):
+        """by_genre にジャンル別件数が正しく記録されること."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "input"
+            output_dir = Path(tmpdir) / "output"
+            input_dir.mkdir()
+
+            # 異なるジャンルのファイル
+            files_data = [
+                ("eng.md", "engineer", "Python"),
+                ("biz.md", "business", "Sales"),
+                ("eco.md", "economy", "Finance"),
+            ]
+            for fname, genre, topic in files_data:
+                f = input_dir / fname
+                f.write_text(
+                    f"---\ntitle: {fname}\ngenre: {genre}\ntopic: {topic}\n---\nContent\n",
+                    encoding="utf-8",
+                )
+
+            summary = self.organize_files(self.config, input_dir, output_dir)
+
+            self.assertEqual(summary["by_genre"].get("エンジニア", 0), 1)
+            self.assertEqual(summary["by_genre"].get("ビジネス", 0), 1)
+            self.assertEqual(summary["by_genre"].get("経済", 0), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
