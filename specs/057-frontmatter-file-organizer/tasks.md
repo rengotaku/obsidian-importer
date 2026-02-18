@@ -52,7 +52,7 @@
 
 ### 入力
 
-- [ ] T008 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph1-output.md
+- [X] T008 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
@@ -84,7 +84,7 @@
 ### 検証
 
 - [x] T030 Verify `make test` passes all tests (no regressions)
-- [ ] T031 Run `make organize-preview` with test fixtures to validate output
+- [X] T031 Run `make organize-preview` with test fixtures to validate output
 - [x] T032 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph2-output.md
 
 **Checkpoint**: US1 完了 - プレビューモードが独立して動作することを確認
@@ -99,7 +99,7 @@
 
 ### 入力
 
-- [ ] T033 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph2-output.md
+- [X] T033 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
@@ -123,9 +123,9 @@
 
 ### 検証
 
-- [ ] T048 Verify `make test` passes all tests (including US1 regressions)
-- [ ] T049 Run integration test: preview → execute → verify file locations
-- [ ] T050 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph3-output.md
+- [X] T048 Verify `make test` passes all tests (including US1 regressions)
+- [X] T049 Run integration test: preview → execute → verify file locations
+- [X] T050 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph3-output.md
 
 **Checkpoint**: US1 + US2 完了 - プレビュー＆実行が独立して動作することを確認
 
@@ -139,7 +139,7 @@
 
 ### 入力
 
-- [ ] T051 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph3-output.md
+- [X] T051 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
@@ -175,20 +175,20 @@
 
 ### 入力
 
-- [ ] T067 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph4-output.md
+- [X] T067 Read previous phase output: specs/057-frontmatter-file-organizer/tasks/ph4-output.md
 
 ### 実装
 
-- [ ] T068 [P] Add docstrings to all public functions in scripts/organize_files.py
-- [ ] T069 [P] Run `make lint` and fix any ruff warnings
-- [ ] T070 [P] Update Makefile help section with new targets
-- [ ] T071 Verify quickstart.md scenarios work as documented
+- [X] T068 [P] Add docstrings to all public functions in scripts/organize_files.py
+- [X] T069 [P] Run `make lint` and fix any ruff warnings
+- [X] T070 [P] Update Makefile help section with new targets
+- [X] T071 Verify quickstart.md scenarios work as documented
 
 ### 検証
 
-- [ ] T072 Run `make test` to verify all tests pass after cleanup
-- [ ] T073 Run `make coverage` and verify ≥80% coverage
-- [ ] T074 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph5-output.md
+- [X] T072 Run `make test` to verify all tests pass after cleanup
+- [X] T073 Run `make coverage` and verify ≥80% coverage
+- [X] T074 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph5-output.md
 
 ---
 
