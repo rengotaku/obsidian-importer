@@ -56,18 +56,18 @@
 
 ### テスト実装 (RED)
 
-- [ ] T009 [P] [US1] Implement test_load_config_success for config loading in tests/test_organize_files.py
-- [ ] T010 [P] [US1] Implement test_load_config_not_found for missing config error in tests/test_organize_files.py
-- [ ] T011 [P] [US1] Implement test_parse_frontmatter for YAML parsing in tests/test_organize_files.py
-- [ ] T012 [P] [US1] Implement test_parse_frontmatter_invalid for invalid YAML handling in tests/test_organize_files.py
-- [ ] T013 [P] [US1] Implement test_get_genre_mapping for English→Japanese mapping in tests/test_organize_files.py
-- [ ] T014 [P] [US1] Implement test_get_genre_mapping_unknown for unknown genre→その他 fallback in tests/test_organize_files.py
-- [ ] T015 [P] [US1] Implement test_sanitize_topic for special character replacement in tests/test_organize_files.py
-- [ ] T016 [P] [US1] Implement test_preview_genre_counts for genre count summary in tests/test_organize_files.py
-- [ ] T017 [P] [US1] Implement test_preview_folder_existence for folder existence check in tests/test_organize_files.py
-- [ ] T018 [P] [US1] Implement test_preview_empty_input for no files scenario in tests/test_organize_files.py
-- [ ] T019 Verify `make test` FAIL (RED)
-- [ ] T020 Generate RED output: specs/057-frontmatter-file-organizer/red-tests/ph2-test.md
+- [x] T009 [P] [US1] Implement test_load_config_success for config loading in tests/test_organize_files.py
+- [x] T010 [P] [US1] Implement test_load_config_not_found for missing config error in tests/test_organize_files.py
+- [x] T011 [P] [US1] Implement test_parse_frontmatter for YAML parsing in tests/test_organize_files.py
+- [x] T012 [P] [US1] Implement test_parse_frontmatter_invalid for invalid YAML handling in tests/test_organize_files.py
+- [x] T013 [P] [US1] Implement test_get_genre_mapping for English→Japanese mapping in tests/test_organize_files.py
+- [x] T014 [P] [US1] Implement test_get_genre_mapping_unknown for unknown genre→その他 fallback in tests/test_organize_files.py
+- [x] T015 [P] [US1] Implement test_sanitize_topic for special character replacement in tests/test_organize_files.py
+- [x] T016 [P] [US1] Implement test_preview_genre_counts for genre count summary in tests/test_organize_files.py
+- [x] T017 [P] [US1] Implement test_preview_folder_existence for folder existence check in tests/test_organize_files.py
+- [x] T018 [P] [US1] Implement test_preview_empty_input for no files scenario in tests/test_organize_files.py
+- [x] T019 Verify `make test` FAIL (RED)
+- [x] T020 Generate RED output: specs/057-frontmatter-file-organizer/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
