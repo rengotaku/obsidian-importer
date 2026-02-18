@@ -141,10 +141,10 @@ def extract_knowledge(
         return None, error
 
     data, parse_error = parse_markdown_response(response)
-    if parse_error:
-        return None, parse_error
 
-    return data, None
+    # Return data even if parse_error (e.g., unclosed fence)
+    # Caller can use review_reason to flag the issue
+    return data, parse_error
 
 
 def _build_user_message(

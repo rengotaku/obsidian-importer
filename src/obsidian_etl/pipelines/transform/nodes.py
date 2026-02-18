@@ -140,7 +140,7 @@ def extract_knowledge(
             params=params,
         )
 
-        if error or not knowledge:
+        if not knowledge:
             logger.warning(f"LLM extraction failed for {partition_id}: {error}. Marked for review.")
             failed += 1
             # Mark for review with error details
@@ -157,6 +157,14 @@ def extract_knowledge(
             streaming_file.write_text(json.dumps(item, ensure_ascii=False, indent=2))
             output[partition_id] = item
             continue
+
+        # Parse error but knowledge exists (e.g., unclosed fence) - use knowledge but flag for review
+        if error:
+            logger.warning(
+                f"Parse error for {partition_id}: {error}. Content preserved, marked for review."
+            )
+            item["review_reason"] = f"LLM extraction warning: {error}"
+            item["review_node"] = "extract_knowledge"
 
         # Check for empty summary_content
         summary_content = knowledge.get("summary_content", "")
@@ -299,6 +307,9 @@ def generate_metadata(
             "source_provider": item["source_provider"],
             "file_id": item["file_id"],
             "normalized": True,
+            "is_chunked": item.get("is_chunked", False),
+            "chunk_index": item.get("chunk_index"),
+            "total_chunks": item.get("total_chunks"),
         }
 
         output[partition_id] = item
@@ -387,6 +398,17 @@ def format_markdown(
             frontmatter_parts.append(f'review_reason: "{review_reason_escaped}"')
         if review_node:
             frontmatter_parts.append(f"review_node: {review_node}")
+
+        # Add chunk info to frontmatter if chunked
+        is_chunked = metadata.get("is_chunked", False)
+        if is_chunked:
+            frontmatter_parts.append("is_chunked: true")
+            chunk_index = metadata.get("chunk_index")
+            total_chunks = metadata.get("total_chunks")
+            if chunk_index is not None:
+                frontmatter_parts.append(f"chunk_index: {chunk_index}")
+            if total_chunks is not None:
+                frontmatter_parts.append(f"total_chunks: {total_chunks}")
 
         frontmatter_yaml = "\n".join(frontmatter_parts) + "\n"
 
