@@ -544,5 +544,72 @@ class TestOrganizeFiles(unittest.TestCase):
             self.assertEqual(summary["by_genre"].get("経済", 0), 1)
 
 
+class TestResolvePaths(unittest.TestCase):
+    """resolve_paths() のテスト (Phase 4 RED)."""
+
+    def setUp(self):
+        """テスト用に resolve_paths をインポート."""
+        from scripts.organize_files import resolve_paths
+
+        self.resolve_paths = resolve_paths
+
+    def test_resolve_paths_defaults(self):
+        """引数なしの場合、config のデフォルトパスが使用されること."""
+        config = {
+            "default_input": "data/input",
+            "default_output": "data/output",
+        }
+
+        input_path, output_path = self.resolve_paths(config, input_path=None, output_path=None)
+
+        self.assertEqual(input_path, Path("data/input"))
+        self.assertEqual(output_path, Path("data/output"))
+
+    def test_resolve_paths_custom_input(self):
+        """カスタム入力パスが指定された場合、config のデフォルトより優先されること."""
+        config = {
+            "default_input": "default/in",
+            "default_output": "default/out",
+        }
+
+        input_path, output_path = self.resolve_paths(
+            config, input_path="/custom/input", output_path=None
+        )
+
+        self.assertEqual(input_path, Path("/custom/input"))
+        self.assertEqual(output_path, Path("default/out"))
+
+    def test_resolve_paths_custom_output(self):
+        """カスタム出力パスが指定された場合、config のデフォルトより優先されること."""
+        config = {
+            "default_input": "default/in",
+            "default_output": "default/out",
+        }
+
+        input_path, output_path = self.resolve_paths(
+            config, input_path=None, output_path="/custom/output"
+        )
+
+        self.assertEqual(input_path, Path("default/in"))
+        self.assertEqual(output_path, Path("/custom/output"))
+
+    def test_resolve_paths_expand_tilde(self):
+        """パスに ~ が含まれる場合、ホームディレクトリに展開されること."""
+        config = {
+            "default_input": "~/input",
+            "default_output": "~/output",
+        }
+
+        input_path, output_path = self.resolve_paths(config, input_path=None, output_path=None)
+
+        # ~ が展開されてホームディレクトリパスになること
+        home_dir = Path.home()
+        self.assertEqual(input_path, home_dir / "input")
+        self.assertEqual(output_path, home_dir / "output")
+        # ~ で始まらないこと
+        self.assertFalse(str(input_path).startswith("~"))
+        self.assertFalse(str(output_path).startswith("~"))
+
+
 if __name__ == "__main__":
     unittest.main()

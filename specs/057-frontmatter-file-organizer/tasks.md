@@ -143,12 +143,12 @@
 
 ### テスト実装 (RED)
 
-- [ ] T052 [P] [US3] Implement test_cli_default_paths for default path usage in tests/test_organize_files.py
-- [ ] T053 [P] [US3] Implement test_cli_custom_input_path for custom input path in tests/test_organize_files.py
-- [ ] T054 [P] [US3] Implement test_cli_custom_output_path for custom output path in tests/test_organize_files.py
-- [ ] T055 [P] [US3] Implement test_cli_expand_tilde for ~ expansion in tests/test_organize_files.py
-- [ ] T056 Verify `make test` FAIL (RED)
-- [ ] T057 Generate RED output: specs/057-frontmatter-file-organizer/red-tests/ph4-test.md
+- [x] T052 [P] [US3] Implement test_cli_default_paths for default path usage in tests/test_organize_files.py
+- [x] T053 [P] [US3] Implement test_cli_custom_input_path for custom input path in tests/test_organize_files.py
+- [x] T054 [P] [US3] Implement test_cli_custom_output_path for custom output path in tests/test_organize_files.py
+- [x] T055 [P] [US3] Implement test_cli_expand_tilde for ~ expansion in tests/test_organize_files.py
+- [x] T056 Verify `make test` FAIL (RED)
+- [x] T057 Generate RED output: specs/057-frontmatter-file-organizer/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 
