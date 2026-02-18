@@ -114,12 +114,12 @@
 
 ### 実装 (GREEN)
 
-- [ ] T042 Read RED tests: specs/057-frontmatter-file-organizer/red-tests/ph3-test.md
-- [ ] T043 [P] [US2] Implement get_destination_path() for target path calculation in scripts/organize_files.py
-- [ ] T044 [P] [US2] Implement move_file() with directory creation and skip logic in scripts/organize_files.py
-- [ ] T045 [US2] Implement organize_files() for batch file processing with summary in scripts/organize_files.py
-- [ ] T046 [US2] Implement execute_mode() CLI handler with confirmation prompt in scripts/organize_files.py
-- [ ] T047 Verify `make test` PASS (GREEN)
+- [x] T042 Read RED tests: specs/057-frontmatter-file-organizer/red-tests/ph3-test.md
+- [x] T043 [P] [US2] Implement get_destination_path() for target path calculation in scripts/organize_files.py
+- [x] T044 [P] [US2] Implement move_file() with directory creation and skip logic in scripts/organize_files.py
+- [x] T045 [US2] Implement organize_files() for batch file processing with summary in scripts/organize_files.py
+- [x] T046 [US2] Implement execute_mode() CLI handler with confirmation prompt in scripts/organize_files.py
+- [x] T047 Verify `make test` PASS (GREEN)
 
 ### 検証
 

@@ -17,6 +17,7 @@ Usage:
 
 import argparse
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import Union
@@ -182,6 +183,166 @@ def generate_preview(config: dict, input_dir: str | Path, output_dir: str | Path
     return "\n".join(lines)
 
 
+def get_destination_path(config: dict, frontmatter: dict, filename: str, output_dir: Path) -> Path:
+    """Calculate destination path based on frontmatter genre and topic.
+
+    Args:
+        config: Configuration dictionary with genre_mapping and unclassified_folder
+        frontmatter: Parsed frontmatter dictionary
+        filename: Filename to use for destination
+        output_dir: Base output directory
+
+    Returns:
+        Path: Full destination path for the file
+    """
+    genre_en = frontmatter.get("genre", "")
+    topic = frontmatter.get("topic", "")
+
+    # Handle unclassified case (no genre or empty genre)
+    if not genre_en:
+        unclassified = config.get("unclassified_folder", "unclassified")
+        return output_dir / unclassified / filename
+
+    # Map genre to Japanese folder name
+    genre_ja = get_genre_mapping(config, genre_en)
+
+    # If no topic, place directly in genre folder
+    if not topic:
+        return output_dir / genre_ja / filename
+
+    # Sanitize topic and create nested path
+    topic_safe = sanitize_topic(topic)
+    return output_dir / genre_ja / topic_safe / filename
+
+
+def move_file(source: Path, dest: Path) -> str:
+    """Move file from source to destination with safety checks.
+
+    Args:
+        source: Source file path
+        dest: Destination file path
+
+    Returns:
+        str: Status - "success", "skipped", or "error"
+    """
+    # Check if source exists
+    if not source.exists():
+        return "error"
+
+    # Check if destination already exists
+    if dest.exists():
+        return "skipped"
+
+    # Create destination directory if needed
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Move the file
+    try:
+        shutil.move(str(source), str(dest))
+        return "success"
+    except Exception:
+        return "error"
+
+
+def organize_files(config: dict, input_dir: Path, output_dir: Path) -> dict:
+    """Organize files based on frontmatter genre/topic.
+
+    Args:
+        config: Configuration dictionary
+        input_dir: Input directory containing files
+        output_dir: Output directory for organized files
+
+    Returns:
+        dict: ProcessingSummary with total, success, skipped, error, by_genre counts
+    """
+    files = scan_files(input_dir)
+
+    summary = {
+        "total": len(files),
+        "success": 0,
+        "skipped": 0,
+        "error": 0,
+        "by_genre": {},
+    }
+
+    for file_info in files:
+        source_path = file_info["path"]
+        frontmatter = file_info["frontmatter"]
+        filename = source_path.name
+
+        # Calculate destination path
+        dest_path = get_destination_path(config, frontmatter, filename, output_dir)
+
+        # Move file and track status
+        status = move_file(source_path, dest_path)
+
+        # Update counts
+        if status == "success":
+            summary["success"] += 1
+        elif status == "skipped":
+            summary["skipped"] += 1
+        elif status == "error":
+            summary["error"] += 1
+
+        # Track by genre (for successful moves)
+        if status == "success":
+            genre_en = frontmatter.get("genre", "")
+            if genre_en:
+                genre_ja = get_genre_mapping(config, genre_en)
+            else:
+                genre_ja = config.get("unclassified_folder", "unclassified")
+
+            summary["by_genre"][genre_ja] = summary["by_genre"].get(genre_ja, 0) + 1
+
+    return summary
+
+
+def execute_mode(args) -> int:
+    """Handle execute mode (actual file movement).
+
+    Args:
+        args: Command-line arguments
+
+    Returns:
+        int: Exit code (0 for success)
+    """
+    try:
+        # Load configuration
+        config = load_config(args.config)
+
+        # Determine input/output paths
+        input_dir = Path(
+            args.input or config.get("default_input", "data/07_model_output/organized")
+        )
+        output_dir = Path(
+            args.output or config.get("default_output", "data/07_model_output/organized_out")
+        )
+
+        # Execute organization
+        summary = organize_files(config, input_dir, output_dir)
+
+        # Print summary
+        print("ファイル振り分け完了:")
+        print(f"  総ファイル数: {summary['total']}")
+        print(f"  成功: {summary['success']}")
+        print(f"  スキップ: {summary['skipped']}")
+        print(f"  エラー: {summary['error']}")
+
+        if summary["by_genre"]:
+            print("\nジャンル別件数:")
+            for genre_ja, count in sorted(summary["by_genre"].items()):
+                print(f"  {genre_ja}: {count}")
+
+        return 0
+
+    except FileNotFoundError as e:
+        print(f"エラー: {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"予期しないエラー: {e}", file=sys.stderr)
+        return 1
+
+
 def preview_mode(args) -> int:
     """Handle preview mode (--dry-run).
 
@@ -245,9 +406,7 @@ def main() -> int:
     if args.dry_run:
         return preview_mode(args)
 
-    # TODO: Implement execute mode in Phase 3
-    print("Execute mode - implementation pending (Phase 3)")
-    return 0
+    return execute_mode(args)
 
 
 if __name__ == "__main__":
