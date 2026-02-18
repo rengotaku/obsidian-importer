@@ -71,21 +71,21 @@
 
 ### 実装 (GREEN)
 
-- [ ] T021 Read RED tests: specs/057-frontmatter-file-organizer/red-tests/ph2-test.md
-- [ ] T022 [P] [US1] Implement load_config() for YAML config loading in scripts/organize_files.py
-- [ ] T023 [P] [US1] Implement parse_frontmatter() for Markdown frontmatter extraction in scripts/organize_files.py
-- [ ] T024 [P] [US1] Implement get_genre_mapping() for English→Japanese mapping with fallback in scripts/organize_files.py
-- [ ] T025 [P] [US1] Implement sanitize_topic() for special character replacement in scripts/organize_files.py
-- [ ] T026 [P] [US1] Implement scan_files() to collect all .md files with frontmatter in scripts/organize_files.py
-- [ ] T027 [US1] Implement generate_preview() for genre counts and folder existence in scripts/organize_files.py
-- [ ] T028 [US1] Implement preview_mode() CLI handler with formatted output in scripts/organize_files.py
-- [ ] T029 Verify `make test` PASS (GREEN)
+- [x] T021 Read RED tests: specs/057-frontmatter-file-organizer/red-tests/ph2-test.md
+- [x] T022 [P] [US1] Implement load_config() for YAML config loading in scripts/organize_files.py
+- [x] T023 [P] [US1] Implement parse_frontmatter() for Markdown frontmatter extraction in scripts/organize_files.py
+- [x] T024 [P] [US1] Implement get_genre_mapping() for English→Japanese mapping with fallback in scripts/organize_files.py
+- [x] T025 [P] [US1] Implement sanitize_topic() for special character replacement in scripts/organize_files.py
+- [x] T026 [P] [US1] Implement scan_files() to collect all .md files with frontmatter in scripts/organize_files.py
+- [x] T027 [US1] Implement generate_preview() for genre counts and folder existence in scripts/organize_files.py
+- [x] T028 [US1] Implement preview_mode() CLI handler with formatted output in scripts/organize_files.py
+- [x] T029 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T030 Verify `make test` passes all tests (no regressions)
+- [x] T030 Verify `make test` passes all tests (no regressions)
 - [ ] T031 Run `make organize-preview` with test fixtures to validate output
-- [ ] T032 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph2-output.md
+- [x] T032 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph2-output.md
 
 **Checkpoint**: US1 完了 - プレビューモードが独立して動作することを確認
 
