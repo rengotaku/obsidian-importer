@@ -152,18 +152,18 @@
 
 ### 実装 (GREEN)
 
-- [ ] T058 Read RED tests: specs/057-frontmatter-file-organizer/red-tests/ph4-test.md
-- [ ] T059 [US3] Implement resolve_paths() for default/custom path resolution with ~ expansion in scripts/organize_files.py
-- [ ] T060 [US3] Update main() to integrate path resolution in scripts/organize_files.py
-- [ ] T061 [US3] Update Makefile targets to support INPUT/OUTPUT variables
-- [ ] T062 Verify `make test` PASS (GREEN)
+- [x] T058 Read RED tests: specs/057-frontmatter-file-organizer/red-tests/ph4-test.md
+- [x] T059 [US3] Implement resolve_paths() for default/custom path resolution with ~ expansion in scripts/organize_files.py
+- [x] T060 [US3] Update main() to integrate path resolution in scripts/organize_files.py
+- [x] T061 [US3] Update Makefile targets to support INPUT/OUTPUT variables
+- [x] T062 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T063 Verify `make test` passes all tests (including US1, US2 regressions)
-- [ ] T064 Test `make organize-preview INPUT=/custom/path`
-- [ ] T065 Test `make organize OUTPUT=/custom/path`
-- [ ] T066 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph4-output.md
+- [x] T063 Verify `make test` passes all tests (including US1, US2 regressions)
+- [x] T064 Test `make organize-preview INPUT=/custom/path`
+- [x] T065 Test `make organize OUTPUT=/custom/path`
+- [x] T066 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph4-output.md
 
 **Checkpoint**: US1 + US2 + US3 完了 - 全ユーザーストーリーが動作することを確認
 

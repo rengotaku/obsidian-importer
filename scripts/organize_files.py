@@ -297,6 +297,32 @@ def organize_files(config: dict, input_dir: Path, output_dir: Path) -> dict:
     return summary
 
 
+def resolve_paths(
+    config: dict,
+    input_path: str | None = None,
+    output_path: str | None = None,
+) -> tuple[Path, Path]:
+    """Resolve input and output paths with defaults and ~ expansion.
+
+    Args:
+        config: Configuration dictionary with default_input and default_output keys
+        input_path: Custom input path (overrides config default if provided)
+        output_path: Custom output path (overrides config default if provided)
+
+    Returns:
+        tuple[Path, Path]: (input_path, output_path) as Path objects with ~ expanded
+    """
+    # Use custom path if provided, otherwise use config default
+    final_input = input_path if input_path is not None else config.get("default_input", "")
+    final_output = output_path if output_path is not None else config.get("default_output", "")
+
+    # Convert to Path and expand ~
+    input_p = Path(final_input).expanduser()
+    output_p = Path(final_output).expanduser()
+
+    return input_p, output_p
+
+
 def execute_mode(args) -> int:
     """Handle execute mode (actual file movement).
 
@@ -310,13 +336,8 @@ def execute_mode(args) -> int:
         # Load configuration
         config = load_config(args.config)
 
-        # Determine input/output paths
-        input_dir = Path(
-            args.input or config.get("default_input", "data/07_model_output/organized")
-        )
-        output_dir = Path(
-            args.output or config.get("default_output", "data/07_model_output/organized_out")
-        )
+        # Resolve input/output paths with ~ expansion
+        input_dir, output_dir = resolve_paths(config, args.input, args.output)
 
         # Execute organization
         summary = organize_files(config, input_dir, output_dir)
@@ -356,9 +377,8 @@ def preview_mode(args) -> int:
         # Load configuration
         config = load_config(args.config)
 
-        # Determine input/output paths
-        input_dir = args.input or config.get("default_input", "data/07_model_output/organized")
-        output_dir = args.output or config.get("default_output")
+        # Resolve input/output paths with ~ expansion
+        input_dir, output_dir = resolve_paths(config, args.input, args.output)
 
         # Generate and display preview
         preview_text = generate_preview(config, input_dir, output_dir)
