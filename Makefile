@@ -12,6 +12,7 @@ COMMA := ,
 .PHONY: rag-index rag-search rag-ask rag-status
 .PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
 .PHONY: run kedro-run kedro-test kedro-viz
+.PHONY: organize-preview organize
 
 # ═══════════════════════════════════════════════════════════
 # Help
@@ -44,6 +45,13 @@ help:
 	@echo "  coverage       テストカバレッジ計測 (≥80%)"
 	@echo "  check          Python構文チェック"
 	@echo "  lint           コード品質チェック (ruff)"
+	@echo ""
+	@echo "File Organization:"
+	@echo "  organize-preview"
+	@echo "                 プレビュー: ファイル振り分け計画を表示"
+	@echo "                 [INPUT=/path/to/input] [OUTPUT=/path/to/output]"
+	@echo "  organize       ファイル振り分けを実行"
+	@echo "                 [INPUT=/path/to/input] [OUTPUT=/path/to/output]"
 	@echo ""
 	@echo "RAG (Semantic Search):"
 	@echo "  rag-index      インデックス作成 [VAULT=xxx]"
@@ -314,3 +322,27 @@ endif
 rag-status:
 	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli status \
 		$(if $(FORMAT),--format $(FORMAT),)
+
+# ═══════════════════════════════════════════════════════════
+# File Organization
+# ═══════════════════════════════════════════════════════════
+
+# Preview file organization (dry-run)
+organize-preview:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  File Organization Preview"
+	@echo "═══════════════════════════════════════════════════════════"
+	@cd $(BASE_DIR) && $(PYTHON) scripts/organize_files.py --dry-run \
+		$(if $(INPUT),--input $(INPUT),) \
+		$(if $(OUTPUT),--output $(OUTPUT),) \
+		$(if $(CONFIG),--config $(CONFIG),)
+
+# Execute file organization
+organize:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  File Organization"
+	@echo "═══════════════════════════════════════════════════════════"
+	@cd $(BASE_DIR) && $(PYTHON) scripts/organize_files.py \
+		$(if $(INPUT),--input $(INPUT),) \
+		$(if $(OUTPUT),--output $(OUTPUT),) \
+		$(if $(CONFIG),--config $(CONFIG),)

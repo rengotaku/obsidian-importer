@@ -229,6 +229,9 @@ logs/
 # Kedro local config
 conf/local/
 
+# User-specific genre mapping (copy from .sample)
+conf/base/genre_mapping.yml
+
 # OS
 .DS_Store
 .Trash/

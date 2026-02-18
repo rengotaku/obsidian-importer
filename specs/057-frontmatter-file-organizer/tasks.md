@@ -34,13 +34,13 @@
 
 **Purpose**: Project initialization, configuration files, and core module scaffolding
 
-- [ ] T001 Create scripts/ directory structure
-- [ ] T002 [P] Create conf/base/genre_mapping.yml.sample with default mappings
-- [ ] T003 [P] Add conf/base/genre_mapping.yml to .gitignore
-- [ ] T004 [P] Create scripts/organize_files.py scaffold with argparse CLI (--dry-run, --input, --output, --config)
-- [ ] T005 [P] Create tests/test_organize_files.py scaffold with unittest
-- [ ] T006 Add organize-preview and organize targets to Makefile
-- [ ] T007 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph1-output.md
+- [X] T001 Create scripts/ directory structure
+- [X] T002 [P] Create conf/base/genre_mapping.yml.sample with default mappings
+- [X] T003 [P] Add conf/base/genre_mapping.yml to .gitignore
+- [X] T004 [P] Create scripts/organize_files.py scaffold with argparse CLI (--dry-run, --input, --output, --config)
+- [X] T005 [P] Create tests/test_organize_files.py scaffold with unittest
+- [X] T006 Add organize-preview and organize targets to Makefile
+- [X] T007 Generate phase output: specs/057-frontmatter-file-organizer/tasks/ph1-output.md
 
 ---
 

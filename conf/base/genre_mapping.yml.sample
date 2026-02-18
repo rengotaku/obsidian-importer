@@ -1,0 +1,17 @@
+# Genre mapping configuration for organize_files.py
+# Copy this file to genre_mapping.yml and customize as needed
+
+# Genre English -> Japanese folder name mapping
+genre_mapping:
+  engineer: エンジニア
+  business: ビジネス
+  economy: 経済
+  daily: 日常
+  other: その他
+
+# Default paths (overridable via CLI)
+default_input: data/07_model_output/organized
+default_output: ~/Documents/Obsidian/Vaults
+
+# Fallback folder for unclassified files (missing genre/topic)
+unclassified_folder: unclassified
