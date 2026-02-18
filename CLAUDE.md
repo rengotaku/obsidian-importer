@@ -211,6 +211,8 @@ file_id: abc123
 ## Active Technologies
 - Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+ (052-improve-summary-quality)
 - ファイルシステム (Markdown, JSON, JSONL)、Kedro PartitionedDataset (052-improve-summary-quality)
+- Python 3.11+ (既存プロジェクト準拠) + PyYAML (既存依存関係) (057-frontmatter-file-organizer)
+- ファイルシステム（Markdown ファイル） (057-frontmatter-file-organizer)
 
 ## Recent Changes
 - 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+
