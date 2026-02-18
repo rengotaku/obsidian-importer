@@ -52,7 +52,7 @@ import:
 
   # Chunking
   chunk_size: 25000  # Characters before splitting into chunks
-  chunk_enabled: true
+  chunk_enabled: false # FIXME: 会話の途中でぶった切ってしまうのを防ぐ必要がある
 
 # ============================================================
 # Organize Parameters

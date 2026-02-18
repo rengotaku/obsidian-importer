@@ -96,11 +96,33 @@ def check_ollama_connection(base_url: str = "http://localhost:11434") -> tuple[b
         return False, f"Error: {e}"
 
 
-# Code block fence pattern
+# Code block fence pattern (plain ``` only, language already stripped)
 _FENCE_PATTERN = re.compile(
-    r"^\s*```(?:markdown)?\s*\n([\s\S]*?)\n\s*```\s*$",
+    r"^\s*```\s*\n([\s\S]*?)\n\s*```\s*$",
     re.DOTALL,
 )
+
+# Pattern to strip language identifier from opening fence
+_FENCE_LANG_PATTERN = re.compile(r"^(\s*)```[a-zA-Z0-9]*(\s*)$", re.MULTILINE)
+
+
+def _strip_fence_language(text: str) -> str:
+    """Strip language identifier from opening code fence.
+
+    Converts ```markdown or ```python etc. to plain ```.
+    Only affects the FIRST line if it's a code fence.
+
+    Args:
+        text: Response text.
+
+    Returns:
+        Text with language identifier stripped from first fence.
+    """
+    lines = text.split("\n")
+    if lines and lines[0].strip().startswith("```"):
+        # Replace ```<lang> with ``` on first line only
+        lines[0] = _FENCE_LANG_PATTERN.sub(r"\1```\2", lines[0])
+    return "\n".join(lines)
 
 
 def parse_markdown_response(response: str) -> tuple[dict, str | None]:
@@ -113,16 +135,35 @@ def parse_markdown_response(response: str) -> tuple[dict, str | None]:
 
     Returns:
         Tuple of (parsed_dict, error_message).
+        Error is returned if outer code fence is unclosed.
     """
     if response is None or not str(response).strip():
         return {}, "Empty response"
 
     text = str(response).strip()
 
+    # Strip language identifier from outer fence (```markdown -> ```)
+    text = _strip_fence_language(text)
+
+    # Check for unclosed outer fence
+    starts_with_fence = text.startswith("```")
+    ends_with_fence = text.endswith("```")
+
+    parse_error = None
+    if starts_with_fence and not ends_with_fence:
+        # Outer fence opened but not closed - LLM output was truncated
+        # Continue parsing but flag the error
+        parse_error = "Unclosed code fence in LLM response"
+
     # Strip code block fences
     match = _FENCE_PATTERN.match(text)
     if match:
         text = match.group(1).strip()
+    elif starts_with_fence:
+        # Unclosed fence: strip opening fence line and parse content
+        lines = text.split("\n")
+        if lines and lines[0].strip().startswith("```"):
+            text = "\n".join(lines[1:]).strip()
 
     # Split sections
     title, summary, tags, summary_content = _split_markdown_sections(text)
@@ -132,7 +173,7 @@ def parse_markdown_response(response: str) -> tuple[dict, str | None]:
         "summary": summary,
         "tags": tags,
         "summary_content": summary_content,
-    }, None
+    }, parse_error
 
 
 def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
