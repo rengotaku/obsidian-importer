@@ -82,6 +82,7 @@ def classify_genre(
         existing_output = {}
 
     genre_keywords = params.get("genre_keywords", {})
+    genre_priority = params.get("genre_priority", ["engineer", "business", "economy", "daily"])
     result = {}
 
     for key, load_func in partitioned_input.items():
@@ -145,7 +146,7 @@ def classify_genre(
 
         # Try to match genre keywords in tags first (priority order)
         genre = "other"  # default
-        for genre_name in ["engineer", "business", "economy", "daily"]:
+        for genre_name in genre_priority:
             keywords = genre_keywords.get(genre_name, [])
             matched = False
             for keyword in keywords:
@@ -158,7 +159,7 @@ def classify_genre(
 
         # If no match in tags, check content
         if genre == "other":
-            for genre_name in ["engineer", "business", "economy", "daily"]:
+            for genre_name in genre_priority:
                 keywords = genre_keywords.get(genre_name, [])
                 matched = False
                 for keyword in keywords:

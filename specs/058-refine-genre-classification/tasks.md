@@ -69,16 +69,16 @@
 
 ### 実装 (GREEN)
 
-- [ ] T017 Read RED tests: specs/058-refine-genre-classification/red-tests/ph2-test.md
-- [ ] T018 [P] [US2] Add new genre keywords (ai, devops, health, parenting, travel, lifestyle) in conf/base/parameters.yml
-- [ ] T019 [P] [US1] Add genre_priority list in conf/base/parameters.yml
-- [ ] T020 [US1] Update classify_genre to use genre_priority from params in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T021 Verify `make test` PASS (GREEN)
+- [x] T017 Read RED tests: specs/058-refine-genre-classification/red-tests/ph2-test.md
+- [x] T018 [P] [US2] Add new genre keywords (ai, devops, health, parenting, travel, lifestyle) in conf/base/parameters.yml
+- [x] T019 [P] [US1] Add genre_priority list in conf/base/parameters.yml
+- [x] T020 [US1] Update classify_genre to use genre_priority from params in src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T021 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T022 Verify `make test` passes all tests (no regressions)
-- [ ] T023 Generate phase output: specs/058-refine-genre-classification/tasks/ph2-output.md
+- [x] T022 Verify `make test` passes all tests (no regressions)
+- [x] T023 Generate phase output: specs/058-refine-genre-classification/tasks/ph2-output.md
 
 **Checkpoint**: 新ジャンル分類が動作し、優先順位が設定から読み込まれる
 
