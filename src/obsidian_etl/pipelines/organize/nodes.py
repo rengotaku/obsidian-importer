@@ -556,3 +556,56 @@ def _embed_fields_in_frontmatter(
         logger.warning(f"Failed to parse frontmatter: {e}")
         # Return original content if parsing fails
         return content
+
+
+@timed_node
+def log_genre_distribution(
+    partitioned_input: dict[str, Callable],
+    params: dict,
+) -> dict[str, dict]:
+    """Log genre distribution statistics.
+
+    Args:
+        partitioned_input: PartitionedDataset-style input (dict of callables)
+        params: Pipeline parameters
+
+    Returns:
+        The input classified_items unchanged (for pipeline chaining)
+
+    Genre distribution logging:
+    - Count items per genre
+    - Calculate percentages
+    - Log in alphabetical order
+    - Handle empty input gracefully
+    """
+    # Load all items first
+    classified_items = {}
+    for key, load_func_or_item in partitioned_input.items():
+        # Handle both callable (real pipeline) and dict (memory dataset in tests)
+        if callable(load_func_or_item):
+            item = load_func_or_item()
+        else:
+            item = load_func_or_item
+        classified_items[key] = item
+
+    if not classified_items:
+        logger.info("Genre distribution: No items to process")
+        return classified_items
+
+    # Count genres
+    genre_counts = {}
+    for item_id, item in classified_items.items():
+        genre = item.get("genre", "other")
+        genre_counts[genre] = genre_counts.get(genre, 0) + 1
+
+    total = sum(genre_counts.values())
+
+    # Log distribution
+    lines = ["Genre distribution:"]
+    for genre, count in sorted(genre_counts.items()):
+        percentage = (count / total) * 100
+        lines.append(f"  {genre}: {count} ({percentage:.1f}%)")
+
+    logger.info("\n".join(lines))
+
+    return classified_items
