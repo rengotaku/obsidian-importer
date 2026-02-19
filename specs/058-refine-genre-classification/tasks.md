@@ -127,13 +127,13 @@
 
 ### 入力
 
-- [ ] T037 Read previous phase output: specs/058-refine-genre-classification/tasks/ph3-output.md
+- [x] T037 Read previous phase output: specs/058-refine-genre-classification/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T038 [P] Implement test_log_genre_distribution for genre stats logging in tests/test_organize_files.py
-- [ ] T039 Verify `make test` FAIL (RED)
-- [ ] T040 Generate RED output: specs/058-refine-genre-classification/red-tests/ph4-test.md
+- [x] T038 [P] Implement test_log_genre_distribution for genre stats logging in tests/test_organize_files.py
+- [x] T039 Verify `make test` FAIL (RED)
+- [x] T040 Generate RED output: specs/058-refine-genre-classification/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 

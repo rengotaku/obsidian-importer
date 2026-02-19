@@ -22,6 +22,7 @@ from obsidian_etl.pipelines.organize.nodes import (
     clean_content,
     embed_frontmatter_fields,
     extract_topic,
+    log_genre_distribution,
     normalize_frontmatter,
 )
 
@@ -1424,6 +1425,108 @@ class TestExtractTopicUsesOllamaConfig(unittest.TestCase):
             call_kwargs = mock_call_ollama.call_args
             # Check that num_predict argument is 64 (from functions.extract_topic)
             self.assertEqual(call_kwargs.kwargs.get("num_predict"), 64)
+
+
+# ============================================================
+# log_genre_distribution node tests (Phase 4 - 058-refine-genre-classification)
+# ============================================================
+
+
+class TestLogGenreDistribution(unittest.TestCase):
+    """log_genre_distribution: ジャンル分布（件数・割合）をログ出力する。
+
+    FR-008: パイプライン完了時にジャンル分布がログ出力されること。
+    """
+
+    def test_log_genre_distribution_logs_counts(self):
+        """各ジャンルの件数がログ出力されること。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "engineer"},
+            "item3": {"item_id": "3", "genre": "engineer"},
+            "item4": {"item_id": "4", "genre": "other"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            log_genre_distribution(partitioned_input, params)
+
+            # logger.info が呼ばれたことを確認
+            mock_logger.info.assert_called()
+
+            # 全ての info 呼び出しの引数を結合して検証
+            all_log_calls = " ".join(str(call) for call in mock_logger.info.call_args_list)
+            self.assertIn("ai", all_log_calls)
+            self.assertIn("1", all_log_calls)
+            self.assertIn("engineer", all_log_calls)
+            self.assertIn("2", all_log_calls)
+            self.assertIn("other", all_log_calls)
+
+    def test_log_genre_distribution_logs_percentages(self):
+        """各ジャンルの割合（%）がログ出力されること。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "ai"},
+            "item3": {"item_id": "3", "genre": "engineer"},
+            "item4": {"item_id": "4", "genre": "other"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            log_genre_distribution(partitioned_input, params)
+
+            all_log_calls = " ".join(str(call) for call in mock_logger.info.call_args_list)
+            # ai: 2/4 = 50.0%
+            self.assertIn("50.0%", all_log_calls)
+            # engineer: 1/4 = 25.0%
+            self.assertIn("25.0%", all_log_calls)
+            # other: 1/4 = 25.0%
+            self.assertIn("25.0%", all_log_calls)
+
+    def test_log_genre_distribution_empty_input(self):
+        """空の入力でもエラーにならないこと。"""
+        partitioned_input = _make_partitioned_input({})
+        params = _make_organize_params()
+
+        # 空入力でも例外が発生しないこと
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            log_genre_distribution(partitioned_input, params)
+
+    def test_log_genre_distribution_single_genre(self):
+        """全アイテムが同一ジャンルの場合、100.0% と表示されること。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "ai"},
+            "item3": {"item_id": "3", "genre": "ai"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            log_genre_distribution(partitioned_input, params)
+
+            all_log_calls = " ".join(str(call) for call in mock_logger.info.call_args_list)
+            self.assertIn("ai", all_log_calls)
+            self.assertIn("3", all_log_calls)
+            self.assertIn("100.0%", all_log_calls)
+
+    def test_log_genre_distribution_returns_input(self):
+        """入力をそのまま返すこと（パイプラインの次ノードに渡すため）。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "engineer"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            result = log_genre_distribution(partitioned_input, params)
+
+        # 入力と同じ dict が返されること
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 2)
 
 
 if __name__ == "__main__":
