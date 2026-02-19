@@ -11,9 +11,7 @@ This module implements the organize pipeline nodes:
 from __future__ import annotations
 
 import logging
-import time
 from collections.abc import Callable
-from pathlib import Path
 
 import yaml
 
@@ -594,7 +592,7 @@ def log_genre_distribution(
 
     # Count genres
     genre_counts = {}
-    for item_id, item in classified_items.items():
+    for _item_id, item in classified_items.items():
         genre = item.get("genre", "other")
         genre_counts[genre] = genre_counts.get(genre, 0) + 1
 

@@ -179,11 +179,17 @@ file_id: abc123
 
 | ジャンル | 内容 |
 |---------|------|
-| エンジニア | プログラミング、システム設計、DevOps、技術ベストプラクティス |
-| ビジネス | ビジネス書、コミュニケーション、マネジメント、キャリア |
-| 経済 | 経済ニュース、企業分析、投資、金融、政策 |
-| 日常 | 日常生活、趣味、雑記 |
-| その他 | 上記に該当しない価値あるコンテンツ |
+| AI | AI/ML、生成AI、機械学習、Claude、ChatGPT |
+| DevOps | インフラ、クラウド、CI/CD、Docker、Kubernetes |
+| エンジニア | プログラミング、アーキテクチャ、API、データベース |
+| 経済 | 経済ニュース、投資、金融、市場 |
+| ビジネス | ビジネス、マネジメント、リーダーシップ、マーケティング |
+| 健康 | 健康、医療、フィットネス、運動 |
+| 子育て | 子育て、育児、教育、キッザニア |
+| 旅行 | 旅行、観光、ホテル |
+| ライフスタイル | 家電、DIY、住居、生活用品 |
+| 日常 | 日記、趣味、雑記 |
+| その他 | 上記に該当しないコンテンツ |
 
 ---
 
@@ -213,6 +219,8 @@ file_id: abc123
 - ファイルシステム (Markdown, JSON, JSONL)、Kedro PartitionedDataset (052-improve-summary-quality)
 - Python 3.11+ (既存プロジェクト準拠) + PyYAML (既存依存関係) (057-frontmatter-file-organizer)
 - ファイルシステム（Markdown ファイル） (057-frontmatter-file-organizer)
+- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+ (058-refine-genre-classification)
+- ファイルシステム (PartitionedDataset) (058-refine-genre-classification)
 
 ## Recent Changes
 - 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+

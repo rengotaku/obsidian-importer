@@ -157,19 +157,19 @@
 
 ### 入力
 
-- [ ] T047 Read previous phase output: specs/058-refine-genre-classification/tasks/ph4-output.md
+- [x] T047 Read previous phase output: specs/058-refine-genre-classification/tasks/ph4-output.md
 
 ### 実装
 
-- [ ] T048 [P] Update CLAUDE.md ジャンル説明 section with new genres
-- [ ] T049 [P] Run quickstart.md validation steps
-- [ ] T050 Code cleanup and remove any debug statements
+- [x] T048 [P] Update CLAUDE.md ジャンル説明 section with new genres
+- [x] T049 [P] Run quickstart.md validation steps
+- [x] T050 Code cleanup and remove any debug statements
 
 ### 検証
 
-- [ ] T051 Run `make test` to verify all tests pass after cleanup
-- [ ] T052 Run `make lint` to verify code quality
-- [ ] T053 Generate phase output: specs/058-refine-genre-classification/tasks/ph5-output.md
+- [x] T051 Run `make test` to verify all tests pass after cleanup
+- [x] T052 Run `make lint` to verify code quality
+- [x] T053 Generate phase output: specs/058-refine-genre-classification/tasks/ph5-output.md
 
 ---
 
