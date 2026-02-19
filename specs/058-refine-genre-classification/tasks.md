@@ -105,15 +105,15 @@
 
 ### 実装 (GREEN)
 
-- [ ] T031 Read RED tests: specs/058-refine-genre-classification/red-tests/ph3-test.md
-- [ ] T032 [US3] Verify existing genre keywords are preserved in conf/base/parameters.yml
-- [ ] T033 [US3] Update any existing tests that fail due to priority order changes in tests/test_organize_files.py
-- [ ] T034 Verify `make test` PASS (GREEN)
+- [x] T031 Read RED tests: specs/058-refine-genre-classification/red-tests/ph3-test.md
+- [x] T032 [US3] Verify existing genre keywords are preserved in conf/base/parameters.yml
+- [x] T033 [US3] Update any existing tests that fail due to priority order changes in tests/test_organize_files.py
+- [x] T034 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T035 Verify `make test` passes all tests (including US1, US2 tests)
-- [ ] T036 Generate phase output: specs/058-refine-genre-classification/tasks/ph3-output.md
+- [x] T035 Verify `make test` passes all tests (including US1, US2 tests)
+- [x] T036 Generate phase output: specs/058-refine-genre-classification/tasks/ph3-output.md
 
 **Checkpoint**: 既存4ジャンルの分類が維持され、全テストがパス
 
