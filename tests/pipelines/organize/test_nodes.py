@@ -76,6 +76,30 @@ def _make_organize_params() -> dict:
     """Helper to create organize params matching parameters.yml."""
     return {
         "genre_keywords": {
+            "ai": [
+                "AI",
+                "機械学習",
+                "深層学習",
+                "生成AI",
+                "プロンプト",
+                "Claude",
+                "ChatGPT",
+                "Stable Diffusion",
+                "LLM",
+                "GPT",
+            ],
+            "devops": [
+                "インフラ",
+                "コンテナ",
+                "クラウド",
+                "CI/CD",
+                "サーバー",
+                "Docker",
+                "Kubernetes",
+                "NGINX",
+                "Terraform",
+                "AWS",
+            ],
             "engineer": [
                 "プログラミング",
                 "アーキテクチャ",
@@ -96,6 +120,35 @@ def _make_organize_params() -> dict:
                 "金融",
                 "市場",
             ],
+            "health": [
+                "健康",
+                "医療",
+                "フィットネス",
+                "運動",
+                "病気",
+            ],
+            "parenting": [
+                "子育て",
+                "育児",
+                "赤ちゃん",
+                "教育",
+                "幼児",
+                "キッザニア",
+            ],
+            "travel": [
+                "旅行",
+                "観光",
+                "ホテル",
+                "航空",
+            ],
+            "lifestyle": [
+                "家電",
+                "電子レンジ",
+                "洗濯機",
+                "DIY",
+                "住居",
+                "空気清浄機",
+            ],
             "daily": [
                 "日常",
                 "趣味",
@@ -103,6 +156,18 @@ def _make_organize_params() -> dict:
                 "生活",
             ],
         },
+        "genre_priority": [
+            "ai",
+            "devops",
+            "engineer",
+            "economy",
+            "business",
+            "health",
+            "parenting",
+            "travel",
+            "lifestyle",
+            "daily",
+        ],
     }
 
 
@@ -204,6 +269,128 @@ class TestClassifyGenre(unittest.TestCase):
 
         classified_item = list(result.values())[0]
         self.assertEqual(classified_item["genre"], "engineer")
+
+    def test_classify_genre_ai(self):
+        """AI関連のタグ/コンテンツが 'ai' に分類されること。"""
+        item = _make_markdown_item(
+            title="ChatGPT を使った文章生成",
+            tags=["ChatGPT", "LLM", "生成AI"],
+        )
+        partitioned_input = _make_partitioned_input({"item-ai": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "ai")
+
+    def test_classify_genre_devops(self):
+        """DevOps関連のタグ/コンテンツが 'devops' に分類されること。"""
+        item = _make_markdown_item(
+            title="Docker コンテナの運用",
+            tags=["Docker", "コンテナ", "インフラ"],
+        )
+        partitioned_input = _make_partitioned_input({"item-devops": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "devops")
+
+    def test_classify_genre_lifestyle(self):
+        """ライフスタイル関連のタグ/コンテンツが 'lifestyle' に分類されること。"""
+        item = _make_markdown_item(
+            title="電子レンジの選び方",
+            tags=["家電", "電子レンジ"],
+        )
+        partitioned_input = _make_partitioned_input({"item-lifestyle": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "lifestyle")
+
+    def test_classify_genre_parenting(self):
+        """子育て関連のタグ/コンテンツが 'parenting' に分類されること。"""
+        item = _make_markdown_item(
+            title="赤ちゃんの離乳食",
+            tags=["子育て", "育児", "赤ちゃん"],
+        )
+        partitioned_input = _make_partitioned_input({"item-parenting": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "parenting")
+
+    def test_classify_genre_travel(self):
+        """旅行関連のタグ/コンテンツが 'travel' に分類されること。"""
+        item = _make_markdown_item(
+            title="宮崎への家族旅行",
+            tags=["旅行", "観光"],
+        )
+        partitioned_input = _make_partitioned_input({"item-travel": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "travel")
+
+    def test_classify_genre_health(self):
+        """健康関連のタグ/コンテンツが 'health' に分類されること。"""
+        item = _make_markdown_item(
+            title="フィットネスと健康管理",
+            tags=["健康", "フィットネス", "運動"],
+        )
+        partitioned_input = _make_partitioned_input({"item-health": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "health")
+
+    def test_classify_genre_priority_ai_over_engineer(self):
+        """AI と engineer の両方にマッチする場合、ai が優先されること。
+
+        「Claude でプログラミング」は ai キーワード (Claude) と
+        engineer キーワード (プログラミング) の両方にマッチするが、
+        優先順位により ai に分類される。
+        """
+        item = _make_markdown_item(
+            title="Claude でプログラミング",
+            tags=["Claude", "プログラミング"],
+        )
+        partitioned_input = _make_partitioned_input({"item-ai-eng": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "ai")
+
+    def test_classify_genre_priority_devops_over_engineer(self):
+        """DevOps と engineer の両方にマッチする場合、devops が優先されること。
+
+        「AWS でのAPI設計」は devops キーワード (AWS) と
+        engineer キーワード (API) の両方にマッチするが、
+        優先順位により devops に分類される。
+        """
+        item = _make_markdown_item(
+            title="AWS でのAPI設計",
+            tags=["AWS", "API"],
+        )
+        partitioned_input = _make_partitioned_input({"item-devops-eng": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "devops")
 
     def test_classify_genre_multiple_items(self):
         """複数アイテムがそれぞれ正しくジャンル分類されること。"""
