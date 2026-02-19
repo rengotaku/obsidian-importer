@@ -92,16 +92,16 @@
 
 ### 入力
 
-- [ ] T024 Read previous phase output: specs/058-refine-genre-classification/tasks/ph2-output.md
+- [x] T024 Read previous phase output: specs/058-refine-genre-classification/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T025 [P] [US3] Implement test_classify_genre_engineer_unchanged for engineer keywords in tests/test_organize_files.py
-- [ ] T026 [P] [US3] Implement test_classify_genre_business_unchanged for business keywords in tests/test_organize_files.py
-- [ ] T027 [P] [US3] Implement test_classify_genre_economy_unchanged for economy keywords in tests/test_organize_files.py
-- [ ] T028 [P] [US3] Implement test_classify_genre_daily_unchanged for daily keywords in tests/test_organize_files.py
-- [ ] T029 Verify `make test` FAIL (RED) - 既存テストの期待値更新が必要な場合
-- [ ] T030 Generate RED output: specs/058-refine-genre-classification/red-tests/ph3-test.md
+- [x] T025 [P] [US3] Implement test_classify_genre_engineer_unchanged for engineer keywords in tests/test_organize_files.py
+- [x] T026 [P] [US3] Implement test_classify_genre_business_unchanged for business keywords in tests/test_organize_files.py
+- [x] T027 [P] [US3] Implement test_classify_genre_economy_unchanged for economy keywords in tests/test_organize_files.py
+- [x] T028 [P] [US3] Implement test_classify_genre_daily_unchanged for daily keywords in tests/test_organize_files.py
+- [x] T029 Verify `make test` FAIL (RED) - 既存テストの期待値更新が必要な場合
+- [x] T030 Generate RED output: specs/058-refine-genre-classification/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 

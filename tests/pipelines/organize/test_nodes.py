@@ -392,6 +392,142 @@ class TestClassifyGenre(unittest.TestCase):
         classified_item = list(result.values())[0]
         self.assertEqual(classified_item["genre"], "devops")
 
+    # ============================================================
+    # US3: Backward compatibility tests for existing 4 genres
+    # ============================================================
+
+    def test_classify_genre_engineer_unchanged(self):
+        """US3後方互換: engineer キーワードのみで engineer に分類されること。
+
+        新ジャンル追加後も、engineer 固有のキーワード（プログラミング）のみを含む
+        コンテンツは従来通り engineer に分類される。ai/devops と重複しないキーワードを使用。
+        """
+        content = (
+            "---\n"
+            "title: プログラミングの基本\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - プログラミング\n"
+            "  - 入門\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "プログラミングの基礎概念を学ぶ。変数、関数、条件分岐について。\n"
+        )
+        item = _make_markdown_item(
+            title="プログラミングの基本",
+            tags=["プログラミング", "入門"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-eng-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "engineer")
+
+    def test_classify_genre_business_unchanged(self):
+        """US3後方互換: business キーワードのみで business に分類されること。
+
+        新ジャンル追加後も、business 固有のキーワード（マネジメント）のみを含む
+        コンテンツは従来通り business に分類される。
+        """
+        content = (
+            "---\n"
+            "title: マネジメント手法\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - マネジメント\n"
+            "  - 組織\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "マネジメントの基本手法について解説する。\n"
+        )
+        item = _make_markdown_item(
+            title="マネジメント手法",
+            tags=["マネジメント", "組織"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-biz-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "business")
+
+    def test_classify_genre_economy_unchanged(self):
+        """US3後方互換: economy キーワードのみで economy に分類されること。
+
+        新ジャンル追加後も、economy 固有のキーワード（投資）のみを含む
+        コンテンツは従来通り economy に分類される。
+        """
+        content = (
+            "---\n"
+            "title: 投資戦略の分析\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - 投資\n"
+            "  - 戦略\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "長期投資戦略について分析する。\n"
+        )
+        item = _make_markdown_item(
+            title="投資戦略の分析",
+            tags=["投資", "戦略"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-eco-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "economy")
+
+    def test_classify_genre_daily_unchanged(self):
+        """US3後方互換: daily キーワードのみで daily に分類されること。
+
+        新ジャンル追加後も、daily 固有のキーワード（日常）のみを含む
+        コンテンツは従来通り daily に分類される。
+        """
+        content = (
+            "---\n"
+            "title: 日常の記録\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - 日常\n"
+            "  - 記録\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "日常の出来事を記録する。\n"
+        )
+        item = _make_markdown_item(
+            title="日常の記録",
+            tags=["日常", "記録"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-daily-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "daily")
+
     def test_classify_genre_multiple_items(self):
         """複数アイテムがそれぞれ正しくジャンル分類されること。"""
         items = {
