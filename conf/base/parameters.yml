@@ -59,6 +59,26 @@ import:
 # ============================================================
 
 organize:
+  # Vault output configuration
+  vault_base_path: "/home/takuya/Documents/Obsidian/Vaults"
+
+  # Genre to Vault mapping (used by vault_output pipeline)
+  genre_vault_mapping:
+    ai: "エンジニア"
+    devops: "エンジニア"
+    engineer: "エンジニア"
+    business: "ビジネス"
+    economy: "経済"
+    health: "日常"
+    parenting: "日常"
+    travel: "日常"
+    lifestyle: "日常"
+    daily: "日常"
+    other: "その他"
+
+  # Conflict handling mode: skip (default), overwrite, increment
+  conflict_handling: "skip"
+
   # Genre classification keywords (used by classify_genre node)
   genre_priority:
     - ai
