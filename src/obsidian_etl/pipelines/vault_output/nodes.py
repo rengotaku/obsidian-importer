@@ -63,17 +63,29 @@ def resolve_vault_destination(
 ) -> dict[str, dict]:
     """Resolve Vault destination paths for organized files.
 
+    This function maps genre metadata to Vault directories and constructs
+    full destination paths including topic subfolders.
+
     Args:
-        organized_files: PartitionedDataset-style input (dict of callables or strings)
-        params: Parameters dict with vault_base_path and genre_vault_mapping
+        organized_files: PartitionedDataset-style input (dict of callables or strings).
+                        Each value is either a callable returning markdown content
+                        or markdown content string with frontmatter.
+        params: Parameters dict with vault_base_path and genre_vault_mapping.
+                vault_base_path: Root directory for all Vaults
+                genre_vault_mapping: dict mapping genre to Vault name
 
     Returns:
         dict[partition_key, VaultDestination]: Destination information for each file.
         VaultDestination dict contains:
-        - vault_name: Target Vault name
-        - subfolder: Subfolder (topic), or empty string
-        - file_name: Output file name
-        - full_path: Complete destination path
+        - vault_name: Target Vault name (from genre_vault_mapping)
+        - subfolder: Subfolder path (sanitized topic), or empty string
+        - file_name: Output file name (title.md)
+        - full_path: Complete destination path string
+
+    Example:
+        Input file with genre="ai", topic="machine-learning", title="ML Guide"
+        → vault_name="エンジニア", subfolder="machine-learning",
+          full_path="/path/to/Vaults/エンジニア/machine-learning/ML Guide.md"
     """
     vault_base_path = params.get("vault_base_path", "")
     genre_vault_mapping = params.get("genre_vault_mapping", {})
@@ -135,17 +147,25 @@ def resolve_vault_destination(
 def check_conflicts(destinations: dict[str, dict]) -> list[dict]:
     """Check for conflicts at destination paths.
 
+    Detects existing files at destination paths that would be
+    overwritten during copy operations.
+
     Args:
-        destinations: dict[partition_key, VaultDestination]
+        destinations: dict[partition_key, VaultDestination] from resolve_vault_destination
 
     Returns:
         list[ConflictInfo]: List of conflict information dicts.
+        Empty list if no conflicts found.
         ConflictInfo dict contains:
-        - source_file: Source partition key
-        - destination: Destination path
-        - conflict_type: "exists"
-        - existing_size: File size in bytes
-        - existing_mtime: File modification timestamp
+        - source_file: Source partition key (e.g., "note1")
+        - destination: Destination path string
+        - conflict_type: Always "exists" for existing files
+        - existing_size: File size in bytes (from os.stat)
+        - existing_mtime: File modification timestamp (from os.stat)
+
+    Note:
+        Only checks for file existence. Directory creation conflicts
+        are not checked as they are handled automatically during copy.
     """
     conflicts = []
 
@@ -173,15 +193,25 @@ def log_preview_summary(
 ) -> dict:
     """Generate and log preview summary.
 
+    Logs destination distribution and conflicts to logger.info.
+    Used by organize_preview pipeline for pre-copy validation.
+
     Args:
-        destinations: dict[partition_key, VaultDestination]
-        conflicts: list[ConflictInfo]
+        destinations: dict[partition_key, VaultDestination] from resolve_vault_destination
+        conflicts: list[ConflictInfo] from check_conflicts
 
     Returns:
         dict: Summary information with:
-        - total_files: Total number of files
+        - total_files: Total number of files to copy
         - total_conflicts: Number of conflicts detected
-        - vault_distribution: dict[vault_name, count]
+        - vault_distribution: dict[vault_name, count] showing file counts per Vault
+
+    Side effects:
+        Logs formatted summary table to logger.info, including:
+        - Total file count
+        - Conflict count
+        - Vault distribution table
+        - First 10 conflicts (if any)
     """
     total_files = len(destinations)
     total_conflicts = len(conflicts)
@@ -229,13 +259,36 @@ def copy_to_vault(
 ) -> list[dict]:
     """Copy organized files to Vault destinations.
 
+    Handles file copying with conflict resolution strategies:
+    - skip: Skip existing files (default)
+    - overwrite: Replace existing files
+    - increment: Save as file_1.md, file_2.md, etc.
+
     Args:
-        organized_files: PartitionedDataset-style input (dict of callables or strings)
+        organized_files: PartitionedDataset-style input (dict of callables or strings).
+                        Keys must match destinations keys.
         destinations: dict[partition_key, VaultDestination] from resolve_vault_destination
-        params: Parameters dict with conflict_handling mode
+        params: Parameters dict with conflict_handling mode.
+                conflict_handling: "skip" (default), "overwrite", or "increment"
 
     Returns:
         list[CopyResult]: Results for each copy operation.
+        CopyResult dict contains:
+        - source: Source partition key
+        - destination: Destination path string (or None if skipped/error)
+        - status: "copied", "skipped", "overwritten", "incremented", or "error"
+        - error_message: Error description (or None if successful)
+
+    Side effects:
+        - Creates destination directories as needed (parents=True)
+        - Writes files to destination paths
+        - Logs copy operations to logger.info
+        - Logs errors to logger.warning
+
+    Error handling:
+        - PermissionError: Caught and returned as error status, does not raise
+        - Missing source: Returned as error status
+        - Creates parent directories automatically
     """
     conflict_handling = params.get("conflict_handling", "skip")
     results = []
@@ -336,11 +389,25 @@ def copy_to_vault(
 def log_copy_summary(copy_results: list[dict]) -> dict:
     """Generate and log copy summary.
 
+    Aggregates copy operation results and logs summary statistics.
+    Used by organize_to_vault pipeline for post-copy reporting.
+
     Args:
         copy_results: list[CopyResult] from copy_to_vault
 
     Returns:
-        dict: Summary information with total, copied, skipped, errors counts.
+        dict: Summary information with:
+        - total: Total number of operations
+        - copied: Count of newly copied files
+        - overwritten: Count of replaced files
+        - incremented: Count of files saved with incremented names
+        - skipped: Count of skipped files (existing files in skip mode)
+        - errors: Count of failed operations
+
+    Side effects:
+        Logs formatted summary table to logger.info, including:
+        - Operation counts for each status
+        - Error details (source and error_message) for failed operations
     """
     total = len(copy_results)
     copied = sum(1 for r in copy_results if r["status"] == "copied")

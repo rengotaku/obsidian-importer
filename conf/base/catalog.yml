@@ -207,3 +207,14 @@ organized_notes:
     kedro-viz:
       layer: model_output
 
+organized_files:
+  type: partitions.PartitionedDataset
+  path: data/07_model_output/organized
+  dataset:
+    type: text.TextDataset
+  filename_suffix: ".md"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_output
+

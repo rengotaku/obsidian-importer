@@ -199,19 +199,19 @@
 
 ### 入力
 
-- [ ] T067 Read previous phase output: specs/059-organize-vault-output/tasks/ph5-output.md
+- [x] T067 Read previous phase output: specs/059-organize-vault-output/tasks/ph5-output.md
 
 ### 実装
 
-- [ ] T068 [P] Add docstrings to all public functions in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T069 [P] Verify edge cases: topic with special chars, missing genre, permission errors
-- [ ] T070 Run quickstart.md validation (manual test with real data)
+- [x] T068 [P] Add docstrings to all public functions in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T069 [P] Verify edge cases: topic with special chars, missing genre, permission errors
+- [x] T070 Run quickstart.md validation (manual test with real data)
 
 ### 検証
 
-- [ ] T071 Run `make test` to verify all tests pass
-- [ ] T072 Run `make coverage` to verify ≥80% coverage
-- [ ] T073 Generate phase output: specs/059-organize-vault-output/tasks/ph6-output.md
+- [x] T071 Run `make test` to verify all tests pass
+- [x] T072 Run `make coverage` to verify ≥80% coverage
+- [x] T073 Generate phase output: specs/059-organize-vault-output/tasks/ph6-output.md
 
 ---
 
