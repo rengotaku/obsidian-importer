@@ -328,30 +328,6 @@ rag-status:
 		$(if $(FORMAT),--format $(FORMAT),)
 
 # ═══════════════════════════════════════════════════════════
-# File Organization
-# ═══════════════════════════════════════════════════════════
-
-# Preview file organization (dry-run)
-organize-preview:
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  File Organization Preview"
-	@echo "═══════════════════════════════════════════════════════════"
-	@cd $(BASE_DIR) && $(PYTHON) scripts/organize_files.py --dry-run \
-		$(if $(INPUT),--input $(INPUT),) \
-		$(if $(OUTPUT),--output $(OUTPUT),) \
-		$(if $(CONFIG),--config $(CONFIG),)
-
-# Execute file organization
-organize:
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  File Organization"
-	@echo "═══════════════════════════════════════════════════════════"
-	@cd $(BASE_DIR) && $(PYTHON) scripts/organize_files.py \
-		$(if $(INPUT),--input $(INPUT),) \
-		$(if $(OUTPUT),--output $(OUTPUT),) \
-		$(if $(CONFIG),--config $(CONFIG),)
-
-# ═══════════════════════════════════════════════════════════
 # Vault Output (Kedro pipelines)
 # ═══════════════════════════════════════════════════════════
 
