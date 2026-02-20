@@ -15,6 +15,7 @@ from obsidian_etl.pipelines.extract_github import pipeline as extract_github
 from obsidian_etl.pipelines.extract_openai import pipeline as extract_openai
 from obsidian_etl.pipelines.organize import pipeline as organize
 from obsidian_etl.pipelines.transform import pipeline as transform
+from obsidian_etl.pipelines.vault_output import pipeline as vault_output
 
 VALID_PROVIDERS = {"claude", "openai", "github"}
 
@@ -59,6 +60,8 @@ def register_pipelines() -> dict[str, Pipeline]:
         "import_claude": import_claude_pipeline,
         "import_openai": import_openai_pipeline,
         "import_github": import_github_pipeline,
+        "organize_preview": vault_output.create_preview_pipeline(),
+        "organize_to_vault": vault_output.create_vault_pipeline(),
     }
 
     # Set __default__ based on provider

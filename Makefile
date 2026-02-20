@@ -12,7 +12,7 @@ COMMA := ,
 .PHONY: rag-index rag-search rag-ask rag-status
 .PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
 .PHONY: run kedro-run kedro-test kedro-viz
-.PHONY: organize-preview organize
+.PHONY: organize-preview organize vault-preview vault-copy
 
 # ═══════════════════════════════════════════════════════════
 # Help
@@ -52,6 +52,10 @@ help:
 	@echo "                 [INPUT=/path/to/input] [OUTPUT=/path/to/output]"
 	@echo "  organize       ファイル振り分けを実行"
 	@echo "                 [INPUT=/path/to/input] [OUTPUT=/path/to/output]"
+	@echo ""
+	@echo "Vault Output (Kedro pipelines):"
+	@echo "  vault-preview  Vault出力先プレビュー（dry-run）"
+	@echo "  vault-copy     Vaultへファイルコピー [MODE=skip|overwrite|increment]"
 	@echo ""
 	@echo "RAG (Semantic Search):"
 	@echo "  rag-index      インデックス作成 [VAULT=xxx]"
@@ -346,3 +350,26 @@ organize:
 		$(if $(INPUT),--input $(INPUT),) \
 		$(if $(OUTPUT),--output $(OUTPUT),) \
 		$(if $(CONFIG),--config $(CONFIG),)
+
+# ═══════════════════════════════════════════════════════════
+# Vault Output (Kedro pipelines)
+# ═══════════════════════════════════════════════════════════
+
+# Preview vault output destinations (dry-run, no file copy)
+# Usage: make vault-preview
+vault-preview:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  Vault Output Preview"
+	@echo "═══════════════════════════════════════════════════════════"
+	@cd $(BASE_DIR) && kedro run --pipeline=organize_preview
+
+# Copy organized files to Obsidian Vaults
+# Usage: make vault-copy
+#        make vault-copy MODE=overwrite  # 上書きモード
+#        make vault-copy MODE=increment  # 別名保存モード
+vault-copy:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  Vault Output Copy"
+	@echo "═══════════════════════════════════════════════════════════"
+	@cd $(BASE_DIR) && kedro run --pipeline=organize_to_vault \
+		$(if $(MODE),--params='{"organize.conflict_handling": "$(MODE)"}',)

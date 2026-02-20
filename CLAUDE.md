@@ -221,6 +221,7 @@ file_id: abc123
 - ファイルシステム（Markdown ファイル） (057-frontmatter-file-organizer)
 - Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+ (058-refine-genre-classification)
 - ファイルシステム (PartitionedDataset) (058-refine-genre-classification)
+- ファイルシステム (PartitionedDataset for input, 直接ファイルコピー for output) (059-organize-vault-output)
 
 ## Recent Changes
 - 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+
