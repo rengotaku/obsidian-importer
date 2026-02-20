@@ -71,19 +71,19 @@
 
 ### 実装 (GREEN)
 
-- [ ] T019 Read RED tests: specs/059-organize-vault-output/red-tests/ph2-test.md
-- [ ] T020 [P] [US1] Implement sanitize_topic() helper in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T021 [P] [US1] Implement resolve_vault_destination() node in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T022 [P] [US1] Implement check_conflicts() node in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T023 [P] [US1] Implement log_preview_summary() node in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T024 [US1] Create create_preview_pipeline() in src/obsidian_etl/pipelines/vault_output/pipeline.py
-- [ ] T025 [US1] Register organize_preview pipeline in src/obsidian_etl/pipeline_registry.py
-- [ ] T026 Verify `make test` PASS (GREEN)
+- [x] T019 Read RED tests: specs/059-organize-vault-output/red-tests/ph2-test.md
+- [x] T020 [P] [US1] Implement sanitize_topic() helper in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T021 [P] [US1] Implement resolve_vault_destination() node in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T022 [P] [US1] Implement check_conflicts() node in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T023 [P] [US1] Implement log_preview_summary() node in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T024 [US1] Create create_preview_pipeline() in src/obsidian_etl/pipelines/vault_output/pipeline.py
+- [x] T025 [US1] Register organize_preview pipeline in src/obsidian_etl/pipeline_registry.py
+- [x] T026 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T027 Verify `make test` passes all tests (no regressions)
-- [ ] T028 Generate phase output: specs/059-organize-vault-output/tasks/ph2-output.md
+- [x] T027 Verify `make test` passes all tests (no regressions)
+- [x] T028 Generate phase output: specs/059-organize-vault-output/tasks/ph2-output.md
 
 **Checkpoint**: `kedro run --pipeline=organize_preview` が動作し、出力先一覧と競合が表示される
 
