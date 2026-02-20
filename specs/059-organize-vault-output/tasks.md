@@ -97,17 +97,17 @@
 
 ### 入力
 
-- [ ] T029 Read previous phase output: specs/059-organize-vault-output/tasks/ph2-output.md
+- [x] T029 Read previous phase output: specs/059-organize-vault-output/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T030 [P] [US2] Implement test_copy_to_vault_creates_file in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T031 [P] [US2] Implement test_copy_to_vault_creates_subfolder in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T032 [P] [US3] Implement test_copy_to_vault_skip_existing in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T033 [P] [US2] Implement test_log_copy_summary_output_format in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T034 [P] [US2] Implement test_copy_to_vault_permission_error_skips in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T035 Verify `make test` FAIL (RED)
-- [ ] T036 Generate RED output: specs/059-organize-vault-output/red-tests/ph3-test.md
+- [x] T030 [P] [US2] Implement test_copy_to_vault_creates_file in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T031 [P] [US2] Implement test_copy_to_vault_creates_subfolder in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T032 [P] [US3] Implement test_copy_to_vault_skip_existing in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T033 [P] [US2] Implement test_log_copy_summary_output_format in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T034 [P] [US2] Implement test_copy_to_vault_permission_error_skips in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T035 Verify `make test` FAIL (RED)
+- [x] T036 Generate RED output: specs/059-organize-vault-output/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 

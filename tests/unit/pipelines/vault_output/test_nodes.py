@@ -1,6 +1,6 @@
-"""Tests for Vault Output pipeline nodes (Phase 2 - US1 Preview).
+"""Tests for Vault Output pipeline nodes.
 
-Tests verify:
+Phase 2 (US1 Preview) tests verify:
 - Genre to Vault mapping (ai -> engineer Vault)
 - Topic subfolder resolution
 - Empty topic handling (Vault root placement)
@@ -8,6 +8,13 @@ Tests verify:
 - Conflict detection (existing files)
 - No-conflict detection
 - Preview summary output format
+
+Phase 3 (US2+US3 Copy) tests verify:
+- File copy to vault creates destination file
+- Subdirectory creation during copy
+- Skip existing files (default conflict handling)
+- Copy summary output format
+- Permission error handling (skip, not crash)
 """
 
 from __future__ import annotations
@@ -19,6 +26,8 @@ from pathlib import Path
 
 from obsidian_etl.pipelines.vault_output.nodes import (
     check_conflicts,
+    copy_to_vault,
+    log_copy_summary,
     log_preview_summary,
     resolve_vault_destination,
     sanitize_topic,
@@ -241,6 +250,159 @@ class TestLogPreviewSummary(unittest.TestCase):
         self.assertIn("vault_distribution", result)
         self.assertEqual(result["vault_distribution"]["エンジニア"], 2)
         self.assertEqual(result["vault_distribution"]["ビジネス"], 1)
+
+
+class TestCopyToVault(unittest.TestCase):
+    """copy_to_vault: file copy with conflict handling (US2+US3)."""
+
+    def setUp(self):
+        """Set up temp directories for source and destination."""
+        self.source_dir = tempfile.mkdtemp()
+        self.vault_dir = tempfile.mkdtemp()
+        self.params = _make_vault_params()
+        self.params["vault_base_path"] = self.vault_dir
+
+    def tearDown(self):
+        """Clean up temp directories."""
+        import shutil
+
+        shutil.rmtree(self.source_dir, ignore_errors=True)
+        shutil.rmtree(self.vault_dir, ignore_errors=True)
+
+    def _write_source(self, name: str, content: str) -> Path:
+        """Helper to write a source file."""
+        path = Path(self.source_dir) / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        return path
+
+    def test_copy_to_vault_creates_file(self):
+        """ファイルが Vault の正しい位置にコピーされること。"""
+        content = _make_organized_content(title="AI Note", genre="ai", topic="python")
+        organized_files = {"note1": content}
+
+        destinations = resolve_vault_destination(organized_files, self.params)
+
+        results = copy_to_vault(organized_files, destinations, self.params)
+
+        self.assertEqual(len(results), 1)
+        result = results[0]
+        self.assertEqual(result["status"], "copied")
+        # Verify file actually exists at destination
+        dest_path = Path(result["destination"])
+        self.assertTrue(dest_path.exists())
+        # Verify content matches
+        copied_content = dest_path.read_text(encoding="utf-8")
+        self.assertEqual(copied_content, content)
+
+    def test_copy_to_vault_creates_subfolder(self):
+        """コピー時にサブフォルダが自動作成されること。"""
+        content = _make_organized_content(
+            title="Docker Guide", genre="devops", topic="docker/compose"
+        )
+        organized_files = {"note1": content}
+
+        destinations = resolve_vault_destination(organized_files, self.params)
+
+        # Subfolder should not exist yet
+        dest_path = Path(destinations["note1"]["full_path"])
+        self.assertFalse(dest_path.parent.exists())
+
+        results = copy_to_vault(organized_files, destinations, self.params)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["status"], "copied")
+        # Verify subfolder was created
+        self.assertTrue(dest_path.parent.exists())
+        self.assertTrue(dest_path.exists())
+
+    def test_copy_to_vault_skip_existing(self):
+        """既存ファイルがある場合、skip モードではスキップされること（US3）。"""
+        content = _make_organized_content(title="Existing Note", genre="ai", topic="python")
+        organized_files = {"note1": content}
+
+        destinations = resolve_vault_destination(organized_files, self.params)
+
+        # Pre-create the destination file with different content
+        dest_path = Path(destinations["note1"]["full_path"])
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        original_content = "original content that should be preserved"
+        dest_path.write_text(original_content, encoding="utf-8")
+
+        # conflict_handling defaults to "skip"
+        results = copy_to_vault(organized_files, destinations, self.params)
+
+        self.assertEqual(len(results), 1)
+        result = results[0]
+        self.assertEqual(result["status"], "skipped")
+        self.assertIsNone(result["destination"])
+        # Verify original file was NOT overwritten
+        preserved_content = dest_path.read_text(encoding="utf-8")
+        self.assertEqual(preserved_content, original_content)
+
+    def test_copy_to_vault_permission_error_skips(self):
+        """パーミッションエラー時にエラーステータスで返し、例外を投げないこと。"""
+        content = _make_organized_content(title="Permission Test", genre="ai", topic="python")
+        organized_files = {"note1": content}
+
+        destinations = resolve_vault_destination(organized_files, self.params)
+
+        # Create parent dir as read-only to cause permission error
+        dest_path = Path(destinations["note1"]["full_path"])
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        os.chmod(str(dest_path.parent), 0o444)
+
+        try:
+            results = copy_to_vault(organized_files, destinations, self.params)
+
+            self.assertEqual(len(results), 1)
+            result = results[0]
+            self.assertEqual(result["status"], "error")
+            self.assertIsNotNone(result["error_message"])
+        finally:
+            # Restore permissions for cleanup
+            os.chmod(str(dest_path.parent), 0o755)
+
+
+class TestLogCopySummary(unittest.TestCase):
+    """log_copy_summary: output format for copy results (US2)."""
+
+    def test_log_copy_summary_output_format(self):
+        """コピーサマリーが正しい形式で返されること。"""
+        copy_results = [
+            {
+                "source": "note1",
+                "destination": "/vaults/エンジニア/python/Note1.md",
+                "status": "copied",
+                "error_message": None,
+            },
+            {
+                "source": "note2",
+                "destination": None,
+                "status": "skipped",
+                "error_message": None,
+            },
+            {
+                "source": "note3",
+                "destination": "/vaults/ビジネス/Note3.md",
+                "status": "copied",
+                "error_message": None,
+            },
+            {
+                "source": "note4",
+                "destination": None,
+                "status": "error",
+                "error_message": "Permission denied",
+            },
+        ]
+
+        result = log_copy_summary(copy_results)
+
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result["total"], 4)
+        self.assertEqual(result["copied"], 2)
+        self.assertEqual(result["skipped"], 1)
+        self.assertEqual(result["errors"], 1)
 
 
 if __name__ == "__main__":
