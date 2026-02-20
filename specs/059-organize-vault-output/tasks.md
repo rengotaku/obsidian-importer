@@ -304,10 +304,10 @@ specs/059-organize-vault-output/
 
 **チェックリスト**:
 - [x] frontmatter パース部分のテスト (既存 organize で対応済み)
-- [ ] Vault 解決ロジックのテスト (resolve_vault_destination)
-- [ ] 競合検出のテスト (check_conflicts)
-- [ ] ファイルコピーのテスト (copy_to_vault)
-- [ ] End-to-End テスト（パイプライン実行）
+- [x] Vault 解決ロジックのテスト (resolve_vault_destination)
+- [x] 競合検出のテスト (check_conflicts)
+- [x] ファイルコピーのテスト (copy_to_vault)
+- [x] End-to-End テスト（パイプライン実行）
 
 ---
 
