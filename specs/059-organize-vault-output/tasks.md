@@ -111,17 +111,17 @@
 
 ### 実装 (GREEN)
 
-- [ ] T037 Read RED tests: specs/059-organize-vault-output/red-tests/ph3-test.md
-- [ ] T038 [P] [US2] Implement copy_to_vault() node in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T039 [P] [US2] Implement log_copy_summary() node in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T040 [US2] Create create_vault_pipeline() in src/obsidian_etl/pipelines/vault_output/pipeline.py
-- [ ] T041 [US2] Register organize_to_vault pipeline in src/obsidian_etl/pipeline_registry.py
-- [ ] T042 Verify `make test` PASS (GREEN)
+- [x] T037 Read RED tests: specs/059-organize-vault-output/red-tests/ph3-test.md
+- [x] T038 [P] [US2] Implement copy_to_vault() node in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T039 [P] [US2] Implement log_copy_summary() node in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T040 [US2] Create create_vault_pipeline() in src/obsidian_etl/pipelines/vault_output/pipeline.py
+- [x] T041 [US2] Register organize_to_vault pipeline in src/obsidian_etl/pipeline_registry.py
+- [x] T042 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T043 Verify `make test` passes all tests (no regressions)
-- [ ] T044 Generate phase output: specs/059-organize-vault-output/tasks/ph3-output.md
+- [x] T043 Verify `make test` passes all tests (no regressions)
+- [x] T044 Generate phase output: specs/059-organize-vault-output/tasks/ph3-output.md
 
 **Checkpoint**: `kedro run --pipeline=organize_to_vault` でファイルがコピーされ、競合時はスキップ
 

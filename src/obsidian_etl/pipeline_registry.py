@@ -61,6 +61,7 @@ def register_pipelines() -> dict[str, Pipeline]:
         "import_openai": import_openai_pipeline,
         "import_github": import_github_pipeline,
         "organize_preview": vault_output.create_preview_pipeline(),
+        "organize_to_vault": vault_output.create_vault_pipeline(),
     }
 
     # Set __default__ based on provider

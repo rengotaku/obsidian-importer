@@ -198,3 +198,132 @@ def log_preview_summary(
         "total_conflicts": total_conflicts,
         "vault_distribution": vault_distribution,
     }
+
+
+def copy_to_vault(
+    organized_files: dict[str, Callable] | dict[str, str],
+    destinations: dict[str, dict],
+    params: dict,
+) -> list[dict]:
+    """Copy organized files to Vault destinations.
+
+    Args:
+        organized_files: PartitionedDataset-style input (dict of callables or strings)
+        destinations: dict[partition_key, VaultDestination] from resolve_vault_destination
+        params: Parameters dict with conflict_handling mode
+
+    Returns:
+        list[CopyResult]: Results for each copy operation.
+    """
+    conflict_handling = params.get("conflict_handling", "skip")
+    results = []
+
+    for key, dest in destinations.items():
+        content_or_func = organized_files.get(key)
+        if content_or_func is None:
+            results.append(
+                {
+                    "source": key,
+                    "destination": None,
+                    "status": "error",
+                    "error_message": f"Source file {key} not found",
+                }
+            )
+            continue
+
+        content = content_or_func() if callable(content_or_func) else content_or_func
+        full_path = Path(dest["full_path"])
+
+        # Handle existing file (conflict)
+        try:
+            file_exists = full_path.exists()
+        except PermissionError:
+            file_exists = False  # Can't check, will fail on write anyway
+
+        if file_exists:
+            if conflict_handling == "skip":
+                results.append(
+                    {
+                        "source": key,
+                        "destination": None,
+                        "status": "skipped",
+                        "error_message": None,
+                    }
+                )
+                logger.info(f"Skipped existing file: {full_path}")
+                continue
+
+        # Create parent directory if needed
+        try:
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+        except PermissionError as e:
+            results.append(
+                {
+                    "source": key,
+                    "destination": None,
+                    "status": "error",
+                    "error_message": str(e),
+                }
+            )
+            logger.warning(f"Permission error creating directory for {key}: {e}")
+            continue
+
+        # Write file
+        try:
+            full_path.write_text(content, encoding="utf-8")
+            results.append(
+                {
+                    "source": key,
+                    "destination": str(full_path),
+                    "status": "copied",
+                    "error_message": None,
+                }
+            )
+            logger.info(f"Copied {key} -> {full_path}")
+        except PermissionError as e:
+            results.append(
+                {
+                    "source": key,
+                    "destination": None,
+                    "status": "error",
+                    "error_message": str(e),
+                }
+            )
+            logger.warning(f"Permission error writing {key}: {e}")
+
+    return results
+
+
+def log_copy_summary(copy_results: list[dict]) -> dict:
+    """Generate and log copy summary.
+
+    Args:
+        copy_results: list[CopyResult] from copy_to_vault
+
+    Returns:
+        dict: Summary information with total, copied, skipped, errors counts.
+    """
+    total = len(copy_results)
+    copied = sum(1 for r in copy_results if r["status"] == "copied")
+    skipped = sum(1 for r in copy_results if r["status"] == "skipped")
+    errors = sum(1 for r in copy_results if r["status"] == "error")
+
+    logger.info("=" * 80)
+    logger.info("Vault Output Copy Summary")
+    logger.info("=" * 80)
+    logger.info(f"Total files: {total}")
+    logger.info(f"  Copied: {copied}")
+    logger.info(f"  Skipped: {skipped}")
+    if errors > 0:
+        logger.info(f"  Errors: {errors}")
+        for r in copy_results:
+            if r["status"] == "error":
+                logger.warning(f"    {r['source']}: {r['error_message']}")
+    logger.info("=" * 80)
+
+    return {
+        "total": total,
+        "copied": copied,
+        "skipped": skipped,
+        "errors": errors,
+    }
