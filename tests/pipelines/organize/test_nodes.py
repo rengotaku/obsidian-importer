@@ -22,6 +22,7 @@ from obsidian_etl.pipelines.organize.nodes import (
     clean_content,
     embed_frontmatter_fields,
     extract_topic,
+    log_genre_distribution,
     normalize_frontmatter,
 )
 
@@ -76,6 +77,30 @@ def _make_organize_params() -> dict:
     """Helper to create organize params matching parameters.yml."""
     return {
         "genre_keywords": {
+            "ai": [
+                "AI",
+                "機械学習",
+                "深層学習",
+                "生成AI",
+                "プロンプト",
+                "Claude",
+                "ChatGPT",
+                "Stable Diffusion",
+                "LLM",
+                "GPT",
+            ],
+            "devops": [
+                "インフラ",
+                "コンテナ",
+                "クラウド",
+                "CI/CD",
+                "サーバー",
+                "Docker",
+                "Kubernetes",
+                "NGINX",
+                "Terraform",
+                "AWS",
+            ],
             "engineer": [
                 "プログラミング",
                 "アーキテクチャ",
@@ -96,6 +121,35 @@ def _make_organize_params() -> dict:
                 "金融",
                 "市場",
             ],
+            "health": [
+                "健康",
+                "医療",
+                "フィットネス",
+                "運動",
+                "病気",
+            ],
+            "parenting": [
+                "子育て",
+                "育児",
+                "赤ちゃん",
+                "教育",
+                "幼児",
+                "キッザニア",
+            ],
+            "travel": [
+                "旅行",
+                "観光",
+                "ホテル",
+                "航空",
+            ],
+            "lifestyle": [
+                "家電",
+                "電子レンジ",
+                "洗濯機",
+                "DIY",
+                "住居",
+                "空気清浄機",
+            ],
             "daily": [
                 "日常",
                 "趣味",
@@ -103,6 +157,18 @@ def _make_organize_params() -> dict:
                 "生活",
             ],
         },
+        "genre_priority": [
+            "ai",
+            "devops",
+            "engineer",
+            "economy",
+            "business",
+            "health",
+            "parenting",
+            "travel",
+            "lifestyle",
+            "daily",
+        ],
     }
 
 
@@ -204,6 +270,264 @@ class TestClassifyGenre(unittest.TestCase):
 
         classified_item = list(result.values())[0]
         self.assertEqual(classified_item["genre"], "engineer")
+
+    def test_classify_genre_ai(self):
+        """AI関連のタグ/コンテンツが 'ai' に分類されること。"""
+        item = _make_markdown_item(
+            title="ChatGPT を使った文章生成",
+            tags=["ChatGPT", "LLM", "生成AI"],
+        )
+        partitioned_input = _make_partitioned_input({"item-ai": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "ai")
+
+    def test_classify_genre_devops(self):
+        """DevOps関連のタグ/コンテンツが 'devops' に分類されること。"""
+        item = _make_markdown_item(
+            title="Docker コンテナの運用",
+            tags=["Docker", "コンテナ", "インフラ"],
+        )
+        partitioned_input = _make_partitioned_input({"item-devops": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "devops")
+
+    def test_classify_genre_lifestyle(self):
+        """ライフスタイル関連のタグ/コンテンツが 'lifestyle' に分類されること。"""
+        item = _make_markdown_item(
+            title="電子レンジの選び方",
+            tags=["家電", "電子レンジ"],
+        )
+        partitioned_input = _make_partitioned_input({"item-lifestyle": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "lifestyle")
+
+    def test_classify_genre_parenting(self):
+        """子育て関連のタグ/コンテンツが 'parenting' に分類されること。"""
+        item = _make_markdown_item(
+            title="赤ちゃんの離乳食",
+            tags=["子育て", "育児", "赤ちゃん"],
+        )
+        partitioned_input = _make_partitioned_input({"item-parenting": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "parenting")
+
+    def test_classify_genre_travel(self):
+        """旅行関連のタグ/コンテンツが 'travel' に分類されること。"""
+        item = _make_markdown_item(
+            title="宮崎への家族旅行",
+            tags=["旅行", "観光"],
+        )
+        partitioned_input = _make_partitioned_input({"item-travel": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "travel")
+
+    def test_classify_genre_health(self):
+        """健康関連のタグ/コンテンツが 'health' に分類されること。"""
+        item = _make_markdown_item(
+            title="フィットネスと健康管理",
+            tags=["健康", "フィットネス", "運動"],
+        )
+        partitioned_input = _make_partitioned_input({"item-health": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "health")
+
+    def test_classify_genre_priority_ai_over_engineer(self):
+        """AI と engineer の両方にマッチする場合、ai が優先されること。
+
+        「Claude でプログラミング」は ai キーワード (Claude) と
+        engineer キーワード (プログラミング) の両方にマッチするが、
+        優先順位により ai に分類される。
+        """
+        item = _make_markdown_item(
+            title="Claude でプログラミング",
+            tags=["Claude", "プログラミング"],
+        )
+        partitioned_input = _make_partitioned_input({"item-ai-eng": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "ai")
+
+    def test_classify_genre_priority_devops_over_engineer(self):
+        """DevOps と engineer の両方にマッチする場合、devops が優先されること。
+
+        「AWS でのAPI設計」は devops キーワード (AWS) と
+        engineer キーワード (API) の両方にマッチするが、
+        優先順位により devops に分類される。
+        """
+        item = _make_markdown_item(
+            title="AWS でのAPI設計",
+            tags=["AWS", "API"],
+        )
+        partitioned_input = _make_partitioned_input({"item-devops-eng": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "devops")
+
+    # ============================================================
+    # US3: Backward compatibility tests for existing 4 genres
+    # ============================================================
+
+    def test_classify_genre_engineer_unchanged(self):
+        """US3後方互換: engineer キーワードのみで engineer に分類されること。
+
+        新ジャンル追加後も、engineer 固有のキーワード（プログラミング）のみを含む
+        コンテンツは従来通り engineer に分類される。ai/devops と重複しないキーワードを使用。
+        """
+        content = (
+            "---\n"
+            "title: プログラミングの基本\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - プログラミング\n"
+            "  - 入門\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "プログラミングの基礎概念を学ぶ。変数、関数、条件分岐について。\n"
+        )
+        item = _make_markdown_item(
+            title="プログラミングの基本",
+            tags=["プログラミング", "入門"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-eng-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "engineer")
+
+    def test_classify_genre_business_unchanged(self):
+        """US3後方互換: business キーワードのみで business に分類されること。
+
+        新ジャンル追加後も、business 固有のキーワード（マネジメント）のみを含む
+        コンテンツは従来通り business に分類される。
+        """
+        content = (
+            "---\n"
+            "title: マネジメント手法\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - マネジメント\n"
+            "  - 組織\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "マネジメントの基本手法について解説する。\n"
+        )
+        item = _make_markdown_item(
+            title="マネジメント手法",
+            tags=["マネジメント", "組織"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-biz-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "business")
+
+    def test_classify_genre_economy_unchanged(self):
+        """US3後方互換: economy キーワードのみで economy に分類されること。
+
+        新ジャンル追加後も、economy 固有のキーワード（投資）のみを含む
+        コンテンツは従来通り economy に分類される。
+        """
+        content = (
+            "---\n"
+            "title: 投資戦略の分析\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - 投資\n"
+            "  - 戦略\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "長期投資戦略について分析する。\n"
+        )
+        item = _make_markdown_item(
+            title="投資戦略の分析",
+            tags=["投資", "戦略"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-eco-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "economy")
+
+    def test_classify_genre_daily_unchanged(self):
+        """US3後方互換: daily キーワードのみで daily に分類されること。
+
+        新ジャンル追加後も、daily 固有のキーワード（日常）のみを含む
+        コンテンツは従来通り daily に分類される。
+        """
+        content = (
+            "---\n"
+            "title: 日常の記録\n"
+            "created: 2026-01-15\n"
+            "tags:\n"
+            "  - 日常\n"
+            "  - 記録\n"
+            "normalized: true\n"
+            "---\n"
+            "\n"
+            "## 要約\n"
+            "\n"
+            "日常の出来事を記録する。\n"
+        )
+        item = _make_markdown_item(
+            title="日常の記録",
+            tags=["日常", "記録"],
+            content=content,
+        )
+        partitioned_input = _make_partitioned_input({"item-daily-compat": item})
+        params = _make_organize_params()
+
+        result = classify_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "daily")
 
     def test_classify_genre_multiple_items(self):
         """複数アイテムがそれぞれ正しくジャンル分類されること。"""
@@ -1101,6 +1425,108 @@ class TestExtractTopicUsesOllamaConfig(unittest.TestCase):
             call_kwargs = mock_call_ollama.call_args
             # Check that num_predict argument is 64 (from functions.extract_topic)
             self.assertEqual(call_kwargs.kwargs.get("num_predict"), 64)
+
+
+# ============================================================
+# log_genre_distribution node tests (Phase 4 - 058-refine-genre-classification)
+# ============================================================
+
+
+class TestLogGenreDistribution(unittest.TestCase):
+    """log_genre_distribution: ジャンル分布（件数・割合）をログ出力する。
+
+    FR-008: パイプライン完了時にジャンル分布がログ出力されること。
+    """
+
+    def test_log_genre_distribution_logs_counts(self):
+        """各ジャンルの件数がログ出力されること。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "engineer"},
+            "item3": {"item_id": "3", "genre": "engineer"},
+            "item4": {"item_id": "4", "genre": "other"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            log_genre_distribution(partitioned_input, params)
+
+            # logger.info が呼ばれたことを確認
+            mock_logger.info.assert_called()
+
+            # 全ての info 呼び出しの引数を結合して検証
+            all_log_calls = " ".join(str(call) for call in mock_logger.info.call_args_list)
+            self.assertIn("ai", all_log_calls)
+            self.assertIn("1", all_log_calls)
+            self.assertIn("engineer", all_log_calls)
+            self.assertIn("2", all_log_calls)
+            self.assertIn("other", all_log_calls)
+
+    def test_log_genre_distribution_logs_percentages(self):
+        """各ジャンルの割合（%）がログ出力されること。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "ai"},
+            "item3": {"item_id": "3", "genre": "engineer"},
+            "item4": {"item_id": "4", "genre": "other"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            log_genre_distribution(partitioned_input, params)
+
+            all_log_calls = " ".join(str(call) for call in mock_logger.info.call_args_list)
+            # ai: 2/4 = 50.0%
+            self.assertIn("50.0%", all_log_calls)
+            # engineer: 1/4 = 25.0%
+            self.assertIn("25.0%", all_log_calls)
+            # other: 1/4 = 25.0%
+            self.assertIn("25.0%", all_log_calls)
+
+    def test_log_genre_distribution_empty_input(self):
+        """空の入力でもエラーにならないこと。"""
+        partitioned_input = _make_partitioned_input({})
+        params = _make_organize_params()
+
+        # 空入力でも例外が発生しないこと
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            log_genre_distribution(partitioned_input, params)
+
+    def test_log_genre_distribution_single_genre(self):
+        """全アイテムが同一ジャンルの場合、100.0% と表示されること。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "ai"},
+            "item3": {"item_id": "3", "genre": "ai"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            log_genre_distribution(partitioned_input, params)
+
+            all_log_calls = " ".join(str(call) for call in mock_logger.info.call_args_list)
+            self.assertIn("ai", all_log_calls)
+            self.assertIn("3", all_log_calls)
+            self.assertIn("100.0%", all_log_calls)
+
+    def test_log_genre_distribution_returns_input(self):
+        """入力をそのまま返すこと（パイプラインの次ノードに渡すため）。"""
+        classified_items = {
+            "item1": {"item_id": "1", "genre": "ai"},
+            "item2": {"item_id": "2", "genre": "engineer"},
+        }
+        partitioned_input = _make_partitioned_input(classified_items)
+        params = _make_organize_params()
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            result = log_genre_distribution(partitioned_input, params)
+
+        # 入力と同じ dict が返されること
+        self.assertIsInstance(result, dict)
+        self.assertEqual(len(result), 2)
 
 
 if __name__ == "__main__":
