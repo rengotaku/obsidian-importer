@@ -146,14 +146,14 @@
 
 ### 実装 (GREEN)
 
-- [ ] T050 Read RED tests: specs/059-organize-vault-output/red-tests/ph4-test.md
-- [ ] T051 [US4] Add overwrite mode to copy_to_vault() in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T052 Verify `make test` PASS (GREEN)
+- [x] T050 Read RED tests: specs/059-organize-vault-output/red-tests/ph4-test.md
+- [x] T051 [US4] Add overwrite mode to copy_to_vault() in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T052 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T053 Verify `make test` passes all tests (no regressions)
-- [ ] T054 Generate phase output: specs/059-organize-vault-output/tasks/ph4-output.md
+- [x] T053 Verify `make test` passes all tests (no regressions)
+- [x] T054 Generate phase output: specs/059-organize-vault-output/tasks/ph4-output.md
 
 **Checkpoint**: `--overwrite` で既存ファイルが上書きされる
 

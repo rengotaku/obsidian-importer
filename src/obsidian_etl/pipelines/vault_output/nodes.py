@@ -252,6 +252,10 @@ def copy_to_vault(
                 )
                 logger.info(f"Skipped existing file: {full_path}")
                 continue
+            elif conflict_handling == "overwrite":
+                # Will overwrite below, mark as overwritten
+                pass
+            # "increment" mode handled in Phase 5
 
         # Create parent directory if needed
         try:
@@ -271,15 +275,21 @@ def copy_to_vault(
         # Write file
         try:
             full_path.write_text(content, encoding="utf-8")
+            # Determine status based on whether file existed
+            if file_exists and conflict_handling == "overwrite":
+                status = "overwritten"
+                logger.info(f"Overwritten {key} -> {full_path}")
+            else:
+                status = "copied"
+                logger.info(f"Copied {key} -> {full_path}")
             results.append(
                 {
                     "source": key,
                     "destination": str(full_path),
-                    "status": "copied",
+                    "status": status,
                     "error_message": None,
                 }
             )
-            logger.info(f"Copied {key} -> {full_path}")
         except PermissionError as e:
             results.append(
                 {
@@ -305,6 +315,7 @@ def log_copy_summary(copy_results: list[dict]) -> dict:
     """
     total = len(copy_results)
     copied = sum(1 for r in copy_results if r["status"] == "copied")
+    overwritten = sum(1 for r in copy_results if r["status"] == "overwritten")
     skipped = sum(1 for r in copy_results if r["status"] == "skipped")
     errors = sum(1 for r in copy_results if r["status"] == "error")
 
@@ -313,6 +324,8 @@ def log_copy_summary(copy_results: list[dict]) -> dict:
     logger.info("=" * 80)
     logger.info(f"Total files: {total}")
     logger.info(f"  Copied: {copied}")
+    if overwritten > 0:
+        logger.info(f"  Overwritten: {overwritten}")
     logger.info(f"  Skipped: {skipped}")
     if errors > 0:
         logger.info(f"  Errors: {errors}")
@@ -324,6 +337,7 @@ def log_copy_summary(copy_results: list[dict]) -> dict:
     return {
         "total": total,
         "copied": copied,
+        "overwritten": overwritten,
         "skipped": skipped,
         "errors": errors,
     }
