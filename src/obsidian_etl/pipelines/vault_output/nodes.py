@@ -35,6 +35,28 @@ def sanitize_topic(topic: str) -> str:
     return sanitized.strip()
 
 
+def find_incremented_path(dst: Path) -> Path:
+    """Find next available incremented path.
+
+    Args:
+        dst: Original destination path (e.g., /path/to/file.md)
+
+    Returns:
+        Path: Next available incremented path (e.g., file_1.md, file_2.md, ...)
+    """
+    stem = dst.stem  # "file"
+    suffix = dst.suffix  # ".md"
+    parent = dst.parent
+
+    counter = 1
+    while True:
+        new_name = f"{stem}_{counter}{suffix}"
+        new_path = parent / new_name
+        if not new_path.exists():
+            return new_path
+        counter += 1
+
+
 def resolve_vault_destination(
     organized_files: dict[str, Callable] | dict[str, str],
     params: dict,
@@ -240,6 +262,7 @@ def copy_to_vault(
         except PermissionError:
             file_exists = False  # Can't check, will fail on write anyway
 
+        is_incremented = False
         if file_exists:
             if conflict_handling == "skip":
                 results.append(
@@ -255,7 +278,10 @@ def copy_to_vault(
             elif conflict_handling == "overwrite":
                 # Will overwrite below, mark as overwritten
                 pass
-            # "increment" mode handled in Phase 5
+            elif conflict_handling == "increment":
+                # Find next available incremented path
+                full_path = find_incremented_path(full_path)
+                is_incremented = True
 
         # Create parent directory if needed
         try:
@@ -275,8 +301,11 @@ def copy_to_vault(
         # Write file
         try:
             full_path.write_text(content, encoding="utf-8")
-            # Determine status based on whether file existed
-            if file_exists and conflict_handling == "overwrite":
+            # Determine status based on conflict handling
+            if is_incremented:
+                status = "incremented"
+                logger.info(f"Incremented {key} -> {full_path}")
+            elif file_exists and conflict_handling == "overwrite":
                 status = "overwritten"
                 logger.info(f"Overwritten {key} -> {full_path}")
             else:
@@ -316,6 +345,7 @@ def log_copy_summary(copy_results: list[dict]) -> dict:
     total = len(copy_results)
     copied = sum(1 for r in copy_results if r["status"] == "copied")
     overwritten = sum(1 for r in copy_results if r["status"] == "overwritten")
+    incremented = sum(1 for r in copy_results if r["status"] == "incremented")
     skipped = sum(1 for r in copy_results if r["status"] == "skipped")
     errors = sum(1 for r in copy_results if r["status"] == "error")
 
@@ -326,6 +356,8 @@ def log_copy_summary(copy_results: list[dict]) -> dict:
     logger.info(f"  Copied: {copied}")
     if overwritten > 0:
         logger.info(f"  Overwritten: {overwritten}")
+    if incremented > 0:
+        logger.info(f"  Incremented: {incremented}")
     logger.info(f"  Skipped: {skipped}")
     if errors > 0:
         logger.info(f"  Errors: {errors}")
@@ -338,6 +370,7 @@ def log_copy_summary(copy_results: list[dict]) -> dict:
         "total": total,
         "copied": copied,
         "overwritten": overwritten,
+        "incremented": incremented,
         "skipped": skipped,
         "errors": errors,
     }

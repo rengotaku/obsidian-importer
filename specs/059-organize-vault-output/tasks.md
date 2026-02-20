@@ -179,15 +179,15 @@
 
 ### 実装 (GREEN)
 
-- [ ] T061 Read RED tests: specs/059-organize-vault-output/red-tests/ph5-test.md
-- [ ] T062 [P] [US5] Implement find_incremented_path() helper in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T063 [US5] Add increment mode to copy_to_vault() in src/obsidian_etl/pipelines/vault_output/nodes.py
-- [ ] T064 Verify `make test` PASS (GREEN)
+- [x] T061 Read RED tests: specs/059-organize-vault-output/red-tests/ph5-test.md
+- [x] T062 [P] [US5] Implement find_incremented_path() helper in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T063 [US5] Add increment mode to copy_to_vault() in src/obsidian_etl/pipelines/vault_output/nodes.py
+- [x] T064 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T065 Verify `make test` passes all tests (no regressions)
-- [ ] T066 Generate phase output: specs/059-organize-vault-output/tasks/ph5-output.md
+- [x] T065 Verify `make test` passes all tests (no regressions)
+- [x] T066 Generate phase output: specs/059-organize-vault-output/tasks/ph5-output.md
 
 **Checkpoint**: `--increment` で file_1.md 形式の別名ファイルが作成される
 
