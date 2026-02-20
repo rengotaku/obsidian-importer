@@ -55,19 +55,19 @@
 
 ### 入力
 
-- [ ] T009 Read previous phase output: specs/059-organize-vault-output/tasks/ph1-output.md
+- [x] T009 Read previous phase output: specs/059-organize-vault-output/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T010 [P] [US1] Implement test_resolve_vault_destination_ai_to_engineer in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T011 [P] [US1] Implement test_resolve_vault_destination_with_topic_subfolder in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T012 [P] [US1] Implement test_resolve_vault_destination_empty_topic in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T013 [P] [US1] Implement test_sanitize_topic_special_chars in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T014 [P] [US1] Implement test_check_conflicts_detects_existing_file in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T015 [P] [US1] Implement test_check_conflicts_no_conflict in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T016 [P] [US1] Implement test_log_preview_summary_output_format in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T017 Verify `make test` FAIL (RED)
-- [ ] T018 Generate RED output: specs/059-organize-vault-output/red-tests/ph2-test.md
+- [x] T010 [P] [US1] Implement test_resolve_vault_destination_ai_to_engineer in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T011 [P] [US1] Implement test_resolve_vault_destination_with_topic_subfolder in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T012 [P] [US1] Implement test_resolve_vault_destination_empty_topic in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T013 [P] [US1] Implement test_sanitize_topic_special_chars in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T014 [P] [US1] Implement test_check_conflicts_detects_existing_file in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T015 [P] [US1] Implement test_check_conflicts_no_conflict in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T016 [P] [US1] Implement test_log_preview_summary_output_format in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T017 Verify `make test` FAIL (RED)
+- [x] T018 Generate RED output: specs/059-organize-vault-output/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
