@@ -59,24 +59,36 @@ import:
 # ============================================================
 
 organize:
-  # Vault output configuration
+  # ============================================================
+  # Vault Output Settings (used by organize_preview, organize_to_vault pipelines)
+  # ============================================================
+
+  # Vault ベースパス: Obsidian Vaults のルートディレクトリ
+  # 各 Vault (エンジニア, ビジネス, etc.) がこのパス直下に存在する前提
   vault_base_path: "/home/takuya/Documents/Obsidian/Vaults"
 
-  # Genre to Vault mapping (used by vault_output pipeline)
+  # Genre → Vault マッピング
+  # frontmatter の genre フィールドから出力先 Vault を決定
+  # 例: genre: ai → エンジニア Vault に出力
+  # マッピングにない genre は "その他" Vault に出力
   genre_vault_mapping:
-    ai: "エンジニア"
-    devops: "エンジニア"
-    engineer: "エンジニア"
-    business: "ビジネス"
-    economy: "経済"
-    health: "日常"
-    parenting: "日常"
-    travel: "日常"
-    lifestyle: "日常"
-    daily: "日常"
-    other: "その他"
+    ai: "エンジニア"           # AI/ML, 生成AI, LLM
+    devops: "エンジニア"       # インフラ, CI/CD, クラウド
+    engineer: "エンジニア"     # プログラミング, アーキテクチャ
+    business: "ビジネス"       # ビジネス, マネジメント
+    economy: "経済"            # 経済, 投資, 金融
+    health: "日常"             # 健康, 医療
+    parenting: "日常"          # 子育て, 育児
+    travel: "日常"             # 旅行, 観光
+    lifestyle: "日常"          # 家電, DIY, 生活
+    daily: "日常"              # 日記, 趣味, 雑記
+    other: "その他"            # 上記以外
 
-  # Conflict handling mode: skip (default), overwrite, increment
+  # 競合処理モード (既存ファイルがある場合の動作)
+  # - skip: スキップ (デフォルト、安全)
+  # - overwrite: 上書き (既存ファイルを置換)
+  # - increment: 別名保存 (file.md → file_1.md → file_2.md)
+  # CLI: --params='{"organize.conflict_handling": "overwrite"}'
   conflict_handling: "skip"
 
   # Genre classification keywords (used by classify_genre node)
