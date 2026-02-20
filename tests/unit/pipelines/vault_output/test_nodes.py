@@ -19,6 +19,11 @@ Phase 3 (US2+US3 Copy) tests verify:
 Phase 4 (US4 Overwrite) tests verify:
 - Overwrite mode replaces existing file content
 - Overwrite mode returns "overwritten" status
+
+Phase 5 (US5 Increment) tests verify:
+- find_incremented_path returns file_1.md when file.md exists
+- find_incremented_path returns file_2.md when file.md and file_1.md exist
+- Increment mode creates file_1.md when original exists
 """
 
 from __future__ import annotations
@@ -31,6 +36,7 @@ from pathlib import Path
 from obsidian_etl.pipelines.vault_output.nodes import (
     check_conflicts,
     copy_to_vault,
+    find_incremented_path,
     log_copy_summary,
     log_preview_summary,
     resolve_vault_destination,
@@ -469,6 +475,89 @@ class TestLogCopySummary(unittest.TestCase):
         self.assertEqual(result["copied"], 2)
         self.assertEqual(result["skipped"], 1)
         self.assertEqual(result["errors"], 1)
+
+
+class TestFindIncrementedPath(unittest.TestCase):
+    """find_incremented_path: next available incremented file path (US5)."""
+
+    def test_find_incremented_path_first(self):
+        """file.md が存在し file_1.md が存在しない場合、file_1.md を返すこと。"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            existing = Path(tmpdir) / "Note.md"
+            existing.write_text("existing content", encoding="utf-8")
+
+            result = find_incremented_path(existing)
+
+            expected = Path(tmpdir) / "Note_1.md"
+            self.assertEqual(result, expected)
+            # The original file should still exist
+            self.assertTrue(existing.exists())
+            # The incremented path should NOT exist yet (just returns the path)
+            self.assertFalse(result.exists())
+
+    def test_find_incremented_path_second(self):
+        """file.md と file_1.md が存在する場合、file_2.md を返すこと。"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            existing = Path(tmpdir) / "Note.md"
+            existing.write_text("existing content", encoding="utf-8")
+            first_increment = Path(tmpdir) / "Note_1.md"
+            first_increment.write_text("first increment", encoding="utf-8")
+
+            result = find_incremented_path(existing)
+
+            expected = Path(tmpdir) / "Note_2.md"
+            self.assertEqual(result, expected)
+            self.assertFalse(result.exists())
+
+
+class TestCopyToVaultIncrement(unittest.TestCase):
+    """copy_to_vault with increment mode (US5)."""
+
+    def setUp(self):
+        """Set up temp directories for source and destination."""
+        self.source_dir = tempfile.mkdtemp()
+        self.vault_dir = tempfile.mkdtemp()
+        self.params = _make_vault_params()
+        self.params["vault_base_path"] = self.vault_dir
+        self.params["conflict_handling"] = "increment"
+
+    def tearDown(self):
+        """Clean up temp directories."""
+        import shutil
+
+        shutil.rmtree(self.source_dir, ignore_errors=True)
+        shutil.rmtree(self.vault_dir, ignore_errors=True)
+
+    def test_copy_to_vault_increment_existing(self):
+        """increment モードで既存ファイルがある場合、file_1.md として保存されること。"""
+        content = _make_organized_content(title="My Note", genre="ai", topic="python")
+        organized_files = {"note1": content}
+
+        destinations = resolve_vault_destination(organized_files, self.params)
+
+        # Pre-create the destination file with old content
+        dest_path = Path(destinations["note1"]["full_path"])
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        old_content = "original content that should be preserved"
+        dest_path.write_text(old_content, encoding="utf-8")
+
+        results = copy_to_vault(organized_files, destinations, self.params)
+
+        self.assertEqual(len(results), 1)
+        result = results[0]
+        # Should report "incremented" status
+        self.assertEqual(result["status"], "incremented")
+        self.assertIsNotNone(result["destination"])
+        # Destination should be file_1.md, not the original
+        incremented_path = Path(result["destination"])
+        self.assertTrue(incremented_path.name.endswith("_1.md"))
+        self.assertTrue(incremented_path.exists())
+        # Verify new content was written to incremented path
+        actual_content = incremented_path.read_text(encoding="utf-8")
+        self.assertEqual(actual_content, content)
+        # Verify original file was NOT modified
+        preserved_content = dest_path.read_text(encoding="utf-8")
+        self.assertEqual(preserved_content, old_content)
 
 
 if __name__ == "__main__":

@@ -167,15 +167,15 @@
 
 ### 入力
 
-- [ ] T055 Read previous phase output: specs/059-organize-vault-output/tasks/ph4-output.md
+- [x] T055 Read previous phase output: specs/059-organize-vault-output/tasks/ph4-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T056 [P] [US5] Implement test_find_incremented_path_first in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T057 [P] [US5] Implement test_find_incremented_path_second in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T058 [P] [US5] Implement test_copy_to_vault_increment_existing in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T059 Verify `make test` FAIL (RED)
-- [ ] T060 Generate RED output: specs/059-organize-vault-output/red-tests/ph5-test.md
+- [x] T056 [P] [US5] Implement test_find_incremented_path_first in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T057 [P] [US5] Implement test_find_incremented_path_second in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T058 [P] [US5] Implement test_copy_to_vault_increment_existing in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T059 Verify `make test` FAIL (RED)
+- [x] T060 Generate RED output: specs/059-organize-vault-output/red-tests/ph5-test.md
 
 ### 実装 (GREEN)
 
