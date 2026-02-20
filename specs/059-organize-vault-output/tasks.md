@@ -135,14 +135,14 @@
 
 ### 入力
 
-- [ ] T045 Read previous phase output: specs/059-organize-vault-output/tasks/ph3-output.md
+- [x] T045 Read previous phase output: specs/059-organize-vault-output/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T046 [P] [US4] Implement test_copy_to_vault_overwrite_existing in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T047 [P] [US4] Implement test_handle_conflict_overwrite_mode in tests/unit/pipelines/vault_output/test_nodes.py
-- [ ] T048 Verify `make test` FAIL (RED)
-- [ ] T049 Generate RED output: specs/059-organize-vault-output/red-tests/ph4-test.md
+- [x] T046 [P] [US4] Implement test_copy_to_vault_overwrite_existing in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T047 [P] [US4] Implement test_handle_conflict_overwrite_mode in tests/unit/pipelines/vault_output/test_nodes.py
+- [x] T048 Verify `make test` FAIL (RED)
+- [x] T049 Generate RED output: specs/059-organize-vault-output/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 

@@ -15,6 +15,10 @@ Phase 3 (US2+US3 Copy) tests verify:
 - Skip existing files (default conflict handling)
 - Copy summary output format
 - Permission error handling (skip, not crash)
+
+Phase 4 (US4 Overwrite) tests verify:
+- Overwrite mode replaces existing file content
+- Overwrite mode returns "overwritten" status
 """
 
 from __future__ import annotations
@@ -339,6 +343,68 @@ class TestCopyToVault(unittest.TestCase):
         # Verify original file was NOT overwritten
         preserved_content = dest_path.read_text(encoding="utf-8")
         self.assertEqual(preserved_content, original_content)
+
+    def test_copy_to_vault_overwrite_existing(self):
+        """overwrite モードで既存ファイルが新しい内容に上書きされること（US4）。"""
+        content = _make_organized_content(title="Updated Note", genre="ai", topic="python")
+        organized_files = {"note1": content}
+
+        destinations = resolve_vault_destination(organized_files, self.params)
+
+        # Pre-create the destination file with old content
+        dest_path = Path(destinations["note1"]["full_path"])
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        old_content = "old content that should be replaced"
+        dest_path.write_text(old_content, encoding="utf-8")
+
+        # Set conflict_handling to "overwrite"
+        overwrite_params = dict(self.params)
+        overwrite_params["conflict_handling"] = "overwrite"
+
+        results = copy_to_vault(organized_files, destinations, overwrite_params)
+
+        self.assertEqual(len(results), 1)
+        result = results[0]
+        # Should report "overwritten" status (not "copied" or "skipped")
+        self.assertEqual(result["status"], "overwritten")
+        self.assertIsNotNone(result["destination"])
+        # Verify file was actually overwritten with new content
+        actual_content = dest_path.read_text(encoding="utf-8")
+        self.assertEqual(actual_content, content)
+        self.assertNotEqual(actual_content, old_content)
+
+    def test_handle_conflict_overwrite_mode(self):
+        """overwrite モードでコピーサマリーに overwritten カウントが含まれること（US4）。"""
+        copy_results = [
+            {
+                "source": "note1",
+                "destination": "/vaults/エンジニア/python/Note1.md",
+                "status": "overwritten",
+                "error_message": None,
+            },
+            {
+                "source": "note2",
+                "destination": "/vaults/エンジニア/docker/Note2.md",
+                "status": "copied",
+                "error_message": None,
+            },
+            {
+                "source": "note3",
+                "destination": None,
+                "status": "skipped",
+                "error_message": None,
+            },
+        ]
+
+        result = log_copy_summary(copy_results)
+
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result["total"], 3)
+        self.assertEqual(result["copied"], 1)
+        self.assertEqual(result["skipped"], 1)
+        # Should include overwritten count
+        self.assertIn("overwritten", result)
+        self.assertEqual(result["overwritten"], 1)
 
     def test_copy_to_vault_permission_error_skips(self):
         """パーミッションエラー時にエラーステータスで返し、例外を投げないこと。"""
