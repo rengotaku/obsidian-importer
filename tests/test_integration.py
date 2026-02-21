@@ -504,8 +504,7 @@ class TestPipelineNodeNames(unittest.TestCase):
             "generate_metadata",
             "format_markdown",
             # Organize
-            "classify_genre",
-            "extract_topic",
+            "extract_topic_and_genre",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
@@ -530,8 +529,7 @@ class TestPipelineNodeNames(unittest.TestCase):
             "generate_metadata",
             "format_markdown",
             # Organize
-            "classify_genre",
-            "extract_topic",
+            "extract_topic_and_genre",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
@@ -558,8 +556,7 @@ class TestPipelineNodeNames(unittest.TestCase):
             "generate_metadata",
             "format_markdown",
             # Organize
-            "classify_genre",
-            "extract_topic",
+            "extract_topic_and_genre",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
@@ -713,7 +710,7 @@ class TestPartialRunFromTo(unittest.TestCase):
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
     def test_partial_run_organize_only(self, mock_extract):
-        """from_nodes=classify_genre で Organize のみ実行されること。"""
+        """from_nodes=extract_topic_and_genre で Organize のみ実行されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
         full_pipeline = self.pipelines["import_claude"]
@@ -723,7 +720,7 @@ class TestPartialRunFromTo(unittest.TestCase):
         self.runner.run(full_pipeline, catalog)
 
         # Now run only Organize part
-        organize_pipeline = full_pipeline.from_nodes("classify_genre")
+        organize_pipeline = full_pipeline.from_nodes("extract_topic_and_genre")
         catalog2 = self._build_catalog_with_intermediate_data()
 
         # Pre-populate markdown_notes from previous run

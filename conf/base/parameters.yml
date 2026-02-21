@@ -38,6 +38,11 @@ ollama:
       num_predict: 64
       timeout: 30
 
+    # Topic and genre extraction: short JSON output
+    extract_topic_and_genre:
+      num_predict: 128
+      timeout: 30
+
 # ============================================================
 # Import Parameters
 # ============================================================
@@ -69,89 +74,6 @@ import:
 # and includes: vault_base_path, genre_vault_mapping, conflict_handling,
 # genre_priority, genre_keywords
 
-# Placeholder for classify_genre node (used by other pipelines)
+# Placeholder for organize pipeline
 # This is overridden by conf/local/parameters_organize.yml when present
-organize:
-  # Genre classification keywords (used by classify_genre node in import pipeline)
-  genre_priority:
-    - ai
-    - devops
-    - engineer
-    - economy
-    - business
-    - health
-    - parenting
-    - travel
-    - lifestyle
-    - daily
-
-  genre_keywords:
-    ai:
-      - AI
-      - 機械学習
-      - 深層学習
-      - 生成AI
-      - プロンプト
-      - Claude
-      - ChatGPT
-      - Stable Diffusion
-      - LLM
-      - GPT
-    devops:
-      - インフラ
-      - コンテナ
-      - クラウド
-      - CI/CD
-      - サーバー
-      - Docker
-      - Kubernetes
-      - NGINX
-      - Terraform
-      - AWS
-    engineer:
-      - プログラミング
-      - アーキテクチャ
-      - DevOps
-      - フレームワーク
-      - API
-      - データベース
-    business:
-      - ビジネス
-      - マネジメント
-      - リーダーシップ
-      - マーケティング
-    economy:
-      - 経済
-      - 投資
-      - 金融
-      - 市場
-    health:
-      - 健康
-      - 医療
-      - フィットネス
-      - 運動
-      - 病気
-    parenting:
-      - 子育て
-      - 育児
-      - 赤ちゃん
-      - 教育
-      - 幼児
-      - キッザニア
-    travel:
-      - 旅行
-      - 観光
-      - ホテル
-      - 航空
-    lifestyle:
-      - 家電
-      - 電子レンジ
-      - 洗濯機
-      - DIY
-      - 住居
-      - 空気清浄機
-    daily:
-      - 日常
-      - 趣味
-      - 雑記
-      - 生活
+organize: {}
