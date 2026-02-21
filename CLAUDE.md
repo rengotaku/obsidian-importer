@@ -42,6 +42,10 @@ obsidian-importer/
 # 初回セットアップ
 make setup
 
+# Vault Output 設定（初回のみ）
+cp conf/base/parameters_organize.local.yml.example conf/local/parameters_organize.yml
+# vault_base_path を自分の環境に合わせて編集
+
 # パイプライン実行（デフォルト: Claude）
 kedro run
 

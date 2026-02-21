@@ -1,0 +1,128 @@
+# Organize Pipeline Settings (User-Specific)
+# Copy this file to conf/local/parameters_organize.yml:
+#   cp conf/base/parameters_organize.local.yml.example conf/local/parameters_organize.yml
+# This file is git-ignored for security.
+#
+# NOTE: This file REPLACES the organize section in base/parameters.yml,
+#       so all organize settings must be included here.
+
+organize:
+  # ============================================================
+  # User-Specific Settings (EDIT THESE)
+  # ============================================================
+
+  # Vault ベースパス: Obsidian Vaults のルートディレクトリ
+  # 各 Vault (エンジニア, ビジネス, etc.) がこのパス直下に存在する前提
+  vault_base_path: "/path/to/your/Obsidian/Vaults"
+
+  # Genre → Vault マッピング
+  # frontmatter の genre フィールドから出力先 Vault を決定
+  # 例: genre: ai → エンジニア Vault に出力
+  # マッピングにない genre は "その他" Vault に出力
+  genre_vault_mapping:
+    ai: "エンジニア"           # AI/ML, 生成AI, LLM
+    devops: "エンジニア"       # インフラ, CI/CD, クラウド
+    engineer: "エンジニア"     # プログラミング, アーキテクチャ
+    business: "ビジネス"       # ビジネス, マネジメント
+    economy: "経済"            # 経済, 投資, 金融
+    health: "日常"             # 健康, 医療
+    parenting: "日常"          # 子育て, 育児
+    travel: "日常"             # 旅行, 観光
+    lifestyle: "日常"          # 家電, DIY, 生活
+    daily: "日常"              # 日記, 趣味, 雑記
+    other: "その他"            # 上記以外
+
+  # ============================================================
+  # Pipeline Settings (usually no changes needed)
+  # ============================================================
+
+  # 競合処理モード (既存ファイルがある場合の動作)
+  # - skip: スキップ (デフォルト、安全)
+  # - overwrite: 上書き (既存ファイルを置換)
+  # - increment: 別名保存 (file.md → file_1.md → file_2.md)
+  # CLI: --params='{"organize.conflict_handling": "overwrite"}'
+  conflict_handling: "skip"
+
+  # Genre classification keywords (used by classify_genre node)
+  genre_priority:
+    - ai
+    - devops
+    - engineer
+    - economy
+    - business
+    - health
+    - parenting
+    - travel
+    - lifestyle
+    - daily
+
+  genre_keywords:
+    ai:
+      - AI
+      - 機械学習
+      - 深層学習
+      - 生成AI
+      - プロンプト
+      - Claude
+      - ChatGPT
+      - Stable Diffusion
+      - LLM
+      - GPT
+    devops:
+      - インフラ
+      - コンテナ
+      - クラウド
+      - CI/CD
+      - サーバー
+      - Docker
+      - Kubernetes
+      - NGINX
+      - Terraform
+      - AWS
+    engineer:
+      - プログラミング
+      - アーキテクチャ
+      - DevOps
+      - フレームワーク
+      - API
+      - データベース
+    business:
+      - ビジネス
+      - マネジメント
+      - リーダーシップ
+      - マーケティング
+    economy:
+      - 経済
+      - 投資
+      - 金融
+      - 市場
+    health:
+      - 健康
+      - 医療
+      - フィットネス
+      - 運動
+      - 病気
+    parenting:
+      - 子育て
+      - 育児
+      - 赤ちゃん
+      - 教育
+      - 幼児
+      - キッザニア
+    travel:
+      - 旅行
+      - 観光
+      - ホテル
+      - 航空
+    lifestyle:
+      - 家電
+      - 電子レンジ
+      - 洗濯機
+      - DIY
+      - 住居
+      - 空気清浄機
+    daily:
+      - 日常
+      - 趣味
+      - 雑記
+      - 生活
