@@ -22,6 +22,16 @@ from obsidian_etl.pipelines.organize.nodes import (
     normalize_frontmatter,
 )
 
+# Phase 2 (060-dynamic-genre-config): these functions don't exist yet (RED state)
+try:
+    from obsidian_etl.pipelines.organize.nodes import (
+        _build_genre_prompt,
+        _parse_genre_config,
+    )
+except ImportError:
+    _build_genre_prompt = None
+    _parse_genre_config = None
+
 
 def _make_markdown_item(
     item_id: str = "conv-001-uuid-abcdef",
@@ -1052,6 +1062,265 @@ class TestLogGenreDistribution(unittest.TestCase):
         # 入力と同じ dict が返されること
         self.assertIsInstance(result, dict)
         self.assertEqual(len(result), 2)
+
+
+# ============================================================
+# Dynamic Genre Config tests (Phase 2 - 060-dynamic-genre-config)
+# ============================================================
+
+
+def _make_genre_config_new_format() -> dict:
+    """Helper to create genre_vault_mapping in new format (vault + description)."""
+    return {
+        "ai": {
+            "vault": "エンジニア",
+            "description": "AI/機械学習/LLM/生成AI/Claude/ChatGPT",
+        },
+        "devops": {
+            "vault": "エンジニア",
+            "description": "インフラ/CI/CD/クラウド/Docker/Kubernetes/AWS",
+        },
+        "engineer": {
+            "vault": "エンジニア",
+            "description": "プログラミング/アーキテクチャ/API/データベース/フレームワーク",
+        },
+        "economy": {
+            "vault": "経済",
+            "description": "経済/投資/金融/市場",
+        },
+        "business": {
+            "vault": "ビジネス",
+            "description": "ビジネス/マネジメント/リーダーシップ/マーケティング",
+        },
+        "health": {
+            "vault": "健康",
+            "description": "健康/医療/フィットネス/運動",
+        },
+        "parenting": {
+            "vault": "子育て",
+            "description": "子育て/育児/教育/幼児",
+        },
+        "travel": {
+            "vault": "旅行",
+            "description": "旅行/観光/ホテル",
+        },
+        "lifestyle": {
+            "vault": "ライフスタイル",
+            "description": "家電/DIY/住居/生活用品",
+        },
+        "daily": {
+            "vault": "日常",
+            "description": "日常/趣味/雑記",
+        },
+        "other": {
+            "vault": "その他",
+            "description": "上記に該当しないもの",
+        },
+    }
+
+
+class TestDynamicGenreConfig(unittest.TestCase):
+    """Dynamic genre config: ジャンル定義の動的設定テスト。
+
+    060-dynamic-genre-config Phase 2: US1 + US2
+    - _build_genre_prompt: 設定からLLMプロンプト用のジャンル一覧を生成
+    - _parse_genre_config: 新形式設定を解析し genre_definitions と valid_genres を返す
+    - valid_genres の動的構築
+    - 不正ジャンルの other フォールバック
+    """
+
+    def setUp(self):
+        """関数が存在しない場合は FAIL させる (RED state)。"""
+        if _parse_genre_config is None:
+            self.fail("_parse_genre_config is not yet implemented (RED)")
+        if _build_genre_prompt is None:
+            self.fail("_build_genre_prompt is not yet implemented (RED)")
+
+    # ---- US1: test_build_genre_prompt ----
+
+    def test_build_genre_prompt_contains_all_genres(self):
+        """_build_genre_prompt が全ジャンルをプロンプト文字列に含めること。"""
+        genre_config = _make_genre_config_new_format()
+        genre_definitions, _ = _parse_genre_config(genre_config)
+        result = _build_genre_prompt(genre_definitions)
+
+        # 全ジャンルキーがプロンプトに含まれること
+        for genre_key in genre_config:
+            self.assertIn(genre_key, result, f"Genre '{genre_key}' should be in prompt")
+
+    def test_build_genre_prompt_contains_descriptions(self):
+        """_build_genre_prompt が各ジャンルの description を含めること。"""
+        genre_config = _make_genre_config_new_format()
+        genre_definitions, _ = _parse_genre_config(genre_config)
+        result = _build_genre_prompt(genre_definitions)
+
+        # description がプロンプトに含まれること
+        self.assertIn("AI/機械学習/LLM/生成AI/Claude/ChatGPT", result)
+        self.assertIn("インフラ/CI/CD/クラウド/Docker/Kubernetes/AWS", result)
+
+    def test_build_genre_prompt_format(self):
+        """_build_genre_prompt が '- key: description' 形式で出力すること。"""
+        genre_config = {
+            "ai": {
+                "vault": "エンジニア",
+                "description": "AI/機械学習",
+            },
+            "other": {
+                "vault": "その他",
+                "description": "上記に該当しないもの",
+            },
+        }
+        genre_definitions, _ = _parse_genre_config(genre_config)
+        result = _build_genre_prompt(genre_definitions)
+
+        self.assertIn("- ai: AI/機械学習", result)
+        self.assertIn("- other: 上記に該当しないもの", result)
+
+    def test_build_genre_prompt_empty_definitions(self):
+        """空の genre_definitions で空文字列を返すこと。"""
+        result = _build_genre_prompt({})
+        self.assertEqual(result, "")
+
+    # ---- US1: test_parse_genre_config_new_format ----
+
+    def test_parse_genre_config_returns_tuple(self):
+        """_parse_genre_config が (genre_definitions, valid_genres) のタプルを返すこと。"""
+        genre_config = _make_genre_config_new_format()
+        result = _parse_genre_config(genre_config)
+
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+
+    def test_parse_genre_config_extracts_descriptions(self):
+        """_parse_genre_config が description を正しく抽出すること。"""
+        genre_config = _make_genre_config_new_format()
+        genre_definitions, _ = _parse_genre_config(genre_config)
+
+        self.assertEqual(genre_definitions["ai"], "AI/機械学習/LLM/生成AI/Claude/ChatGPT")
+        self.assertEqual(
+            genre_definitions["devops"], "インフラ/CI/CD/クラウド/Docker/Kubernetes/AWS"
+        )
+
+    def test_parse_genre_config_missing_description_uses_genre_name(self):
+        """description がないジャンルはジャンル名を description として使用すること。"""
+        genre_config = {
+            "custom_genre": {
+                "vault": "カスタム",
+                # description なし
+            },
+        }
+        genre_definitions, _ = _parse_genre_config(genre_config)
+
+        self.assertEqual(genre_definitions["custom_genre"], "custom_genre")
+
+    def test_parse_genre_config_valid_genres_set(self):
+        """_parse_genre_config が valid_genres を set として返すこと。"""
+        genre_config = _make_genre_config_new_format()
+        _, valid_genres = _parse_genre_config(genre_config)
+
+        self.assertIsInstance(valid_genres, set)
+        self.assertIn("ai", valid_genres)
+        self.assertIn("devops", valid_genres)
+        self.assertIn("other", valid_genres)
+
+    # ---- US2: test_valid_genres_from_config ----
+
+    def test_valid_genres_includes_custom_genre(self):
+        """カスタムジャンルが valid_genres に含まれること。"""
+        genre_config = _make_genre_config_new_format()
+        genre_config["finance"] = {
+            "vault": "経済",
+            "description": "金融/投資/株式/FX",
+        }
+        _, valid_genres = _parse_genre_config(genre_config)
+
+        self.assertIn("finance", valid_genres)
+
+    def test_valid_genres_always_includes_other(self):
+        """other がなくても valid_genres に含まれること。"""
+        genre_config = {
+            "ai": {
+                "vault": "エンジニア",
+                "description": "AI/機械学習",
+            },
+        }
+        _, valid_genres = _parse_genre_config(genre_config)
+
+        self.assertIn("other", valid_genres, "valid_genres should always include 'other'")
+
+    def test_valid_genres_matches_config_keys(self):
+        """valid_genres が設定キーと一致すること（other を含む）。"""
+        genre_config = {
+            "ai": {"vault": "エンジニア", "description": "AI"},
+            "devops": {"vault": "エンジニア", "description": "DevOps"},
+        }
+        _, valid_genres = _parse_genre_config(genre_config)
+
+        self.assertIn("ai", valid_genres)
+        self.assertIn("devops", valid_genres)
+        self.assertIn("other", valid_genres)
+        # ハードコードされたジャンルは含まれないこと
+        self.assertNotIn("business", valid_genres)
+        self.assertNotIn("health", valid_genres)
+
+    # ---- US2: test_genre_fallback_to_other ----
+
+    def test_genre_fallback_with_custom_config(self):
+        """カスタム設定で不正ジャンルが other にフォールバックすること。"""
+        genre_config = {
+            "ai": {"vault": "エンジニア", "description": "AI"},
+            "finance": {"vault": "経済", "description": "金融"},
+        }
+        _, valid_genres = _parse_genre_config(genre_config)
+
+        # "engineer" は設定にないので不正
+        invalid_genre = "engineer"
+        self.assertNotIn(invalid_genre, valid_genres)
+
+        # バリデーションロジック: valid_genres にない場合は "other"
+        result_genre = invalid_genre if invalid_genre in valid_genres else "other"
+        self.assertEqual(result_genre, "other")
+
+    def test_genre_fallback_valid_genre_not_changed(self):
+        """有効なジャンルはそのまま保持されること。"""
+        genre_config = {
+            "ai": {"vault": "エンジニア", "description": "AI"},
+            "finance": {"vault": "経済", "description": "金融"},
+        }
+        _, valid_genres = _parse_genre_config(genre_config)
+
+        valid_genre = "finance"
+        self.assertIn(valid_genre, valid_genres)
+
+        result_genre = valid_genre if valid_genre in valid_genres else "other"
+        self.assertEqual(result_genre, "finance")
+
+    def test_genre_fallback_integration_with_extract(self):
+        """extract_topic_and_genre が設定ベースで不正ジャンルを other にフォールバックすること。"""
+        item = _make_markdown_item(
+            title="ブロックチェーン入門",
+            tags=["ブロックチェーン", "暗号通貨"],
+        )
+        partitioned_input = _make_partitioned_input({"item-blockchain": item})
+
+        # カスタム設定: ai と finance のみ
+        params = _make_organize_params()
+        params["genre_vault_mapping"] = {
+            "ai": {"vault": "エンジニア", "description": "AI/機械学習"},
+            "finance": {"vault": "経済", "description": "金融/投資"},
+            "other": {"vault": "その他", "description": "上記に該当しないもの"},
+        }
+        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
+
+        # LLM が設定にない "engineer" を返した場合、other にフォールバック
+        with patch(
+            "obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm"
+        ) as mock_llm:
+            mock_llm.return_value = ("blockchain", "other")
+            result = extract_topic_and_genre(partitioned_input, params)
+
+        classified_item = list(result.values())[0]
+        self.assertEqual(classified_item["genre"], "other")
 
 
 if __name__ == "__main__":

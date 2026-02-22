@@ -52,16 +52,16 @@
 
 ### 入力
 
-- [ ] T007 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph1-output.md
+- [X] T007 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph1-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T008 [P] [US1] Implement test_build_genre_prompt in tests/pipelines/organize/test_nodes.py
-- [ ] T009 [P] [US1] Implement test_parse_genre_config_new_format in tests/pipelines/organize/test_nodes.py
-- [ ] T010 [P] [US2] Implement test_valid_genres_from_config in tests/pipelines/organize/test_nodes.py
-- [ ] T011 [P] [US2] Implement test_genre_fallback_to_other in tests/pipelines/organize/test_nodes.py
-- [ ] T012 Verify `make test` FAIL (RED)
-- [ ] T013 Generate RED output: specs/060-dynamic-genre-config/red-tests/ph2-test.md
+- [X] T008 [P] [US1] Implement test_build_genre_prompt in tests/pipelines/organize/test_nodes.py
+- [X] T009 [P] [US1] Implement test_parse_genre_config_new_format in tests/pipelines/organize/test_nodes.py
+- [X] T010 [P] [US2] Implement test_valid_genres_from_config in tests/pipelines/organize/test_nodes.py
+- [X] T011 [P] [US2] Implement test_genre_fallback_to_other in tests/pipelines/organize/test_nodes.py
+- [X] T012 Verify `make test` FAIL (RED)
+- [X] T013 Generate RED output: specs/060-dynamic-genre-config/red-tests/ph2-test.md
 
 ### 実装 (GREEN)
 
