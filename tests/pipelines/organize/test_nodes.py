@@ -1686,5 +1686,198 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
 
+# ============================================================
+# Genre Config Validation tests (Phase 4 - 060-dynamic-genre-config / US4)
+# ============================================================
+
+
+class TestGenreConfigValidation(unittest.TestCase):
+    """Genre config validation: バリデーションとエラーハンドリング。
+
+    060-dynamic-genre-config Phase 4: US4
+    - description 欠落時に警告ログを出力すること
+    - vault 欠落時にエラーを発生させること
+    - genre_vault_mapping が空/None の場合に other フォールバック
+    """
+
+    def setUp(self):
+        """関数が存在しない場合は FAIL させる (RED state)。"""
+        if _parse_genre_config is None:
+            self.fail("_parse_genre_config is not yet implemented (RED)")
+
+    # ---- T038: test_missing_description_warning ----
+
+    def test_missing_description_warning_logs(self):
+        """description が欠落している場合に警告ログが出力されること。"""
+        genre_config = {
+            "ai": {
+                "vault": "エンジニア",
+                # description is missing
+            },
+        }
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            genre_definitions, valid_genres = _parse_genre_config(genre_config)
+
+            # Warning should be logged for missing description
+            mock_logger.warning.assert_called()
+            warning_calls = " ".join(str(call) for call in mock_logger.warning.call_args_list)
+            self.assertIn("ai", warning_calls, "Warning should mention the genre key 'ai'")
+            self.assertIn(
+                "description",
+                warning_calls.lower(),
+                "Warning should mention 'description'",
+            )
+
+    def test_missing_description_uses_genre_name_as_fallback(self):
+        """description が欠落している場合にジャンル名をフォールバックとして使用すること。"""
+        genre_config = {
+            "custom": {
+                "vault": "カスタム",
+                # description なし
+            },
+        }
+
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            genre_definitions, valid_genres = _parse_genre_config(genre_config)
+
+        # Genre name should be used as fallback description
+        self.assertEqual(genre_definitions["custom"], "custom")
+        # Genre should still be in valid_genres
+        self.assertIn("custom", valid_genres)
+
+    def test_missing_description_does_not_raise(self):
+        """description が欠落していてもエラーにならないこと。"""
+        genre_config = {
+            "ai": {
+                "vault": "エンジニア",
+                # description なし
+            },
+            "devops": {
+                "vault": "エンジニア",
+                "description": "インフラ/CI/CD",
+            },
+        }
+
+        # Should not raise any exception
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            genre_definitions, valid_genres = _parse_genre_config(genre_config)
+
+        self.assertIn("ai", genre_definitions)
+        self.assertIn("devops", genre_definitions)
+        # devops has description, ai does not
+        self.assertEqual(genre_definitions["devops"], "インフラ/CI/CD")
+
+    # ---- T039: test_missing_vault_error ----
+
+    def test_missing_vault_raises_error(self):
+        """vault が欠落している場合にエラーが発生すること。"""
+        genre_config = {
+            "ai": {
+                "description": "AI/機械学習",
+                # vault is missing
+            },
+        }
+
+        with self.assertRaises((ValueError, KeyError)) as ctx:
+            _parse_genre_config(genre_config)
+
+        # Error message should indicate which genre is missing vault
+        error_msg = str(ctx.exception)
+        self.assertIn("ai", error_msg, "Error should mention genre key 'ai'")
+
+    def test_missing_vault_error_message_clarity(self):
+        """vault 欠落時のエラーメッセージが明確であること。"""
+        genre_config = {
+            "finance": {
+                "description": "金融/投資",
+                # vault is missing
+            },
+        }
+
+        with self.assertRaises((ValueError, KeyError)) as ctx:
+            _parse_genre_config(genre_config)
+
+        error_msg = str(ctx.exception).lower()
+        self.assertIn("vault", error_msg, "Error should mention 'vault'")
+        self.assertIn("finance", str(ctx.exception), "Error should mention genre key")
+
+    def test_missing_vault_with_valid_genres_mixed(self):
+        """正常なジャンルと vault 欠落ジャンルが混在する場合にエラーが発生すること。"""
+        genre_config = {
+            "ai": {
+                "vault": "エンジニア",
+                "description": "AI/機械学習",
+            },
+            "broken": {
+                "description": "壊れたジャンル",
+                # vault is missing
+            },
+        }
+
+        with self.assertRaises((ValueError, KeyError)) as ctx:
+            _parse_genre_config(genre_config)
+
+        error_msg = str(ctx.exception)
+        self.assertIn("broken", error_msg, "Error should mention the broken genre key")
+
+    # ---- T040: test_empty_genre_mapping_fallback ----
+
+    def test_empty_genre_mapping_returns_fallback(self):
+        """空の genre_vault_mapping で other フォールバックを返すこと。"""
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            genre_definitions, valid_genres = _parse_genre_config({})
+
+            # Warning should be logged
+            mock_logger.warning.assert_called()
+
+        # Should fallback to other
+        self.assertIn("other", valid_genres)
+        self.assertGreaterEqual(len(valid_genres), 1)
+
+    def test_none_genre_mapping_returns_fallback(self):
+        """None の genre_vault_mapping で other フォールバックを返すこと。"""
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            genre_definitions, valid_genres = _parse_genre_config(None)
+
+            # Warning should be logged
+            mock_logger.warning.assert_called()
+
+        # Should fallback to other
+        self.assertIn("other", valid_genres)
+        self.assertGreaterEqual(len(valid_genres), 1)
+
+    def test_empty_genre_mapping_fallback_genre_definitions(self):
+        """空の genre_vault_mapping で genre_definitions に other が含まれること。"""
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            genre_definitions, valid_genres = _parse_genre_config({})
+
+        # genre_definitions should have "other" as fallback
+        self.assertIn("other", genre_definitions)
+
+    def test_none_genre_mapping_fallback_genre_definitions(self):
+        """None の genre_vault_mapping で genre_definitions に other が含まれること。"""
+        with patch("obsidian_etl.pipelines.organize.nodes.logger"):
+            genre_definitions, valid_genres = _parse_genre_config(None)
+
+        # genre_definitions should have "other" as fallback
+        self.assertIn("other", genre_definitions)
+
+    def test_empty_genre_mapping_warning_content(self):
+        """空の genre_vault_mapping で適切な警告メッセージが出力されること。"""
+        with patch("obsidian_etl.pipelines.organize.nodes.logger") as mock_logger:
+            _parse_genre_config({})
+
+            warning_calls = " ".join(str(call) for call in mock_logger.warning.call_args_list)
+            # Warning should mention empty/missing config
+            self.assertTrue(
+                "genre_vault_mapping" in warning_calls.lower()
+                or "empty" in warning_calls.lower()
+                or "fallback" in warning_calls.lower()
+                or "フォールバック" in warning_calls,
+                f"Warning should mention fallback/empty config, got: {warning_calls}",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

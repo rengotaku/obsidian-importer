@@ -126,15 +126,15 @@
 
 ### 入力
 
-- [ ] T037 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph3-output.md
+- [X] T037 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph3-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T038 [P] [US4] Implement test_missing_description_warning in tests/pipelines/organize/test_nodes.py
-- [ ] T039 [P] [US4] Implement test_missing_vault_error in tests/pipelines/organize/test_nodes.py
-- [ ] T040 [P] [US4] Implement test_empty_genre_mapping_fallback in tests/pipelines/organize/test_nodes.py
-- [ ] T041 Verify `make test` FAIL (RED)
-- [ ] T042 Generate RED output: specs/060-dynamic-genre-config/red-tests/ph4-test.md
+- [X] T038 [P] [US4] Implement test_missing_description_warning in tests/pipelines/organize/test_nodes.py
+- [X] T039 [P] [US4] Implement test_missing_vault_error in tests/pipelines/organize/test_nodes.py
+- [X] T040 [P] [US4] Implement test_empty_genre_mapping_fallback in tests/pipelines/organize/test_nodes.py
+- [X] T041 Verify `make test` FAIL (RED)
+- [X] T042 Generate RED output: specs/060-dynamic-genre-config/red-tests/ph4-test.md
 
 ### 実装 (GREEN)
 
