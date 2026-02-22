@@ -158,20 +158,20 @@
 
 ### 入力
 
-- [ ] T049 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph4-output.md
+- [X] T049 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph4-output.md
 
 ### 実装
 
-- [ ] T050 [P] Remove hardcoded genre definitions from nodes.py
-- [ ] T051 [P] Remove hardcoded valid_genres set from nodes.py
-- [ ] T052 [P] Update docstrings for modified functions in nodes.py
-- [ ] T053 Run `make lint` and fix any issues
+- [X] T050 [P] Remove hardcoded genre definitions from nodes.py
+- [X] T051 [P] Remove hardcoded valid_genres set from nodes.py
+- [X] T052 [P] Update docstrings for modified functions in nodes.py
+- [X] T053 Run `make lint` and fix any issues
 
 ### 検証
 
-- [ ] T054 Run `make test` to verify all tests pass after cleanup
-- [ ] T055 Run `make coverage` to verify ≥80% coverage
-- [ ] T056 Generate phase output: specs/060-dynamic-genre-config/tasks/ph5-output.md
+- [X] T054 Run `make test` to verify all tests pass after cleanup
+- [X] T055 Run `make coverage` to verify ≥80% coverage
+- [X] T056 Generate phase output: specs/060-dynamic-genre-config/tasks/ph5-output.md
 
 ---
 

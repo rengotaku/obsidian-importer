@@ -365,10 +365,7 @@ def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) 
 
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
 
         content = item.get("content", "")
 
@@ -438,10 +435,7 @@ def clean_content(partitioned_input: dict[str, Callable]) -> dict[str, dict]:
 
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
 
         content = item.get("content", "")
 
@@ -518,10 +512,7 @@ def embed_frontmatter_fields(
 
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
 
         content = item.get("content", "")
         genre = item.get("genre", "other")
@@ -646,10 +637,7 @@ def log_genre_distribution(
     classified_items = {}
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
         classified_items[key] = item
 
     if not classified_items:
@@ -857,12 +845,9 @@ def analyze_other_genres(
     """
     # Load all items and count "other" items
     other_items = []
-    for key, load_func_or_item in partitioned_input.items():
+    for _key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
 
         if item.get("genre") == "other":
             other_items.append(item)
