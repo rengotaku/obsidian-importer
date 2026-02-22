@@ -21,6 +21,59 @@ from obsidian_etl.utils.timing import timed_node
 logger = logging.getLogger(__name__)
 
 
+def _parse_genre_config(genre_vault_mapping: dict) -> tuple[dict, set]:
+    """Parse genre config to extract definitions and valid genres.
+
+    Args:
+        genre_vault_mapping: Config dict with structure:
+            {
+                "genre_key": {
+                    "vault": "Vault Name",
+                    "description": "Genre description"
+                }
+            }
+
+    Returns:
+        tuple[dict, set]: (genre_definitions, valid_genres)
+            - genre_definitions: dict mapping genre_key -> description
+            - valid_genres: set of valid genre keys (always includes "other")
+    """
+    genre_definitions = {}
+    valid_genres = set()
+
+    for genre_key, genre_config in genre_vault_mapping.items():
+        # Extract description, fallback to genre_key if missing
+        description = genre_config.get("description", genre_key)
+        genre_definitions[genre_key] = description
+        valid_genres.add(genre_key)
+
+    # Ensure "other" is always in valid_genres
+    if "other" not in valid_genres:
+        valid_genres.add("other")
+
+    return genre_definitions, valid_genres
+
+
+def _build_genre_prompt(genre_definitions: dict) -> str:
+    """Build LLM prompt string from genre definitions.
+
+    Args:
+        genre_definitions: dict mapping genre_key -> description
+
+    Returns:
+        str: Formatted string for LLM prompt with "- key: description" format
+             Returns empty string if genre_definitions is empty
+    """
+    if not genre_definitions:
+        return ""
+
+    lines = []
+    for genre_key, description in genre_definitions.items():
+        lines.append(f"- {genre_key}: {description}")
+
+    return "\n".join(lines)
+
+
 def _yaml_quote(value: str) -> str:
     """Quote a string value for YAML if it contains special characters.
 
@@ -138,13 +191,18 @@ def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, s
 
     Args:
         content: Markdown content with frontmatter
-        params: Parameters dict with ollama settings
+        params: Parameters dict with ollama settings and genre_vault_mapping
 
     Returns:
-        tuple[str, str]: (topic, genre) - topic is lowercase, genre is one of 11 categories
+        tuple[str, str]: (topic, genre) - topic is lowercase, genre from config
                         Returns ("", "other") on extraction failure
     """
     config = get_ollama_config(params, "extract_topic_and_genre")
+
+    # Parse genre config to get dynamic genre definitions
+    genre_vault_mapping = params.get("genre_vault_mapping", {})
+    genre_definitions, valid_genres = _parse_genre_config(genre_vault_mapping)
+    genre_prompt = _build_genre_prompt(genre_definitions)
 
     # Extract body text (skip frontmatter)
     body = content
@@ -155,8 +213,8 @@ def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, s
         except ValueError:
             pass
 
-    # Build prompts
-    system_prompt = """あなたはコンテンツ分類の専門家です。会話内容から主題とジャンルを抽出してください。
+    # Build prompts with dynamic genre list
+    system_prompt = f"""あなたはコンテンツ分類の専門家です。会話内容から主題とジャンルを抽出してください。
 
 **主題 (topic)**: カテゴリレベル（1-3単語）で答え、具体的な商品名・料理名・固有名詞ではなく、上位概念で答えてください。
 例:
@@ -165,23 +223,13 @@ def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, s
 - Claude 3.5 Sonnet の使い方 → AI
 
 **ジャンル (genre)**: 以下のいずれか1つを選んでください（必ず小文字で）:
-- ai: AI/機械学習/LLM/生成AI/Claude/ChatGPT
-- devops: インフラ/CI/CD/クラウド/Docker/Kubernetes/AWS
-- engineer: プログラミング/アーキテクチャ/API/データベース/フレームワーク
-- economy: 経済/投資/金融/市場
-- business: ビジネス/マネジメント/リーダーシップ/マーケティング
-- health: 健康/医療/フィットネス/運動
-- parenting: 子育て/育児/教育/幼児
-- travel: 旅行/観光/ホテル
-- lifestyle: 家電/DIY/住居/生活用品
-- daily: 日常/趣味/雑記
-- other: 上記に該当しないもの
+{genre_prompt}
 
 JSON形式で回答してください:
-{"topic": "主題", "genre": "ジャンル"}
+{{"topic": "主題", "genre": "ジャンル"}}
 
 抽出できない場合:
-{"topic": "", "genre": "other"}"""
+{{"topic": "", "genre": "other"}}"""
 
     user_message = f"""会話内容:
 {body[:1000]}
@@ -211,20 +259,7 @@ JSON形式で回答してください:
         topic = result.get("topic", "").lower().strip()
         genre = result.get("genre", "other").lower().strip()
 
-        # Validate genre (must be one of 11 categories)
-        valid_genres = {
-            "ai",
-            "devops",
-            "engineer",
-            "economy",
-            "business",
-            "health",
-            "parenting",
-            "travel",
-            "lifestyle",
-            "daily",
-            "other",
-        }
+        # Validate genre using dynamic valid_genres from config
         if genre not in valid_genres:
             logger.warning(f"Invalid genre '{genre}', defaulting to 'other'")
             genre = "other"

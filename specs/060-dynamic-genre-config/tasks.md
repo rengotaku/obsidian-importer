@@ -65,17 +65,17 @@
 
 ### 実装 (GREEN)
 
-- [ ] T014 Read RED tests: specs/060-dynamic-genre-config/red-tests/ph2-test.md
-- [ ] T015 [P] [US1] Implement _build_genre_prompt() in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T016 [P] [US1] Implement _parse_genre_config() in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T017 [US1] Update _extract_topic_and_genre_via_llm() to use dynamic prompt in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T018 [US2] Update valid_genres validation to use config keys in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T019 Verify `make test` PASS (GREEN)
+- [X] T014 Read RED tests: specs/060-dynamic-genre-config/red-tests/ph2-test.md
+- [X] T015 [P] [US1] Implement _build_genre_prompt() in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T016 [P] [US1] Implement _parse_genre_config() in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T017 [US1] Update _extract_topic_and_genre_via_llm() to use dynamic prompt in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T018 [US2] Update valid_genres validation to use config keys in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T019 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T020 Verify `make test` passes all tests (no regressions)
-- [ ] T021 Generate phase output: specs/060-dynamic-genre-config/tasks/ph2-output.md
+- [X] T020 Verify `make test` passes all tests (no regressions)
+- [X] T021 Generate phase output: specs/060-dynamic-genre-config/tasks/ph2-output.md
 
 **Checkpoint**: US1+US2 should be fully functional - パラメータでジャンル追加・変更が動作
 
