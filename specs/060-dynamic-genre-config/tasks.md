@@ -138,15 +138,15 @@
 
 ### 実装 (GREEN)
 
-- [ ] T043 Read RED tests: specs/060-dynamic-genre-config/red-tests/ph4-test.md
-- [ ] T044 [US4] Add validation logic to _parse_genre_config() in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T045 [US4] Add warning/error logging for invalid config in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T046 Verify `make test` PASS (GREEN)
+- [X] T043 Read RED tests: specs/060-dynamic-genre-config/red-tests/ph4-test.md
+- [X] T044 [US4] Add validation logic to _parse_genre_config() in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T045 [US4] Add warning/error logging for invalid config in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T046 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T047 Verify `make test` passes all tests (including US1, US2, US3)
-- [ ] T048 Generate phase output: specs/060-dynamic-genre-config/tasks/ph4-output.md
+- [X] T047 Verify `make test` passes all tests (including US1, US2, US3)
+- [X] T048 Generate phase output: specs/060-dynamic-genre-config/tasks/ph4-output.md
 
 **Checkpoint**: US4 should be fully functional - 設定エラーが適切に検出される
 

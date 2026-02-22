@@ -37,13 +37,30 @@ def _parse_genre_config(genre_vault_mapping: dict) -> tuple[dict, set]:
         tuple[dict, set]: (genre_definitions, valid_genres)
             - genre_definitions: dict mapping genre_key -> description
             - valid_genres: set of valid genre keys (always includes "other")
+
+    Raises:
+        ValueError: If any genre is missing the required "vault" key
     """
+    # Handle None or empty mapping
+    if not genre_vault_mapping:
+        logger.warning("genre_vault_mapping is empty, using 'other' only")
+        return {"other": "other"}, {"other"}
+
+    # Validate vault existence for all genres before processing
+    for genre_key, genre_config in genre_vault_mapping.items():
+        if "vault" not in genre_config:
+            raise ValueError(f"Genre '{genre_key}' has no vault defined")
+
     genre_definitions = {}
     valid_genres = set()
 
     for genre_key, genre_config in genre_vault_mapping.items():
         # Extract description, fallback to genre_key if missing
-        description = genre_config.get("description", genre_key)
+        description = genre_config.get("description")
+        if description is None:
+            logger.warning(f"Genre '{genre_key}' has no description, using genre name only")
+            description = genre_key
+
         genre_definitions[genre_key] = description
         valid_genres.add(genre_key)
 
