@@ -89,16 +89,16 @@
 
 ### 入力
 
-- [ ] T022 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph2-output.md
+- [X] T022 Read previous phase output: specs/060-dynamic-genre-config/tasks/ph2-output.md
 
 ### テスト実装 (RED)
 
-- [ ] T023 [P] [US3] Implement test_analyze_other_genres_trigger in tests/pipelines/organize/test_nodes.py
-- [ ] T024 [P] [US3] Implement test_analyze_other_genres_below_threshold in tests/pipelines/organize/test_nodes.py
-- [ ] T025 [P] [US3] Implement test_generate_genre_suggestions_md in tests/pipelines/organize/test_nodes.py
-- [ ] T026 [P] [US3] Implement test_suggest_genre_with_llm in tests/pipelines/organize/test_nodes.py
-- [ ] T027 Verify `make test` FAIL (RED)
-- [ ] T028 Generate RED output: specs/060-dynamic-genre-config/red-tests/ph3-test.md
+- [X] T023 [P] [US3] Implement test_analyze_other_genres_trigger in tests/pipelines/organize/test_nodes.py
+- [X] T024 [P] [US3] Implement test_analyze_other_genres_below_threshold in tests/pipelines/organize/test_nodes.py
+- [X] T025 [P] [US3] Implement test_generate_genre_suggestions_md in tests/pipelines/organize/test_nodes.py
+- [X] T026 [P] [US3] Implement test_suggest_genre_with_llm in tests/pipelines/organize/test_nodes.py
+- [X] T027 Verify `make test` FAIL (RED)
+- [X] T028 Generate RED output: specs/060-dynamic-genre-config/red-tests/ph3-test.md
 
 ### 実装 (GREEN)
 

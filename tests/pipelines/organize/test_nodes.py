@@ -32,6 +32,18 @@ except ImportError:
     _build_genre_prompt = None
     _parse_genre_config = None
 
+# Phase 3 (060-dynamic-genre-config): US3 - other 分類の改善サイクル (RED state)
+try:
+    from obsidian_etl.pipelines.organize.nodes import (
+        _generate_suggestions_markdown,
+        _suggest_new_genres_via_llm,
+        analyze_other_genres,
+    )
+except ImportError:
+    analyze_other_genres = None
+    _suggest_new_genres_via_llm = None
+    _generate_suggestions_markdown = None
+
 
 def _make_markdown_item(
     item_id: str = "conv-001-uuid-abcdef",
@@ -1321,6 +1333,357 @@ class TestDynamicGenreConfig(unittest.TestCase):
 
         classified_item = list(result.values())[0]
         self.assertEqual(classified_item["genre"], "other")
+
+
+# ============================================================
+# Analyze Other Genres tests (Phase 3 - 060-dynamic-genre-config / US3)
+# ============================================================
+
+
+class TestAnalyzeOtherGenres(unittest.TestCase):
+    """analyze_other_genres: other 分類の改善サイクル。
+
+    060-dynamic-genre-config Phase 3: US3
+    - analyze_other_genres: other 5件以上で新ジャンル提案トリガー
+    - _suggest_new_genres_via_llm: LLM による新ジャンル候補提案
+    - _generate_suggestions_markdown: 提案レポートの Markdown 生成
+    """
+
+    def setUp(self):
+        """関数が存在しない場合は FAIL させる (RED state)。"""
+        if analyze_other_genres is None:
+            self.fail("analyze_other_genres is not yet implemented (RED)")
+        if _suggest_new_genres_via_llm is None:
+            self.fail("_suggest_new_genres_via_llm is not yet implemented (RED)")
+        if _generate_suggestions_markdown is None:
+            self.fail("_generate_suggestions_markdown is not yet implemented (RED)")
+
+    def _make_other_items(self, count: int) -> dict[str, dict]:
+        """Helper: other に分類された N 件のアイテムを作成する。"""
+        items = {}
+        for i in range(count):
+            item = _make_markdown_item(
+                item_id=f"other-{i:03d}",
+                title=f"その他コンテンツ {i}",
+                tags=["その他"],
+            )
+            item["genre"] = "other"
+            item["topic"] = f"topic-{i}"
+            items[f"item-other-{i:03d}"] = item
+        return items
+
+    def _make_mixed_items(self, other_count: int, ai_count: int = 2) -> dict[str, dict]:
+        """Helper: other と ai が混在するアイテム群を作成する。"""
+        items = {}
+        for i in range(other_count):
+            item = _make_markdown_item(
+                item_id=f"other-{i:03d}",
+                title=f"その他コンテンツ {i}",
+                tags=["その他"],
+            )
+            item["genre"] = "other"
+            item["topic"] = f"topic-{i}"
+            items[f"item-other-{i:03d}"] = item
+        for i in range(ai_count):
+            item = _make_markdown_item(
+                item_id=f"ai-{i:03d}",
+                title=f"AI コンテンツ {i}",
+                tags=["AI"],
+            )
+            item["genre"] = "ai"
+            item["topic"] = "ai"
+            items[f"item-ai-{i:03d}"] = item
+        return items
+
+    # ---- T023: test_analyze_other_genres_trigger ----
+
+    def test_analyze_other_genres_trigger(self):
+        """other が5件以上の場合に analyze_other_genres がトリガーされ提案を返すこと。"""
+        items = self._make_other_items(6)
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+        params["genre_vault_mapping"] = _make_genre_config_new_format()
+        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
+
+        # Mock LLM to return genre suggestions
+        mock_suggestions = [
+            {
+                "suggested_genre": "cooking",
+                "suggested_description": "料理/レシピ/食材",
+                "sample_titles": ["その他コンテンツ 0", "その他コンテンツ 1"],
+                "content_count": 3,
+            },
+        ]
+
+        with patch("obsidian_etl.pipelines.organize.nodes._suggest_new_genres_via_llm") as mock_llm:
+            mock_llm.return_value = mock_suggestions
+            result = analyze_other_genres(partitioned_input, params)
+
+        # result should be a string (markdown content for genre_suggestions.md)
+        self.assertIsInstance(result, str)
+        self.assertIn("ジャンル提案レポート", result)
+        self.assertIn("cooking", result)
+
+    # ---- T024: test_analyze_other_genres_below_threshold ----
+
+    def test_analyze_other_genres_below_threshold(self):
+        """other が4件以下の場合は提案なしメッセージを返すこと。"""
+        items = self._make_mixed_items(other_count=4, ai_count=3)
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+        params["genre_vault_mapping"] = _make_genre_config_new_format()
+        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
+
+        result = analyze_other_genres(partitioned_input, params)
+
+        # Should return a string indicating no suggestions
+        self.assertIsInstance(result, str)
+        # Should contain "提案なし" or indicate below threshold
+        self.assertIn("5件未満", result)
+        # Should NOT trigger LLM call (no suggestions)
+        self.assertNotIn("提案 1", result)
+
+    def test_analyze_other_genres_zero_other(self):
+        """other が0件の場合も提案なしメッセージを返すこと。"""
+        items = {}
+        for i in range(3):
+            item = _make_markdown_item(
+                item_id=f"ai-{i:03d}",
+                title=f"AI コンテンツ {i}",
+                tags=["AI"],
+            )
+            item["genre"] = "ai"
+            item["topic"] = "ai"
+            items[f"item-ai-{i:03d}"] = item
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+        params["genre_vault_mapping"] = _make_genre_config_new_format()
+
+        result = analyze_other_genres(partitioned_input, params)
+
+        self.assertIsInstance(result, str)
+        self.assertIn("5件未満", result)
+
+    def test_analyze_other_genres_exactly_five(self):
+        """other がちょうど5件の場合にトリガーされること。"""
+        items = self._make_other_items(5)
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+        params["genre_vault_mapping"] = _make_genre_config_new_format()
+        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
+
+        mock_suggestions = [
+            {
+                "suggested_genre": "sports",
+                "suggested_description": "スポーツ/競技/トレーニング",
+                "sample_titles": ["その他コンテンツ 0"],
+                "content_count": 2,
+            },
+        ]
+
+        with patch("obsidian_etl.pipelines.organize.nodes._suggest_new_genres_via_llm") as mock_llm:
+            mock_llm.return_value = mock_suggestions
+            result = analyze_other_genres(partitioned_input, params)
+
+        self.assertIsInstance(result, str)
+        self.assertIn("ジャンル提案レポート", result)
+
+    # ---- T025: test_generate_genre_suggestions_md ----
+
+    def test_generate_genre_suggestions_md_format(self):
+        """_generate_suggestions_markdown が正しい Markdown 形式を出力すること。"""
+        suggestions = [
+            {
+                "suggested_genre": "cooking",
+                "suggested_description": "料理/レシピ/食材",
+                "sample_titles": ["パスタの作り方", "カレーレシピ", "和食の基本"],
+                "content_count": 5,
+            },
+            {
+                "suggested_genre": "sports",
+                "suggested_description": "スポーツ/競技/トレーニング",
+                "sample_titles": ["ランニング入門", "筋トレメニュー"],
+                "content_count": 3,
+            },
+        ]
+        other_count = 10
+
+        result = _generate_suggestions_markdown(suggestions, other_count)
+
+        # Header
+        self.assertIn("# ジャンル提案レポート", result)
+        # Metadata
+        self.assertIn("**other 分類数**: 10件", result)
+        self.assertIn("**提案数**: 2件", result)
+        self.assertIn("**生成日時**:", result)
+        # Suggestion 1
+        self.assertIn("## 提案 1: cooking", result)
+        self.assertIn("**Description**: 料理/レシピ/食材", result)
+        self.assertIn("**該当コンテンツ** (5件)", result)
+        self.assertIn("- パスタの作り方", result)
+        self.assertIn("- カレーレシピ", result)
+        self.assertIn("- 和食の基本", result)
+        # Suggestion 2
+        self.assertIn("## 提案 2: sports", result)
+        self.assertIn("**Description**: スポーツ/競技/トレーニング", result)
+        self.assertIn("**該当コンテンツ** (3件)", result)
+
+    def test_generate_genre_suggestions_md_yaml_example(self):
+        """_generate_suggestions_markdown が YAML 設定例を含むこと。"""
+        suggestions = [
+            {
+                "suggested_genre": "cooking",
+                "suggested_description": "料理/レシピ/食材",
+                "sample_titles": ["パスタの作り方"],
+                "content_count": 3,
+            },
+        ]
+
+        result = _generate_suggestions_markdown(suggestions, 5)
+
+        # Should include YAML config example
+        self.assertIn("cooking:", result)
+        self.assertIn("vault:", result)
+        self.assertIn("description:", result)
+
+    def test_generate_genre_suggestions_md_empty_suggestions(self):
+        """空の提案リストの場合、提案なしメッセージを出力すること。"""
+        result = _generate_suggestions_markdown([], 6)
+
+        self.assertIn("# ジャンル提案レポート", result)
+        self.assertIn("**提案数**: 0件", result)
+
+    def test_generate_genre_suggestions_md_sample_titles_max_five(self):
+        """sample_titles が5件を超える場合も正しく表示すること。"""
+        suggestions = [
+            {
+                "suggested_genre": "food",
+                "suggested_description": "食品/料理",
+                "sample_titles": [
+                    "タイトル1",
+                    "タイトル2",
+                    "タイトル3",
+                    "タイトル4",
+                    "タイトル5",
+                ],
+                "content_count": 10,
+            },
+        ]
+
+        result = _generate_suggestions_markdown(suggestions, 12)
+
+        # All 5 sample titles should be present
+        for i in range(1, 6):
+            self.assertIn(f"- タイトル{i}", result)
+
+    # ---- T026: test_suggest_genre_with_llm ----
+
+    def test_suggest_genre_with_llm_returns_suggestions(self):
+        """_suggest_new_genres_via_llm が GenreSuggestion リストを返すこと。"""
+        other_items = [
+            {
+                "metadata": {"title": "パスタの作り方"},
+                "content": "パスタの基本的な作り方を解説します。",
+                "genre": "other",
+            },
+            {
+                "metadata": {"title": "カレーレシピ"},
+                "content": "簡単なカレーの作り方。",
+                "genre": "other",
+            },
+            {
+                "metadata": {"title": "和食の基本"},
+                "content": "出汁の取り方から始める和食入門。",
+                "genre": "other",
+            },
+            {
+                "metadata": {"title": "お弁当アイデア"},
+                "content": "毎日のお弁当に使えるアイデア集。",
+                "genre": "other",
+            },
+            {
+                "metadata": {"title": "スイーツレシピ"},
+                "content": "簡単に作れるスイーツのレシピ。",
+                "genre": "other",
+            },
+        ]
+        params = {
+            "ollama": {"model": "test-model", "base_url": "http://localhost:11434"},
+            "genre_vault_mapping": _make_genre_config_new_format(),
+        }
+
+        # Mock call_ollama to return genre suggestions as JSON
+        import json
+
+        llm_response = json.dumps(
+            [
+                {
+                    "suggested_genre": "cooking",
+                    "suggested_description": "料理/レシピ/食材",
+                    "sample_titles": ["パスタの作り方", "カレーレシピ", "和食の基本"],
+                    "content_count": 5,
+                },
+            ]
+        )
+
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
+            mock_call.return_value = (llm_response, None)
+            result = _suggest_new_genres_via_llm(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 1)
+
+        # Verify structure of first suggestion
+        suggestion = result[0]
+        self.assertIn("suggested_genre", suggestion)
+        self.assertIn("suggested_description", suggestion)
+        self.assertIn("sample_titles", suggestion)
+        self.assertIn("content_count", suggestion)
+        self.assertEqual(suggestion["suggested_genre"], "cooking")
+        self.assertIsInstance(suggestion["sample_titles"], list)
+        self.assertGreaterEqual(suggestion["content_count"], 1)
+
+    def test_suggest_genre_with_llm_error_returns_empty(self):
+        """LLM エラー時に空リストを返すこと。"""
+        other_items = [
+            {
+                "metadata": {"title": "テスト"},
+                "content": "テスト内容",
+                "genre": "other",
+            },
+        ] * 5
+        params = {
+            "ollama": {"model": "test-model", "base_url": "http://localhost:11434"},
+            "genre_vault_mapping": _make_genre_config_new_format(),
+        }
+
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
+            mock_call.return_value = (None, "Connection error")
+            result = _suggest_new_genres_via_llm(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    def test_suggest_genre_with_llm_invalid_json_returns_empty(self):
+        """LLM が不正な JSON を返した場合に空リストを返すこと。"""
+        other_items = [
+            {
+                "metadata": {"title": "テスト"},
+                "content": "テスト内容",
+                "genre": "other",
+            },
+        ] * 5
+        params = {
+            "ollama": {"model": "test-model", "base_url": "http://localhost:11434"},
+            "genre_vault_mapping": _make_genre_config_new_format(),
+        }
+
+        with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
+            mock_call.return_value = ("not valid json {{{", None)
+            result = _suggest_new_genres_via_llm(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
 
 
 if __name__ == "__main__":
