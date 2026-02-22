@@ -40,7 +40,7 @@ ollama:
 
     # Topic and genre extraction: short JSON output
     extract_topic_and_genre:
-      num_predict: 128
+      num_predict: 256
       timeout: 120
 
 # ============================================================
