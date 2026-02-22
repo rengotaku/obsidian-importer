@@ -102,17 +102,17 @@
 
 ### 実装 (GREEN)
 
-- [ ] T029 Read RED tests: specs/060-dynamic-genre-config/red-tests/ph3-test.md
-- [ ] T030 [P] [US3] Implement _suggest_new_genres_via_llm() in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T031 [P] [US3] Implement _generate_suggestions_markdown() in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T032 [US3] Implement analyze_other_genres() node in src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T033 [US3] Add analyze_other_genres node to pipeline in src/obsidian_etl/pipelines/organize/pipeline.py
-- [ ] T034 Verify `make test` PASS (GREEN)
+- [X] T029 Read RED tests: specs/060-dynamic-genre-config/red-tests/ph3-test.md
+- [X] T030 [P] [US3] Implement _suggest_new_genres_via_llm() in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T031 [P] [US3] Implement _generate_suggestions_markdown() in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T032 [US3] Implement analyze_other_genres() node in src/obsidian_etl/pipelines/organize/nodes.py
+- [X] T033 [US3] Add analyze_other_genres node to pipeline in src/obsidian_etl/pipelines/organize/pipeline.py
+- [X] T034 Verify `make test` PASS (GREEN)
 
 ### 検証
 
-- [ ] T035 Verify `make test` passes all tests (including US1, US2)
-- [ ] T036 Generate phase output: specs/060-dynamic-genre-config/tasks/ph3-output.md
+- [X] T035 Verify `make test` passes all tests (including US1, US2)
+- [X] T036 Generate phase output: specs/060-dynamic-genre-config/tasks/ph3-output.md
 
 **Checkpoint**: US3 should be fully functional - other 5件以上で提案が出力される
 

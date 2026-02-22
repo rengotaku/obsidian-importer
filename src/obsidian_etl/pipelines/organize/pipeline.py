@@ -15,6 +15,7 @@ from __future__ import annotations
 from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
+    analyze_other_genres,
     clean_content,
     embed_frontmatter_fields,
     extract_topic_and_genre,
@@ -29,7 +30,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         **kwargs: Ignored
 
     Returns:
-        Pipeline: Organize pipeline (extract_topic_and_genre → normalize → clean → embed)
+        Pipeline: Organize pipeline (extract_topic_and_genre → analyze_other_genres → normalize → clean → embed)
     """
     return pipeline(
         [
@@ -38,6 +39,12 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=["markdown_notes", "params:organize"],
                 outputs="classified_items",
                 name="extract_topic_and_genre",
+            ),
+            node(
+                func=analyze_other_genres,
+                inputs=["classified_items", "params:organize"],
+                outputs="genre_suggestions_report",
+                name="analyze_other_genres",
             ),
             node(
                 func=normalize_frontmatter,

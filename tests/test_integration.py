@@ -505,6 +505,7 @@ class TestPipelineNodeNames(unittest.TestCase):
             "format_markdown",
             # Organize
             "extract_topic_and_genre",
+            "analyze_other_genres",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
@@ -530,6 +531,7 @@ class TestPipelineNodeNames(unittest.TestCase):
             "format_markdown",
             # Organize
             "extract_topic_and_genre",
+            "analyze_other_genres",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",
@@ -557,6 +559,7 @@ class TestPipelineNodeNames(unittest.TestCase):
             "format_markdown",
             # Organize
             "extract_topic_and_genre",
+            "analyze_other_genres",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",

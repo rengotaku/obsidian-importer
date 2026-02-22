@@ -656,3 +656,227 @@ def log_genre_distribution(
     logger.info("\n".join(lines))
 
     return classified_items
+
+
+def _suggest_new_genres_via_llm(other_items: list[dict], params: dict) -> list[dict]:
+    """Suggest new genres for other-classified items via LLM.
+
+    Args:
+        other_items: List of items with genre="other"
+        params: Parameters dict with ollama settings
+
+    Returns:
+        list[dict]: List of GenreSuggestion dicts with structure:
+            {
+                "suggested_genre": str,
+                "suggested_description": str,
+                "sample_titles": list[str],
+                "content_count": int,
+            }
+        Returns empty list on error or if no suggestions found.
+    """
+    if not other_items:
+        return []
+
+    config = get_ollama_config(params, "extract_topic_and_genre")
+
+    # Collect titles and content samples for LLM analysis
+    titles = []
+    for item in other_items[:20]:  # Limit to first 20 for analysis
+        metadata = item.get("metadata", {})
+        title = metadata.get("title", "無題")
+        titles.append(title)
+
+    titles_text = "\n".join(f"- {t}" for t in titles)
+
+    # Build prompt to suggest new genres
+    system_prompt = """あなたはコンテンツ分類の専門家です。"other" に分類されたコンテンツのタイトルを分析し、新しいジャンルを提案してください。
+
+複数の共通パターンがある場合は複数のジャンルを提案してください（最大3件）。
+各提案には以下を含めてください:
+- suggested_genre: ジャンル名（小文字英字、例: cooking, sports）
+- suggested_description: ジャンルの説明（日本語、例: 料理/レシピ/食材）
+- sample_titles: 該当するタイトルの例（最大5件）
+- content_count: 該当するコンテンツの推定数
+
+JSON配列形式で回答してください:
+[
+  {
+    "suggested_genre": "ジャンル名",
+    "suggested_description": "説明",
+    "sample_titles": ["タイトル1", "タイトル2"],
+    "content_count": 推定数
+  }
+]
+
+明確なパターンが見つからない場合は空の配列 [] を返してください。"""
+
+    user_message = f"""以下は "other" に分類されたコンテンツのタイトル一覧です:
+
+{titles_text}
+
+新しいジャンルを提案してください。"""
+
+    # Call Ollama API
+    response, error = call_ollama(
+        system_prompt,
+        user_message,
+        model=config.model,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        temperature=config.temperature,
+        num_predict=config.num_predict,
+    )
+
+    if error:
+        logger.warning(f"Failed to suggest genres via LLM: {error}")
+        return []
+
+    # Parse JSON response
+    import json
+
+    try:
+        suggestions = json.loads(response.strip())
+        if not isinstance(suggestions, list):
+            logger.warning("LLM response is not a list, returning empty suggestions")
+            return []
+        return suggestions
+    except (json.JSONDecodeError, AttributeError) as e:
+        logger.warning(f"Failed to parse LLM response as JSON: {e}")
+        return []
+
+
+def _generate_suggestions_markdown(suggestions: list[dict], other_count: int) -> str:
+    """Generate markdown report from genre suggestions.
+
+    Args:
+        suggestions: List of GenreSuggestion dicts
+        other_count: Total count of items with genre="other"
+
+    Returns:
+        str: Markdown formatted report
+    """
+    from datetime import datetime
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    lines = [
+        "# ジャンル提案レポート",
+        "",
+        f"**生成日時**: {now}",
+        f"**other 分類数**: {other_count}件",
+        f"**提案数**: {len(suggestions)}件",
+        "",
+        "---",
+        "",
+    ]
+
+    if not suggestions:
+        lines.extend(
+            [
+                "## 提案なし",
+                "",
+                "明確なパターンが見つからなかったため、新ジャンルの提案はありません。",
+            ]
+        )
+        return "\n".join(lines)
+
+    for idx, suggestion in enumerate(suggestions, start=1):
+        genre = suggestion.get("suggested_genre", "unknown")
+        description = suggestion.get("suggested_description", "")
+        sample_titles = suggestion.get("sample_titles", [])
+        content_count = suggestion.get("content_count", 0)
+
+        lines.extend(
+            [
+                f"## 提案 {idx}: {genre}",
+                "",
+                f"**Description**: {description}",
+                "",
+                f"**該当コンテンツ** ({content_count}件):",
+            ]
+        )
+
+        for title in sample_titles[:5]:  # Max 5 titles
+            lines.append(f"- {title}")
+
+        lines.extend(
+            [
+                "",
+                "**設定への追加例**:",
+                "```yaml",
+                f"{genre}:",
+                '  vault: "適切なVault名"',
+                f'  description: "{description}"',
+                "```",
+                "",
+                "---",
+                "",
+            ]
+        )
+
+    return "\n".join(lines)
+
+
+@timed_node
+def analyze_other_genres(
+    partitioned_input: dict[str, Callable],
+    params: dict,
+) -> str:
+    """Analyze other-classified items and suggest new genres if needed.
+
+    Args:
+        partitioned_input: PartitionedDataset-style input (dict of callables)
+        params: Parameters dict with ollama settings
+
+    Returns:
+        str: Markdown report of genre suggestions
+
+    Analysis logic:
+    - Count items with genre="other"
+    - If >= 5: call LLM to suggest new genres, generate report
+    - If < 5: return "no suggestions" message
+    - Write report to data/07_model_output/genre_suggestions.md
+    """
+    # Load all items and count "other" items
+    other_items = []
+    for key, load_func_or_item in partitioned_input.items():
+        # Handle both callable (real pipeline) and dict (memory dataset in tests)
+        if callable(load_func_or_item):
+            item = load_func_or_item()
+        else:
+            item = load_func_or_item
+
+        if item.get("genre") == "other":
+            other_items.append(item)
+
+    other_count = len(other_items)
+
+    # Check threshold
+    if other_count < 5:
+        logger.info(f"other 分類が {other_count} 件のため、ジャンル提案をスキップします（5件未満）")
+        return (
+            _generate_suggestions_markdown([], other_count)
+            + "\n\nother 分類が5件未満のため、新ジャンルの提案はありません。"
+        )
+
+    # Suggest new genres via LLM
+    logger.info(f"other 分類が {other_count} 件あります。LLM による新ジャンル提案を実行します。")
+    suggestions = _suggest_new_genres_via_llm(other_items, params)
+
+    # Generate markdown report
+    report = _generate_suggestions_markdown(suggestions, other_count)
+
+    # Write report to file
+    import os
+
+    output_dir = "data/07_model_output"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "genre_suggestions.md")
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(report)
+
+    logger.info(f"ジャンル提案レポートを {output_path} に出力しました。")
+
+    return report
