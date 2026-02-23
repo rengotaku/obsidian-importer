@@ -226,6 +226,8 @@ file_id: abc123
 - Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+ (058-refine-genre-classification)
 - ファイルシステム (PartitionedDataset) (058-refine-genre-classification)
 - ファイルシステム (PartitionedDataset for input, 直接ファイルコピー for output) (059-organize-vault-output)
+- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, requests (Ollama API) (060-dynamic-genre-config)
+- ファイルシステム (YAML, Markdown, JSON) (060-dynamic-genre-config)
 
 ## Recent Changes
 - 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+

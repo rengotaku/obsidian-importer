@@ -1,8 +1,7 @@
 """Nodes for Organize pipeline.
 
 This module implements the organize pipeline nodes:
-- classify_genre: Keyword-based genre classification
-- extract_topic: LLM-based topic extraction with lowercase normalization
+- extract_topic_and_genre: LLM-based topic and genre extraction
 - normalize_frontmatter: Clean up frontmatter fields
 - clean_content: Remove excess blank lines and trailing whitespace
 - embed_frontmatter_fields: Embed genre, topic, summary into frontmatter content
@@ -20,6 +19,76 @@ from obsidian_etl.utils.ollama_config import get_ollama_config
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_genre_config(genre_vault_mapping: dict) -> tuple[dict, set]:
+    """Parse genre config to extract definitions and valid genres.
+
+    Args:
+        genre_vault_mapping: Config dict with structure:
+            {
+                "genre_key": {
+                    "vault": "Vault Name",
+                    "description": "Genre description"
+                }
+            }
+
+    Returns:
+        tuple[dict, set]: (genre_definitions, valid_genres)
+            - genre_definitions: dict mapping genre_key -> description
+            - valid_genres: set of valid genre keys (always includes "other")
+
+    Raises:
+        ValueError: If any genre is missing the required "vault" key
+    """
+    # Handle None or empty mapping
+    if not genre_vault_mapping:
+        logger.warning("genre_vault_mapping is empty, using 'other' only")
+        return {"other": "other"}, {"other"}
+
+    # Validate vault existence for all genres before processing
+    for genre_key, genre_config in genre_vault_mapping.items():
+        if "vault" not in genre_config:
+            raise ValueError(f"Genre '{genre_key}' has no vault defined")
+
+    genre_definitions = {}
+    valid_genres = set()
+
+    for genre_key, genre_config in genre_vault_mapping.items():
+        # Extract description, fallback to genre_key if missing
+        description = genre_config.get("description")
+        if description is None:
+            logger.warning(f"Genre '{genre_key}' has no description, using genre name only")
+            description = genre_key
+
+        genre_definitions[genre_key] = description
+        valid_genres.add(genre_key)
+
+    # Ensure "other" is always in valid_genres
+    if "other" not in valid_genres:
+        valid_genres.add("other")
+
+    return genre_definitions, valid_genres
+
+
+def _build_genre_prompt(genre_definitions: dict) -> str:
+    """Build LLM prompt string from genre definitions.
+
+    Args:
+        genre_definitions: dict mapping genre_key -> description
+
+    Returns:
+        str: Formatted string for LLM prompt with "- key: description" format
+             Returns empty string if genre_definitions is empty
+    """
+    if not genre_definitions:
+        return ""
+
+    lines = []
+    for genre_key, description in genre_definitions.items():
+        lines.append(f"- {genre_key}: {description}")
+
+    return "\n".join(lines)
 
 
 def _yaml_quote(value: str) -> str:
@@ -54,41 +123,28 @@ def _yaml_quote(value: str) -> str:
 
 
 @timed_node
-def classify_genre(
+def extract_topic_and_genre(
     partitioned_input: dict[str, Callable],
     params: dict,
-    existing_output: dict[str, callable] | None = None,
 ) -> dict[str, dict]:
-    """Classify items into genres based on keyword matching.
+    """Extract topic and classify genre using LLM.
 
     Args:
         partitioned_input: PartitionedDataset-style input (dict of callables)
-        params: Parameters dict with genre_keywords mapping
-        existing_output: Dict of partition_id -> callable (existing classified items to skip).
-                        If None, all items are processed (backward compatibility).
+        params: Parameters dict with ollama settings
 
     Returns:
-        dict[str, dict]: Items with 'genre' field added.
-        Items already in existing_output are skipped.
+        dict[str, dict]: Items with 'topic' and 'genre' fields added
 
-    Genre classification logic:
-    - Check tags and content for genre keywords (from params)
-    - First match wins (priority order: engineer, business, economy, daily)
-    - No match -> 'other'
+    LLM extraction logic:
+    - Single LLM call extracts both topic and genre as JSON
+    - Topic: normalized to lowercase (1-3 words)
+    - Genre: one of 11 predefined categories (ai, devops, engineer, economy, business, health, parenting, travel, lifestyle, daily, other)
+    - Fallback: topic="", genre="other" on parsing failure
     """
-    if existing_output is None:
-        existing_output = {}
-
-    genre_keywords = params.get("genre_keywords", {})
-    genre_priority = params.get("genre_priority", ["engineer", "business", "economy", "daily"])
     result = {}
 
     for key, load_func in partitioned_input.items():
-        # Skip if this partition already exists in output
-        if key in existing_output:
-            logger.debug(f"Skipping existing partition: {key}")
-            continue
-
         item = load_func()
 
         # Handle both dict (unit tests) and string (real pipeline) inputs
@@ -122,10 +178,8 @@ def classify_genre(
                 for fkey, fval in frontmatter.items():
                     if isinstance(fval, (date, datetime)):
                         frontmatter[fkey] = str(fval)
-                tags = frontmatter.get("tags", [])
-                content = body  # Use body for keyword matching
+                content = body  # Use body for extraction
             else:
-                tags = []
                 frontmatter = {}
                 content = original_content
 
@@ -135,91 +189,103 @@ def classify_genre(
                 "content": original_content,
             }
         else:
-            # Extract tags and content for matching (dict format)
-            tags = item.get("metadata", {}).get("tags", [])
+            # Extract content for LLM (dict format)
             content = item.get("content", "")
 
-        # Check tags first (higher priority)
-        tags_text = " ".join(tags)
+        # Extract topic and genre via LLM
+        topic, genre = _extract_topic_and_genre_via_llm(content, params)
 
-        # Try to match genre keywords in tags first (priority order)
-        genre = "other"  # default
-        for genre_name in genre_priority:
-            keywords = genre_keywords.get(genre_name, [])
-            matched = False
-            for keyword in keywords:
-                if keyword in tags_text:
-                    genre = genre_name
-                    matched = True
-                    break
-            if matched:
-                break
-
-        # If no match in tags, check content
-        if genre == "other":
-            for genre_name in genre_priority:
-                keywords = genre_keywords.get(genre_name, [])
-                matched = False
-                for keyword in keywords:
-                    if keyword in content:
-                        genre = genre_name
-                        matched = True
-                        break
-                if matched:
-                    break
-
-        # Add genre to item
+        # Add fields to item
+        item["topic"] = topic
         item["genre"] = genre
         result[key] = item
 
     return result
 
 
-@timed_node
-def extract_topic(
-    partitioned_input: dict[str, Callable],
-    params: dict,
-) -> dict[str, dict]:
-    """Extract topic from content using LLM.
+def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, str]:
+    """Helper to extract topic and genre via LLM.
 
     Args:
-        partitioned_input: Items with genre field and content
-        params: Parameters dict with ollama settings
+        content: Markdown content with frontmatter
+        params: Parameters dict with ollama settings and genre_vault_mapping
 
     Returns:
-        dict[str, dict]: Items with 'topic' field added
-
-    Topic extraction logic:
-    - LLM extracts main topic from content
-    - Normalize to lowercase (AWS -> aws)
-    - Preserve spaces (React Native -> react native)
-    - Empty string on extraction failure
+        tuple[str, str]: (topic, genre) - topic is lowercase, genre from config
+                        Returns ("", "other") on extraction failure
     """
-    result = {}
+    config = get_ollama_config(params, "extract_topic_and_genre")
 
-    for key, load_func_or_item in partitioned_input.items():
-        # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+    # Parse genre config to get dynamic genre definitions
+    genre_vault_mapping = params.get("genre_vault_mapping", {})
+    genre_definitions, valid_genres = _parse_genre_config(genre_vault_mapping)
+    genre_prompt = _build_genre_prompt(genre_definitions)
 
-        content = item.get("content", "")
+    # Extract body text (skip frontmatter)
+    body = content
+    if content.startswith("---\n"):
+        try:
+            end_idx = content.index("\n---\n", 4)
+            body = content[end_idx + 5 :]
+        except ValueError:
+            pass
 
-        # Extract topic via LLM
-        topic = _extract_topic_via_llm(content, params)
+    # Build prompts with dynamic genre list
+    system_prompt = f"""あなたはコンテンツ分類の専門家です。会話内容から主題とジャンルを抽出してください。
 
-        # Normalize topic to lowercase (preserve spaces)
-        if topic:
-            topic = topic.lower()
-        else:
-            topic = ""
+**主題 (topic)**: カテゴリレベル（1-3単語）で答え、具体的な商品名・料理名・固有名詞ではなく、上位概念で答えてください。
+例:
+- バナナプリンの作り方 → 離乳食
+- iPhone 15 Pro の設定 → スマートフォン
+- Claude 3.5 Sonnet の使い方 → AI
 
-        # Add topic to item
-        item["topic"] = topic
-        result[key] = item
+**ジャンル (genre)**: 以下のいずれか1つを選んでください（必ず小文字で）:
+{genre_prompt}
 
-    return result
+JSON形式で回答してください:
+{{"topic": "主題", "genre": "ジャンル"}}
+
+抽出できない場合:
+{{"topic": "", "genre": "other"}}"""
+
+    user_message = f"""会話内容:
+{body[:1000]}
+
+主題とジャンルをJSON形式で答えてください。"""
+
+    # Call Ollama API
+    response, error = call_ollama(
+        system_prompt,
+        user_message,
+        model=config.model,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        temperature=config.temperature,
+        num_predict=config.num_predict,
+    )
+
+    if error:
+        logger.warning(f"Failed to extract topic and genre via LLM: {error}")
+        return "", "other"
+
+    # Parse JSON response
+    import json
+
+    try:
+        result = json.loads(response.strip())
+        topic = result.get("topic", "").lower().strip()
+        genre = result.get("genre", "other").lower().strip()
+
+        # Validate genre using dynamic valid_genres from config
+        if genre not in valid_genres:
+            logger.warning(f"Invalid genre '{genre}', defaulting to 'other'")
+            genre = "other"
+
+        return topic, genre
+
+    except (json.JSONDecodeError, AttributeError) as e:
+        logger.warning(f"Failed to parse LLM response as JSON: {e}")
+        return "", "other"
 
 
 def _extract_topic_via_llm(content: str, params: dict) -> str | None:
@@ -299,10 +365,7 @@ def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) 
 
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
 
         content = item.get("content", "")
 
@@ -372,10 +435,7 @@ def clean_content(partitioned_input: dict[str, Callable]) -> dict[str, dict]:
 
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
 
         content = item.get("content", "")
 
@@ -452,10 +512,7 @@ def embed_frontmatter_fields(
 
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
 
         content = item.get("content", "")
         genre = item.get("genre", "other")
@@ -580,10 +637,7 @@ def log_genre_distribution(
     classified_items = {}
     for key, load_func_or_item in partitioned_input.items():
         # Handle both callable (real pipeline) and dict (memory dataset in tests)
-        if callable(load_func_or_item):
-            item = load_func_or_item()
-        else:
-            item = load_func_or_item
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
         classified_items[key] = item
 
     if not classified_items:
@@ -607,3 +661,224 @@ def log_genre_distribution(
     logger.info("\n".join(lines))
 
     return classified_items
+
+
+def _suggest_new_genres_via_llm(other_items: list[dict], params: dict) -> list[dict]:
+    """Suggest new genres for other-classified items via LLM.
+
+    Args:
+        other_items: List of items with genre="other"
+        params: Parameters dict with ollama settings
+
+    Returns:
+        list[dict]: List of GenreSuggestion dicts with structure:
+            {
+                "suggested_genre": str,
+                "suggested_description": str,
+                "sample_titles": list[str],
+                "content_count": int,
+            }
+        Returns empty list on error or if no suggestions found.
+    """
+    if not other_items:
+        return []
+
+    config = get_ollama_config(params, "extract_topic_and_genre")
+
+    # Collect titles and content samples for LLM analysis
+    titles = []
+    for item in other_items[:20]:  # Limit to first 20 for analysis
+        metadata = item.get("metadata", {})
+        title = metadata.get("title", "無題")
+        titles.append(title)
+
+    titles_text = "\n".join(f"- {t}" for t in titles)
+
+    # Build prompt to suggest new genres
+    system_prompt = """あなたはコンテンツ分類の専門家です。"other" に分類されたコンテンツのタイトルを分析し、新しいジャンルを提案してください。
+
+複数の共通パターンがある場合は複数のジャンルを提案してください（最大3件）。
+各提案には以下を含めてください:
+- suggested_genre: ジャンル名（小文字英字、例: cooking, sports）
+- suggested_description: ジャンルの説明（日本語、例: 料理/レシピ/食材）
+- sample_titles: 該当するタイトルの例（最大5件）
+- content_count: 該当するコンテンツの推定数
+
+JSON配列形式で回答してください:
+[
+  {
+    "suggested_genre": "ジャンル名",
+    "suggested_description": "説明",
+    "sample_titles": ["タイトル1", "タイトル2"],
+    "content_count": 推定数
+  }
+]
+
+明確なパターンが見つからない場合は空の配列 [] を返してください。"""
+
+    user_message = f"""以下は "other" に分類されたコンテンツのタイトル一覧です:
+
+{titles_text}
+
+新しいジャンルを提案してください。"""
+
+    # Call Ollama API
+    response, error = call_ollama(
+        system_prompt,
+        user_message,
+        model=config.model,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        temperature=config.temperature,
+        num_predict=config.num_predict,
+    )
+
+    if error:
+        logger.warning(f"Failed to suggest genres via LLM: {error}")
+        return []
+
+    # Parse JSON response
+    import json
+
+    try:
+        suggestions = json.loads(response.strip())
+        if not isinstance(suggestions, list):
+            logger.warning("LLM response is not a list, returning empty suggestions")
+            return []
+        return suggestions
+    except (json.JSONDecodeError, AttributeError) as e:
+        logger.warning(f"Failed to parse LLM response as JSON: {e}")
+        return []
+
+
+def _generate_suggestions_markdown(suggestions: list[dict], other_count: int) -> str:
+    """Generate markdown report from genre suggestions.
+
+    Args:
+        suggestions: List of GenreSuggestion dicts
+        other_count: Total count of items with genre="other"
+
+    Returns:
+        str: Markdown formatted report
+    """
+    from datetime import datetime
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    lines = [
+        "# ジャンル提案レポート",
+        "",
+        f"**生成日時**: {now}",
+        f"**other 分類数**: {other_count}件",
+        f"**提案数**: {len(suggestions)}件",
+        "",
+        "---",
+        "",
+    ]
+
+    if not suggestions:
+        lines.extend(
+            [
+                "## 提案なし",
+                "",
+                "明確なパターンが見つからなかったため、新ジャンルの提案はありません。",
+            ]
+        )
+        return "\n".join(lines)
+
+    for idx, suggestion in enumerate(suggestions, start=1):
+        genre = suggestion.get("suggested_genre", "unknown")
+        description = suggestion.get("suggested_description", "")
+        sample_titles = suggestion.get("sample_titles", [])
+        content_count = suggestion.get("content_count", 0)
+
+        lines.extend(
+            [
+                f"## 提案 {idx}: {genre}",
+                "",
+                f"**Description**: {description}",
+                "",
+                f"**該当コンテンツ** ({content_count}件):",
+            ]
+        )
+
+        for title in sample_titles[:5]:  # Max 5 titles
+            lines.append(f"- {title}")
+
+        lines.extend(
+            [
+                "",
+                "**設定への追加例**:",
+                "```yaml",
+                f"{genre}:",
+                '  vault: "適切なVault名"',
+                f'  description: "{description}"',
+                "```",
+                "",
+                "---",
+                "",
+            ]
+        )
+
+    return "\n".join(lines)
+
+
+@timed_node
+def analyze_other_genres(
+    partitioned_input: dict[str, Callable],
+    params: dict,
+) -> str:
+    """Analyze other-classified items and suggest new genres if needed.
+
+    Args:
+        partitioned_input: PartitionedDataset-style input (dict of callables)
+        params: Parameters dict with ollama settings
+
+    Returns:
+        str: Markdown report of genre suggestions
+
+    Analysis logic:
+    - Count items with genre="other"
+    - If >= 5: call LLM to suggest new genres, generate report
+    - If < 5: return "no suggestions" message
+    - Write report to data/07_model_output/genre_suggestions.md
+    """
+    # Load all items and count "other" items
+    other_items = []
+    for _key, load_func_or_item in partitioned_input.items():
+        # Handle both callable (real pipeline) and dict (memory dataset in tests)
+        item = load_func_or_item() if callable(load_func_or_item) else load_func_or_item
+
+        if item.get("genre") == "other":
+            other_items.append(item)
+
+    other_count = len(other_items)
+
+    # Check threshold
+    if other_count < 5:
+        logger.info(f"other 分類が {other_count} 件のため、ジャンル提案をスキップします（5件未満）")
+        return (
+            _generate_suggestions_markdown([], other_count)
+            + "\n\nother 分類が5件未満のため、新ジャンルの提案はありません。"
+        )
+
+    # Suggest new genres via LLM
+    logger.info(f"other 分類が {other_count} 件あります。LLM による新ジャンル提案を実行します。")
+    suggestions = _suggest_new_genres_via_llm(other_items, params)
+
+    # Generate markdown report
+    report = _generate_suggestions_markdown(suggestions, other_count)
+
+    # Write report to file
+    import os
+
+    output_dir = "data/07_model_output"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "genre_suggestions.md")
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(report)
+
+    logger.info(f"ジャンル提案レポートを {output_path} に出力しました。")
+
+    return report

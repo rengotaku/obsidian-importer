@@ -81,8 +81,7 @@ class TestPipelineRegistry(unittest.TestCase):
         node_names = {n.name for n in pipeline.nodes}
 
         expected_organize_nodes = [
-            "classify_genre",
-            "extract_topic",
+            "extract_topic_and_genre",
             "normalize_frontmatter",
             "clean_content",
             "embed_frontmatter_fields",

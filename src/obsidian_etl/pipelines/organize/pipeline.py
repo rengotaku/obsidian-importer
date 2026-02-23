@@ -1,8 +1,7 @@
 """Organize pipeline definition.
 
-This pipeline handles genre classification and frontmatter embedding:
-- classify_genre: Keyword-based genre detection
-- extract_topic: LLM-based topic extraction
+This pipeline handles LLM-based classification and frontmatter embedding:
+- extract_topic_and_genre: LLM-based topic and genre extraction
 - normalize_frontmatter: Clean frontmatter fields
 - clean_content: Remove excess blank lines
 - embed_frontmatter_fields: Embed genre, topic, summary into frontmatter
@@ -16,10 +15,10 @@ from __future__ import annotations
 from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
-    classify_genre,
+    analyze_other_genres,
     clean_content,
     embed_frontmatter_fields,
-    extract_topic,
+    extract_topic_and_genre,
     normalize_frontmatter,
 )
 
@@ -31,29 +30,25 @@ def create_pipeline(**kwargs) -> Pipeline:
         **kwargs: Ignored
 
     Returns:
-        Pipeline: Organize pipeline (classify → extract_topic → normalize → clean → embed)
+        Pipeline: Organize pipeline (extract_topic_and_genre → analyze_other_genres → normalize → clean → embed)
     """
     return pipeline(
         [
             node(
-                func=classify_genre,
-                inputs={
-                    "partitioned_input": "markdown_notes",
-                    "params": "params:organize",
-                    "existing_output": "existing_classified_items",
-                },
+                func=extract_topic_and_genre,
+                inputs=["markdown_notes", "params:organize"],
                 outputs="classified_items",
-                name="classify_genre",
+                name="extract_topic_and_genre",
             ),
             node(
-                func=extract_topic,
+                func=analyze_other_genres,
                 inputs=["classified_items", "params:organize"],
-                outputs="topic_extracted_items",
-                name="extract_topic",
+                outputs="genre_suggestions_report",
+                name="analyze_other_genres",
             ),
             node(
                 func=normalize_frontmatter,
-                inputs=["topic_extracted_items", "params:organize"],
+                inputs=["classified_items", "params:organize"],
                 outputs="normalized_items",
                 name="normalize_frontmatter",
             ),
