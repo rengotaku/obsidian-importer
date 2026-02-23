@@ -8,7 +8,6 @@ LLM 会話履歴を Obsidian ナレッジベースに変換するパイプライ
 |------|------|
 | **後方互換性は考慮しない** | 破壊的変更を躊躇なく行う |
 | **シンプルさ優先** | 冗長な構造より、明確で簡潔な設計を選択 |
-| **レガシーコード修正禁止** | `src/converter/` は修正不可。`src/obsidian_etl/` のみ修正対象 |
 
 ## フォルダ構成
 
@@ -25,7 +24,6 @@ obsidian-importer/
 │       └── organized_review/  # 分類済みレビュー対象
 │
 ├── src/obsidian_etl/          # Kedro パイプライン（現行）
-├── src/converter/             # レガシー（修正禁止）
 ├── src/rag/                   # RAG 機能
 ├── conf/                      # Kedro 設定
 ├── tests/                     # テスト
@@ -216,7 +214,6 @@ file_id: abc123
 - 日本語ファイル名可
 - 大量ファイル処理時は確認を求める
 - **Python 実行は venv 使用**: `.venv/bin/python` または `make`
-- **レガシーコード修正禁止**: `src/converter/` は修正不可
 
 ## Active Technologies
 - Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+ (052-improve-summary-quality)
