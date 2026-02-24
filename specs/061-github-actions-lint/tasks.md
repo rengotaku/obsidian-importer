@@ -84,24 +84,24 @@
 
 ### 入力
 
-- [ ] T020 Read previous phase output: specs/061-github-actions-lint/tasks/ph2-output.md
+- [X] T020 Read previous phase output: specs/061-github-actions-lint/tasks/ph2-output.md
 
 ### 実装
 
-- [ ] T021 Create `.github/workflows/` directory if not exists
-- [ ] T022 [P] [US1] [US2] Create `.github/workflows/lint.yml` with workflow name and triggers
-- [ ] T023 [P] [US1] [US2] Add `ruff` job to `.github/workflows/lint.yml`
-- [ ] T024 [P] [US1] [US2] Add `pylint` job to `.github/workflows/lint.yml`
-- [ ] T025 [US1] [US2] Configure pip cache in both jobs in `.github/workflows/lint.yml`
+- [X] T021 Create `.github/workflows/` directory if not exists
+- [X] T022 [P] [US1] [US2] Create `.github/workflows/lint.yml` with workflow name and triggers
+- [X] T023 [P] [US1] [US2] Add `ruff` job to `.github/workflows/lint.yml`
+- [X] T024 [P] [US1] [US2] Add `pylint` job to `.github/workflows/lint.yml`
+- [X] T025 [US1] [US2] Configure pip cache in both jobs in `.github/workflows/lint.yml`
 
 ### 検証
 
-- [ ] T026 Run `make lint` locally to verify no lint errors block PR
-- [ ] T027 Commit and push changes to feature branch
-- [ ] T028 Create PR and verify GitHub Actions triggers
-- [ ] T029 Verify ruff job shows separate status in PR
-- [ ] T030 Verify pylint job shows separate status in PR
-- [ ] T031 Generate phase output: specs/061-github-actions-lint/tasks/ph3-output.md
+- [X] T026 Run `make lint` locally to verify no lint errors block PR
+- [SKIP] T027 Commit and push changes to feature branch (requires user action)
+- [SKIP] T028 Create PR and verify GitHub Actions triggers (requires GitHub interaction)
+- [SKIP] T029 Verify ruff job shows separate status in PR (requires GitHub interaction)
+- [SKIP] T030 Verify pylint job shows separate status in PR (requires GitHub interaction)
+- [X] T031 Generate phase output: specs/061-github-actions-lint/tasks/ph3-output.md
 
 **Checkpoint**: PR should show two separate check statuses (ruff, pylint)
 
