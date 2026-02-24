@@ -25,7 +25,7 @@ help:
 	@echo ""
 	@echo "Setup:"
 	@echo "  setup          Python venv作成 + 依存関係インストール"
-	@echo "  setup-dev      開発用依存関係インストール (ruff, coverage)"
+	@echo "  setup-dev      開発用依存関係インストール (ruff, pylint, coverage)"
 	@echo ""
 	@echo "Kedro Pipeline:"
 	@echo "  run            パイプライン実行 (= kedro-run)"
@@ -113,7 +113,7 @@ $(VENV_DIR)/bin/activate:
 # 開発用依存関係インストール
 setup-dev: setup
 	@echo "Installing dev dependencies..."
-	$(VENV_DIR)/bin/pip install "ruff>=0.1.0" "coverage>=7.0"
+	$(VENV_DIR)/bin/pip install -e ".[dev]"
 	@echo "✅ Dev dependencies installed"
 
 # ═══════════════════════════════════════════════════════════
