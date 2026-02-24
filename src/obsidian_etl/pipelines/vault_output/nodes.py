@@ -94,10 +94,7 @@ def resolve_vault_destination(
 
     for key, content_or_func in organized_files.items():
         # Handle both callable (PartitionedDataset) and string (unit tests)
-        if callable(content_or_func):
-            content = content_or_func()
-        else:
-            content = content_or_func
+        content = content_or_func() if callable(content_or_func) else content_or_func
 
         # Parse frontmatter
         if not content.startswith("---"):

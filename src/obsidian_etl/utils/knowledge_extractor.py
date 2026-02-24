@@ -62,10 +62,7 @@ def is_english_summary(text: str | None) -> bool:
     # ASCII ratio check (>70% ASCII = English)
     ascii_chars = sum(1 for c in text if ord(c) < 128)
     total_chars = len(text)
-    if total_chars > 0 and ascii_chars / total_chars > 0.7:
-        return True
-
-    return False
+    return total_chars > 0 and ascii_chars / total_chars > 0.7
 
 
 def translate_summary(summary: str, params: dict) -> tuple[str | None, str | None]:

@@ -259,9 +259,13 @@ def _split_markdown_sections(text: str) -> tuple[str, str, list[str], str]:
     _flush_section()
 
     # Title fallback
-    if not has_h1 and first_heading_text:
-        if first_heading_level >= 2 and first_heading_text not in ("要約", "タグ", "内容"):
-            title = first_heading_text
+    if (
+        not has_h1
+        and first_heading_text
+        and first_heading_level >= 2
+        and first_heading_text not in ("要約", "タグ", "内容")
+    ):
+        title = first_heading_text
 
     # Plain text fallback
     if not first_heading_text:

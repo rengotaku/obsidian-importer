@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import time
 from collections.abc import Callable
@@ -47,8 +48,6 @@ EMOJI_PATTERN = re.compile(
 
 # Streaming output directory (relative to project root)
 # Respects KEDRO_ENV=test for test environment
-import os
-
 _env = os.getenv("KEDRO_ENV", "base")
 _data_prefix = "data/test" if _env == "test" else "data"
 STREAMING_OUTPUT_DIR = Path(f"{_data_prefix}/03_primary/transformed_knowledge")
@@ -342,7 +341,7 @@ def format_markdown(
     normal_output = {}
     review_output = {}
 
-    for partition_id, load_func in partitioned_input.items():
+    for _partition_id, load_func in partitioned_input.items():
         item = load_func()
 
         metadata = item.get("metadata", {})

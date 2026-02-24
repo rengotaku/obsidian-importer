@@ -176,7 +176,7 @@ def extract_topic_and_genre(
                 from datetime import date, datetime
 
                 for fkey, fval in frontmatter.items():
-                    if isinstance(fval, (date, datetime)):
+                    if isinstance(fval, date | datetime):
                         frontmatter[fkey] = str(fval)
                 content = body  # Use body for extraction
             else:

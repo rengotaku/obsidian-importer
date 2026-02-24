@@ -113,21 +113,21 @@
 
 ### 入力
 
-- [ ] T032 Read previous phase output: specs/061-github-actions-lint/tasks/ph3-output.md
+- [X] T032 Read previous phase output: specs/061-github-actions-lint/tasks/ph3-output.md
 
 ### 実装
 
-- [ ] T033 [P] Fix any ruff errors in src/obsidian_etl/
-- [ ] T034 [P] Fix any pylint errors in src/obsidian_etl/ (or add to disable list)
-- [ ] T035 [P] Update CLAUDE.md if needed (add CI-related notes)
-- [ ] T036 Update Makefile help text to include new targets
+- [X] T033 [P] Fix any ruff errors in src/obsidian_etl/
+- [X] T034 [P] Fix any pylint errors in src/obsidian_etl/ (or add to disable list)
+- [X] T035 [P] Update CLAUDE.md if needed (add CI-related notes)
+- [X] T036 Update Makefile help text to include new targets
 
 ### 検証
 
-- [ ] T037 Run `make lint` to verify all linters pass
-- [ ] T038 Run `make test` to verify no regressions
-- [ ] T039 Verify CI passes on final PR
-- [ ] T040 Generate phase output: specs/061-github-actions-lint/tasks/ph4-output.md
+- [X] T037 Run `make lint` to verify all linters pass
+- [X] T038 Run `make test` to verify no regressions
+- [SKIP] T039 Verify CI passes on final PR (requires GitHub interaction)
+- [X] T040 Generate phase output: specs/061-github-actions-lint/tasks/ph4-output.md
 
 ---
 

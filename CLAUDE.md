@@ -94,11 +94,15 @@ data/01_raw/*.zip → data/02_intermediate/parsed/*.json
 ```bash
 make test            # 全テスト実行
 make coverage        # カバレッジ計測（≥80%）
-make lint            # コード品質チェック (ruff)
+make lint            # コード品質チェック (ruff + pylint)
+make ruff            # ruff のみ実行
+make pylint          # pylint のみ実行
 make kedro-viz       # DAG 可視化
 make test-e2e        # E2E テスト（ゴールデンファイル比較）
 make test-e2e-golden # ゴールデンファイル品質テスト
 ```
+
+**CI**: GitHub Actions で PR 作成時および main push 時に `make ruff` と `make pylint` を自動実行
 
 ### ゴールデンファイル
 
