@@ -55,22 +55,22 @@
 
 ### 入力
 
-- [ ] T010 Read previous phase output: specs/061-github-actions-lint/tasks/ph1-output.md
-- [ ] T011 Read current Makefile
+- [X] T010 Read previous phase output: specs/061-github-actions-lint/tasks/ph1-output.md
+- [X] T011 Read current Makefile
 
 ### 実装
 
-- [ ] T012 [US3] Create `ruff` target in Makefile (extract from existing `lint`)
-- [ ] T013 [US3] Create `pylint` target in Makefile
-- [ ] T014 [US3] Update `lint` target to call `ruff` then `pylint` (fail-fast) in Makefile
-- [ ] T015 [US3] Update `.PHONY` to include `ruff`, `pylint` in Makefile
+- [X] T012 [US3] Create `ruff` target in Makefile (extract from existing `lint`)
+- [X] T013 [US3] Create `pylint` target in Makefile
+- [X] T014 [US3] Update `lint` target to call `ruff` then `pylint` (fail-fast) in Makefile
+- [X] T015 [US3] Update `.PHONY` to include `ruff`, `pylint` in Makefile
 
 ### 検証
 
-- [ ] T016 Run `make ruff` and verify ruff executes
-- [ ] T017 Run `make pylint` and verify pylint executes
-- [ ] T018 Run `make lint` and verify both linters run sequentially
-- [ ] T019 Generate phase output: specs/061-github-actions-lint/tasks/ph2-output.md
+- [X] T016 Run `make ruff` and verify ruff executes
+- [X] T017 Run `make pylint` and verify pylint executes
+- [X] T018 Run `make lint` and verify both linters run sequentially
+- [X] T019 Generate phase output: specs/061-github-actions-lint/tasks/ph2-output.md
 
 **Checkpoint**: `make lint` should work locally with both ruff and pylint
 

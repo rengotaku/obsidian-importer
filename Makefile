@@ -8,7 +8,7 @@ SESSION_DIR := $(BASE_DIR)/.staging/@session
 LLM_EXPORTS_DIR := $(BASE_DIR)/.staging/@llm_exports
 COMMA := ,
 
-.PHONY: help setup setup-dev test coverage check lint clean
+.PHONY: help setup setup-dev test coverage check lint ruff pylint clean
 .PHONY: rag-index rag-search rag-ask rag-status
 .PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
 .PHONY: run kedro-run kedro-test kedro-viz
@@ -281,14 +281,21 @@ check:
 	@find $(BASE_DIR)/src/obsidian_etl -name "*.py" -exec $(PYTHON) -m py_compile {} \;
 	@echo "✅ 構文エラーなし"
 
-# コード品質チェック (ruff)
-lint:
-	@echo "Running ruff lint..."
-	@timeout 10 $(VENV_DIR)/bin/ruff check src/obsidian_etl/ || { \
-		echo "❌ Lint failed or timed out"; \
-		exit 1; \
-	}
-	@echo "✅ Lint passed"
+# コード品質チェック (ruff only)
+ruff:
+	@echo "Running ruff..."
+	@$(VENV_DIR)/bin/ruff check src/obsidian_etl/
+	@echo "✅ ruff passed"
+
+# コード品質チェック (pylint only)
+pylint:
+	@echo "Running pylint..."
+	@$(VENV_DIR)/bin/pylint src/obsidian_etl/
+	@echo "✅ pylint passed"
+
+# コード品質チェック (ruff + pylint, fail-fast)
+lint: ruff pylint
+	@echo "✅ All linters passed"
 
 # E2Eテスト用データディレクトリ削除
 test-clean:
