@@ -187,6 +187,14 @@ def _make_organize_params() -> dict:
             "lifestyle",
             "daily",
         ],
+        "ollama": {
+            "defaults": {
+                "model": "gemma3:12b",
+                "base_url": "http://localhost:11434",
+                "timeout": 120,
+                "temperature": 0.2,
+            },
+        },
     }
 
 
@@ -211,7 +219,6 @@ class TestExtractTopicAndGenre(unittest.TestCase):
         )
         partitioned_input = _make_partitioned_input({"item-eng": item})
         params = _make_organize_params()
-        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
 
         # Mock LLM to return topic and genre
         with patch(
@@ -237,7 +244,6 @@ class TestExtractTopicAndGenre(unittest.TestCase):
         )
         partitioned_input = _make_partitioned_input({"item-parse-error": item})
         params = _make_organize_params()
-        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
 
         # Mock LLM to return fallback on parse error
         with patch(
@@ -258,7 +264,6 @@ class TestExtractTopicAndGenre(unittest.TestCase):
         )
         partitioned_input = _make_partitioned_input({"item-invalid-genre": item})
         params = _make_organize_params()
-        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
 
         # Mock LLM to return invalid genre
         with patch(
@@ -289,7 +294,6 @@ class TestExtractTopicAndGenre(unittest.TestCase):
         }
         partitioned_input = _make_partitioned_input(items)
         params = _make_organize_params()
-        params["ollama"] = {"model": "test-model", "base_url": "http://localhost:11434"}
 
         # Mock LLM to return different values for each item
         with patch(
@@ -1608,7 +1612,12 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
             },
         ]
         params = {
-            "ollama": {"model": "test-model", "base_url": "http://localhost:11434"},
+            "ollama": {
+                "defaults": {
+                    "model": "test-model",
+                    "base_url": "http://localhost:11434",
+                }
+            },
             "genre_vault_mapping": _make_genre_config_new_format(),
         }
 
@@ -1653,7 +1662,12 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
             },
         ] * 5
         params = {
-            "ollama": {"model": "test-model", "base_url": "http://localhost:11434"},
+            "ollama": {
+                "defaults": {
+                    "model": "test-model",
+                    "base_url": "http://localhost:11434",
+                }
+            },
             "genre_vault_mapping": _make_genre_config_new_format(),
         }
 
@@ -1674,7 +1688,12 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
             },
         ] * 5
         params = {
-            "ollama": {"model": "test-model", "base_url": "http://localhost:11434"},
+            "ollama": {
+                "defaults": {
+                    "model": "test-model",
+                    "base_url": "http://localhost:11434",
+                }
+            },
             "genre_vault_mapping": _make_genre_config_new_format(),
         }
 
