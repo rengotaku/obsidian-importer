@@ -14,7 +14,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "coverage>=7.0",
-    "ruff>=0.1.0",
+    "ruff==0.8.6",
+    "pylint==3.3.3",
     "kedro-viz>=10.0",
 ]
 
@@ -96,6 +97,22 @@ unfixable = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["src", "obsidian_etl"]
+
+[tool.pylint.main]
+ignore = [".venv", "venv", "__pycache__", ".staging", ".specify", ".claude"]
+jobs = 0  # auto-detect CPU count
+
+[tool.pylint.messages_control]
+disable = [
+    "C0114",  # missing-module-docstring (ruff handles)
+    "C0115",  # missing-class-docstring
+    "C0116",  # missing-function-docstring
+    "W0511",  # fixme (allow TODO comments)
+    "R0903",  # too-few-public-methods
+]
+
+[tool.pylint.format]
+max-line-length = 100  # match ruff
 
 [tool.kedro_telemetry]
 project_id = "d43e272a453344c2b75e16ef0c43ff3d"

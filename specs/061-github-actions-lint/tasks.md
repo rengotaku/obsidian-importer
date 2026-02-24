@@ -35,15 +35,15 @@
 
 **Purpose**: Add pylint dependency and configuration to pyproject.toml
 
-- [ ] T001 Read current pyproject.toml
-- [ ] T002 [P] Add pylint to dev dependencies with pinned version in pyproject.toml
-- [ ] T003 [P] Pin ruff version in pyproject.toml (change `>=0.1.0` to `==0.8.6`)
-- [ ] T004 [P] Add `[tool.pylint.main]` section in pyproject.toml
-- [ ] T005 [P] Add `[tool.pylint.messages_control]` section in pyproject.toml
-- [ ] T006 [P] Add `[tool.pylint.format]` section in pyproject.toml
-- [ ] T007 Run `pip install -e ".[dev]"` to install updated dependencies
-- [ ] T008 Verify `pylint --version` outputs expected version
-- [ ] T009 Generate phase output: specs/061-github-actions-lint/tasks/ph1-output.md
+- [X] T001 Read current pyproject.toml
+- [X] T002 [P] Add pylint to dev dependencies with pinned version in pyproject.toml
+- [X] T003 [P] Pin ruff version in pyproject.toml (change `>=0.1.0` to `==0.8.6`)
+- [X] T004 [P] Add `[tool.pylint.main]` section in pyproject.toml
+- [X] T005 [P] Add `[tool.pylint.messages_control]` section in pyproject.toml
+- [X] T006 [P] Add `[tool.pylint.format]` section in pyproject.toml
+- [X] T007 Run `pip install -e ".[dev]"` to install updated dependencies
+- [X] T008 Verify `pylint --version` outputs expected version
+- [X] T009 Generate phase output: specs/061-github-actions-lint/tasks/ph1-output.md
 
 ---
 
