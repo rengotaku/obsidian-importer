@@ -33,7 +33,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 func=extract_knowledge,
                 inputs={
                     "partitioned_input": "parsed_items",
-                    "params": "params:import",
+                    "params": "parameters",
                     "existing_output": "existing_transformed_items_with_knowledge",
                 },
                 outputs="transformed_items_with_knowledge",
