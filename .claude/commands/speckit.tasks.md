@@ -68,7 +68,9 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**TDD is MANDATORY**: User Story phases MUST follow TDD workflow (テスト設計 → テスト実装 RED → 実装 GREEN → 検証).
+**TDD is MANDATORY**: User Story phases MUST follow TDD workflow (Test Design → Test Implementation RED → Implementation GREEN → Verification).
+
+**Output Language**: All generated files under specs/ (tasks.md, phase outputs, RED test outputs) MUST be written in **Japanese**.
 
 ### Checklist Format (REQUIRED)
 
@@ -107,10 +109,10 @@ Every task MUST strictly follow this format:
 1. **From User Stories (spec.md)** - PRIMARY ORGANIZATION:
    - Each user story (P1, P2, P3...) gets its own phase
    - Map all related components to their story:
-     - テスト設計: テストスケルトン作成タスク
-     - テスト実装: assertions 実装 + RED 確認
-     - 実装: Models, Services, Endpoints
-     - 検証: GREEN 確認 + カバレッジ
+     - Test Design: Create test skeleton tasks
+     - Test Implementation: assertions + RED verification
+     - Implementation: Models, Services, Endpoints
+     - Verification: GREEN verification + coverage
    - Mark story dependencies (most stories should be independent)
 
 2. **From Contracts**:
@@ -129,41 +131,42 @@ Every task MUST strictly follow this format:
 
 ### Phase Structure
 
-- **Phase 1**: Setup (project initialization) - メインエージェント実行（NO TDD）
-- **Phase 2+**: Foundational/User Stories - TDD フロー（テスト実装セクションがあれば）
+- **Phase 1**: Setup (project initialization) - Main agent execution (NO TDD)
+- **Phase 2+**: Foundational/User Stories - TDD flow (if test implementation section exists)
   - Each phase should be a complete, independently testable increment
-- **Final Phase**: Polish & Cross-Cutting Concerns - phase-executor のみ（NO TDD）
+- **Final Phase**: Polish & Cross-Cutting Concerns - speckit:phase-executor only (NO TDD)
 
 ### TDD Phase Structure (Foundational/User Story Phases)
 
-TDD Phase は以下の構造で生成:
+TDD Phase structure:
 
 ```markdown
 ## Phase N: {title}
 
-### 入力
+### Input
+- [ ] T0XX Read setup analysis: {FEATURE_DIR}/tasks/ph1-output.md
 - [ ] T0XX Read previous phase output: {FEATURE_DIR}/tasks/ph{N-1}-output.md
 
-### テスト実装 (RED)
+### Test Implementation (RED)
 - [ ] T0XX [USX] Implement tests for {feature} in {test_file}
 - [ ] T0XX Verify `make test` FAIL (RED)
 - [ ] T0XX Generate RED output: {FEATURE_DIR}/red-tests/ph{N}-test.md
 
-### 実装 (GREEN)
+### Implementation (GREEN)
 - [ ] T0XX Read RED tests: {FEATURE_DIR}/red-tests/ph{N}-test.md
 - [ ] T0XX [USX] Implement {feature} in {src_file}
 - [ ] T0XX Verify `make test` PASS (GREEN)
 
-### 検証
+### Verification
 - [ ] T0XX Verify `make coverage` ≥80%
 - [ ] T0XX Generate phase output: {FEATURE_DIR}/tasks/ph{N}-output.md
 ```
 
-**TDD サブエージェント役割**:
-- **tdd-generator**: 入力 → テスト実装 (RED) → `red-tests/ph{N}-test.md` 出力
-- **phase-executor**: `red-tests/ph{N}-test.md` 入力 → 実装 (GREEN) → 検証 → `tasks/ph{N}-output.md` 出力
-- RED/GREEN 確認タスクは必須（中断時の状態把握のため）
-- 複数機能がある場合は「テスト実装 → 実装」を機能ごとに繰り返す
+**TDD Subagent Roles**:
+- **speckit:tdd-generator**: Input → Test Implementation (RED) → `red-tests/ph{N}-test.md` output
+- **speckit:phase-executor**: `red-tests/ph{N}-test.md` input → Implementation (GREEN) → Verification → `tasks/ph{N}-output.md` output
+- RED/GREEN verification tasks are mandatory (for state tracking on interruption)
+- For multiple features, repeat "Test Implementation → Implementation" per feature
 
 **REQUIRED**: Each phase MUST end with a `make test` verification task:
 ```text
@@ -173,59 +176,29 @@ This ensures incremental validation and prevents regression at each phase bounda
 
 ### Phase Input/Output (REQUIRED)
 
-**Input**: Each phase (except Phase 1) MUST start by reading the previous phase's output file:
+**Input**: Each phase (except Phase 1) MUST start by reading setup analysis AND previous phase output:
 ```text
+- [ ] T0XX Read setup analysis: {FEATURE_DIR}/tasks/ph1-output.md
 - [ ] T0XX Read previous phase output: {FEATURE_DIR}/tasks/ph{N-1}-output.md
 ```
 
-**TDD Phase Output（2段階）**:
+**Note**: Phase 2 only reads ph1-output.md (setup analysis = previous phase).
 
-1. **RED 出力** (tdd-generator): `{FEATURE_DIR}/red-tests/ph{N}-test.md`
-   ```markdown
-   # Phase {N} RED Tests
+**TDD Phase Output (2 stages)**:
 
-   ## サマリー
-   - Phase: Phase {N} - {Phase Name}
-   - FAIL テスト数: {count}
-   - テストファイル: {list}
+1. **RED Output** (speckit:tdd-generator): `{FEATURE_DIR}/red-tests/ph{N}-test.md`
+   - Format: `.specify/templates/red-test-template.md`
 
-   ## FAIL テスト一覧
-   | テストファイル | テストメソッド | 期待動作 |
-   |---------------|---------------|---------|
-   | tests/test_xxx.py | test_feature_a | {何をテストしているか} |
+2. **Phase Output** (speckit:phase-executor): `{FEATURE_DIR}/tasks/ph{N}-output.md`
+   - Format: `.specify/templates/phN-output-template.md`
 
-   ## 実装ヒント
-   - {テストを PASS させるために必要な実装の概要}
-   ```
-
-2. **Phase 出力** (phase-executor): `{FEATURE_DIR}/tasks/ph{N}-output.md`
-   ```markdown
-   # Phase {N} Output
-
-   ## 作業概要
-   - What was accomplished in this phase
-
-   ## 修正ファイル一覧
-   - `path/to/file1.py` - Description of changes
-   - `path/to/file2.py` - Description of changes
-
-   ## 注意点
-   - Important notes for subsequent phases
-   - Any assumptions made
-
-   ## 実装のミス・課題
-   - Any bugs found and fixed
-   - Known issues or technical debt
-   - Items to revisit in later phases
-   ```
-
-**フォルダ構成**:
+**Directory Structure**:
 ```
 {FEATURE_DIR}/
-├── red-tests/           # tdd-generator 出力（FAIL テスト情報）
+├── red-tests/           # speckit:tdd-generator output (FAIL test info)
 │   ├── ph2-test.md
 │   └── ph3-test.md
-└── tasks/               # phase-executor 出力（Phase 完了情報）
+└── tasks/               # speckit:phase-executor output (Phase completion info)
     ├── ph1-output.md
     └── ph2-output.md
 ```
@@ -236,7 +209,7 @@ This ensures incremental validation and prevents regression at each phase bounda
 
 1. **New Parameters/Features**: If adding parameters or features to existing functions, add tests covering:
    - New parameter variations (e.g., `subfolder` parameter added → test with/without subfolder)
-   - Edge cases (empty string, special formats like "新規: xxx")
+   - Edge cases (empty string, special formats)
    - Integration with existing behavior
 
 2. **Test Task Format**:
@@ -249,6 +222,6 @@ This ensures incremental validation and prevents regression at each phase bounda
 **Example**: Adding `subfolder` parameter to `get_destination_path()`:
 ```text
 - [ ] T015 [P] Add test_destination_with_subfolder in tests/test_files.py
-- [ ] T016 [P] Add test_destination_with_new_subfolder (新規: xxx format) in tests/test_files.py
+- [ ] T016 [P] Add test_destination_with_new_subfolder in tests/test_files.py
 - [ ] T017 Run make test to verify all tests pass
 ```
