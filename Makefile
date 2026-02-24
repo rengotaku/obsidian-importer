@@ -286,13 +286,13 @@ check:
 # コード品質チェック (ruff only)
 ruff:
 	@echo "Running ruff..."
-	@$(VENV_DIR)/bin/ruff check src/obsidian_etl/
+	@$(PYTHON) -m ruff check src/obsidian_etl/
 	@echo "✅ ruff passed"
 
 # コード品質チェック (pylint only)
 pylint:
 	@echo "Running pylint..."
-	@$(VENV_DIR)/bin/pylint src/obsidian_etl/
+	@$(PYTHON) -m pylint src/obsidian_etl/
 	@echo "✅ pylint passed"
 
 # コード品質チェック (ruff + pylint, fail-fast)
