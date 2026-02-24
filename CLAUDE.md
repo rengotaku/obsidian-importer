@@ -94,11 +94,15 @@ data/01_raw/*.zip → data/02_intermediate/parsed/*.json
 ```bash
 make test            # 全テスト実行
 make coverage        # カバレッジ計測（≥80%）
-make lint            # コード品質チェック (ruff)
+make lint            # コード品質チェック (ruff + pylint)
+make ruff            # ruff のみ実行
+make pylint          # pylint のみ実行
 make kedro-viz       # DAG 可視化
 make test-e2e        # E2E テスト（ゴールデンファイル比較）
 make test-e2e-golden # ゴールデンファイル品質テスト
 ```
+
+**CI**: GitHub Actions で PR 作成時および main push 時に `make ruff` と `make pylint` を自動実行
 
 ### ゴールデンファイル
 
@@ -225,6 +229,7 @@ file_id: abc123
 - ファイルシステム (PartitionedDataset for input, 直接ファイルコピー for output) (059-organize-vault-output)
 - Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, requests (Ollama API) (060-dynamic-genre-config)
 - ファイルシステム (YAML, Markdown, JSON) (060-dynamic-genre-config)
+- Python 3.11+ + ruff (既存), pylint (新規追加) (061-github-actions-lint)
 
 ## Recent Changes
 - 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+

@@ -8,7 +8,7 @@ SESSION_DIR := $(BASE_DIR)/.staging/@session
 LLM_EXPORTS_DIR := $(BASE_DIR)/.staging/@llm_exports
 COMMA := ,
 
-.PHONY: help setup setup-dev test coverage check lint clean
+.PHONY: help setup setup-dev test coverage check lint ruff pylint clean
 .PHONY: rag-index rag-search rag-ask rag-status
 .PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
 .PHONY: run kedro-run kedro-test kedro-viz
@@ -25,7 +25,7 @@ help:
 	@echo ""
 	@echo "Setup:"
 	@echo "  setup          Python venv作成 + 依存関係インストール"
-	@echo "  setup-dev      開発用依存関係インストール (ruff, coverage)"
+	@echo "  setup-dev      開発用依存関係インストール (ruff, pylint, coverage)"
 	@echo ""
 	@echo "Kedro Pipeline:"
 	@echo "  run            パイプライン実行 (= kedro-run)"
@@ -44,7 +44,9 @@ help:
 	@echo "  test           全テスト実行"
 	@echo "  coverage       テストカバレッジ計測 (≥80%)"
 	@echo "  check          Python構文チェック"
-	@echo "  lint           コード品質チェック (ruff)"
+	@echo "  lint           コード品質チェック (ruff + pylint)"
+	@echo "  ruff           ruff リンター実行"
+	@echo "  pylint         pylint リンター実行"
 	@echo ""
 	@echo "File Organization:"
 	@echo "  organize-preview"
@@ -111,7 +113,7 @@ $(VENV_DIR)/bin/activate:
 # 開発用依存関係インストール
 setup-dev: setup
 	@echo "Installing dev dependencies..."
-	$(VENV_DIR)/bin/pip install "ruff>=0.1.0" "coverage>=7.0"
+	$(VENV_DIR)/bin/pip install -e ".[dev]"
 	@echo "✅ Dev dependencies installed"
 
 # ═══════════════════════════════════════════════════════════
@@ -281,14 +283,21 @@ check:
 	@find $(BASE_DIR)/src/obsidian_etl -name "*.py" -exec $(PYTHON) -m py_compile {} \;
 	@echo "✅ 構文エラーなし"
 
-# コード品質チェック (ruff)
-lint:
-	@echo "Running ruff lint..."
-	@timeout 10 $(VENV_DIR)/bin/ruff check src/obsidian_etl/ || { \
-		echo "❌ Lint failed or timed out"; \
-		exit 1; \
-	}
-	@echo "✅ Lint passed"
+# コード品質チェック (ruff only)
+ruff:
+	@echo "Running ruff..."
+	@$(VENV_DIR)/bin/ruff check src/obsidian_etl/
+	@echo "✅ ruff passed"
+
+# コード品質チェック (pylint only)
+pylint:
+	@echo "Running pylint..."
+	@$(VENV_DIR)/bin/pylint src/obsidian_etl/
+	@echo "✅ pylint passed"
+
+# コード品質チェック (ruff + pylint, fail-fast)
+lint: ruff pylint
+	@echo "✅ All linters passed"
 
 # E2Eテスト用データディレクトリ削除
 test-clean:

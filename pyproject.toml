@@ -14,7 +14,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "coverage>=7.0",
-    "ruff>=0.1.0",
+    "ruff==0.8.6",
+    "pylint==3.3.3",
     "kedro-viz>=10.0",
 ]
 
@@ -96,6 +97,44 @@ unfixable = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["src", "obsidian_etl"]
+
+[tool.pylint.main]
+ignore = [".venv", "venv", "__pycache__", ".staging", ".specify", ".claude"]
+jobs = 0  # auto-detect CPU count
+
+[tool.pylint.messages_control]
+disable = [
+    "C0114",  # missing-module-docstring (ruff handles)
+    "C0115",  # missing-class-docstring
+    "C0116",  # missing-function-docstring
+    "W0511",  # fixme (allow TODO comments)
+    "R0903",  # too-few-public-methods
+    "C0301",  # line-too-long (ruff handles)
+    "W0613",  # unused-argument (Kedro hooks, interface methods)
+    "W1203",  # logging-fstring-interpolation (stylistic preference)
+    "C0415",  # import-outside-toplevel (intentional for performance)
+    "R0914",  # too-many-locals (complex pipelines acceptable)
+    "R0912",  # too-many-branches (complex pipelines acceptable)
+    "R0915",  # too-many-statements (complex pipelines acceptable)
+    "R0913",  # too-many-arguments (Kedro hooks)
+    "R0917",  # too-many-positional-arguments (Kedro hooks)
+    "W0718",  # broad-exception-caught (intentional for robustness)
+    "R0801",  # duplicate-code (acceptable in pipeline context)
+    "R0902",  # too-many-instance-attributes
+    "W0231",  # super-init-not-called (custom dataset implementation)
+    "W0621",  # redefined-outer-name (local scope reimport)
+    "W0404",  # reimported (intentional local imports)
+    "R1714",  # consider-using-in (readability preference)
+    "R1724",  # no-else-continue (readability preference)
+    "R1705",  # no-else-return (readability preference)
+    "C0103",  # invalid-name (underscore prefix convention)
+    "C0413",  # wrong-import-position (intentional for env check)
+    "C0411",  # wrong-import-order (intentional for env check)
+    "W0612",  # unused-variable (fixed by ruff)
+]
+
+[tool.pylint.format]
+max-line-length = 100  # match ruff
 
 [tool.kedro_telemetry]
 project_id = "d43e272a453344c2b75e16ef0c43ff3d"

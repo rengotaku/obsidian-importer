@@ -408,4 +408,4 @@ def _extract_tags(frontmatter: dict, body: str) -> list[str]:
     tags.extend(hashtag_matches)
 
     # Deduplicate and filter empty strings
-    return sorted(list(set(tag for tag in tags if tag)))
+    return sorted({tag for tag in tags if tag})
