@@ -49,7 +49,7 @@ class TestOllamaConfigDataclass(unittest.TestCase):
         """OllamaConfig のデフォルト値が正しいこと。
 
         Default values from data-model.md:
-        - model: "gemma3:12b"
+        - model: no default (required)
         - base_url: "http://localhost:11434"
         - timeout: 120
         - temperature: 0.2
@@ -57,7 +57,7 @@ class TestOllamaConfigDataclass(unittest.TestCase):
         """
         from obsidian_etl.utils.ollama_config import OllamaConfig
 
-        config = OllamaConfig()
+        config = OllamaConfig(model="gemma3:12b")
 
         self.assertEqual(config.model, "gemma3:12b")
         self.assertEqual(config.base_url, "http://localhost:11434")
@@ -385,51 +385,35 @@ class TestHardcodedDefaultsApplied(unittest.TestCase):
         Then: 全パラメーターにデフォルト値が適用される
 
         Expected HARDCODED_DEFAULTS from data-model.md:
-        - model: "gemma3:12b"
+        - model: no default (KeyError expected)
         - base_url: "http://localhost:11434"
         - timeout: 120
         - temperature: 0.2
         - num_predict: -1
         """
-        from obsidian_etl.utils.ollama_config import (
-            HARDCODED_DEFAULTS,
-            OllamaConfig,
-            get_ollama_config,
-        )
+        from obsidian_etl.utils.ollama_config import get_ollama_config
 
-        # Empty params
+        # Empty params - should fail because model is required
         params = {}
 
-        config = get_ollama_config(params, "extract_knowledge")
+        with self.assertRaises(TypeError) as ctx:
+            get_ollama_config(params, "extract_knowledge")
 
-        # Should return hardcoded defaults
-        self.assertIsInstance(config, OllamaConfig)
-        self.assertEqual(config.model, HARDCODED_DEFAULTS["model"])
-        self.assertEqual(config.base_url, HARDCODED_DEFAULTS["base_url"])
-        self.assertEqual(config.timeout, HARDCODED_DEFAULTS["timeout"])
-        self.assertAlmostEqual(config.temperature, HARDCODED_DEFAULTS["temperature"], places=2)
-        self.assertEqual(config.num_predict, HARDCODED_DEFAULTS["num_predict"])
+        # Should indicate missing required argument 'model'
+        self.assertIn("model", str(ctx.exception).lower())
 
     def test_empty_ollama_section_returns_hardcoded_defaults(self):
         """ollama セクションが空の場合、HARDCODED_DEFAULTS が返されること。"""
-        from obsidian_etl.utils.ollama_config import (
-            HARDCODED_DEFAULTS,
-            OllamaConfig,
-            get_ollama_config,
-        )
+        from obsidian_etl.utils.ollama_config import get_ollama_config
 
-        # ollama section exists but is empty
+        # ollama section exists but is empty - should fail because model is required
         params = {"ollama": {}}
 
-        config = get_ollama_config(params, "extract_knowledge")
+        with self.assertRaises(TypeError) as ctx:
+            get_ollama_config(params, "extract_knowledge")
 
-        # Should return hardcoded defaults
-        self.assertIsInstance(config, OllamaConfig)
-        self.assertEqual(config.model, HARDCODED_DEFAULTS["model"])
-        self.assertEqual(config.base_url, HARDCODED_DEFAULTS["base_url"])
-        self.assertEqual(config.timeout, HARDCODED_DEFAULTS["timeout"])
-        self.assertAlmostEqual(config.temperature, HARDCODED_DEFAULTS["temperature"], places=2)
-        self.assertEqual(config.num_predict, HARDCODED_DEFAULTS["num_predict"])
+        # Should indicate missing required argument 'model'
+        self.assertIn("model", str(ctx.exception).lower())
 
 
 class TestPartialDefaultsMerge(unittest.TestCase):
@@ -449,11 +433,12 @@ class TestPartialDefaultsMerge(unittest.TestCase):
             get_ollama_config,
         )
 
-        # Only model is specified in defaults
+        # Model and timeout specified in defaults
         params = {
             "ollama": {
                 "defaults": {
-                    "model": "custom-model",
+                    "model": "custom-model",  # Required field
+                    "timeout": 200,
                 }
             }
         }
@@ -462,10 +447,10 @@ class TestPartialDefaultsMerge(unittest.TestCase):
 
         # Model should be custom value
         self.assertEqual(config.model, "custom-model")
+        self.assertEqual(config.timeout, 200)
 
         # Other values should be hardcoded defaults
         self.assertEqual(config.base_url, HARDCODED_DEFAULTS["base_url"])
-        self.assertEqual(config.timeout, HARDCODED_DEFAULTS["timeout"])
         self.assertAlmostEqual(config.temperature, HARDCODED_DEFAULTS["temperature"], places=2)
         self.assertEqual(config.num_predict, HARDCODED_DEFAULTS["num_predict"])
 
@@ -482,6 +467,7 @@ class TestPartialFunctionOverride(unittest.TestCase):
         3. ollama.functions.{function_name} (highest)
 
         Input:
+        - defaults.model = "gemma3:12b"
         - defaults.timeout = 100
         - functions.extract_knowledge.num_predict = 8000
 
@@ -499,6 +485,7 @@ class TestPartialFunctionOverride(unittest.TestCase):
         params = {
             "ollama": {
                 "defaults": {
+                    "model": "gemma3:12b",  # Required field
                     "timeout": 100,  # Override hardcoded default
                 },
                 "functions": {
@@ -517,8 +504,10 @@ class TestPartialFunctionOverride(unittest.TestCase):
         # Defaults override should be applied
         self.assertEqual(config.timeout, 100)
 
+        # Model from defaults
+        self.assertEqual(config.model, "gemma3:12b")
+
         # Hardcoded defaults for non-specified fields
-        self.assertEqual(config.model, HARDCODED_DEFAULTS["model"])
         self.assertEqual(config.base_url, HARDCODED_DEFAULTS["base_url"])
         self.assertAlmostEqual(config.temperature, HARDCODED_DEFAULTS["temperature"], places=2)
 
@@ -577,12 +566,12 @@ class TestTimeoutValidation(unittest.TestCase):
         from obsidian_etl.utils.ollama_config import OllamaConfig, get_ollama_config
 
         # Test minimum boundary
-        params_min = {"ollama": {"defaults": {"timeout": 1}}}
+        params_min = {"ollama": {"defaults": {"model": "gemma3:12b", "timeout": 1}}}
         config_min = get_ollama_config(params_min, "extract_knowledge")
         self.assertEqual(config_min.timeout, 1)
 
         # Test maximum boundary
-        params_max = {"ollama": {"defaults": {"timeout": 600}}}
+        params_max = {"ollama": {"defaults": {"model": "gemma3:12b", "timeout": 600}}}
         config_max = get_ollama_config(params_max, "extract_knowledge")
         self.assertEqual(config_max.timeout, 600)
 
@@ -637,12 +626,12 @@ class TestTemperatureValidation(unittest.TestCase):
         from obsidian_etl.utils.ollama_config import OllamaConfig, get_ollama_config
 
         # Test minimum boundary
-        params_min = {"ollama": {"defaults": {"temperature": 0.0}}}
+        params_min = {"ollama": {"defaults": {"model": "gemma3:12b", "temperature": 0.0}}}
         config_min = get_ollama_config(params_min, "extract_knowledge")
         self.assertAlmostEqual(config_min.temperature, 0.0, places=2)
 
         # Test maximum boundary
-        params_max = {"ollama": {"defaults": {"temperature": 2.0}}}
+        params_max = {"ollama": {"defaults": {"model": "gemma3:12b", "temperature": 2.0}}}
         config_max = get_ollama_config(params_max, "extract_knowledge")
         self.assertAlmostEqual(config_max.temperature, 2.0, places=2)
 

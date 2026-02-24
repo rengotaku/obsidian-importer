@@ -13,7 +13,7 @@ from dataclasses import dataclass
 class OllamaConfig:
     """Ollama configuration for a specific function."""
 
-    model: str = "gemma3:12b"
+    model: str
     base_url: str = "http://localhost:11434"
     timeout: int = 120
     temperature: float = 0.2
@@ -22,7 +22,6 @@ class OllamaConfig:
 
 # Hardcoded defaults - lowest priority in merge hierarchy
 HARDCODED_DEFAULTS = {
-    "model": "gemma3:12b",
     "base_url": "http://localhost:11434",
     "timeout": 120,
     "temperature": 0.2,
@@ -72,15 +71,16 @@ def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
 
     Merge Priority (lowest to highest):
         1. HARDCODED_DEFAULTS: Fallback values defined in code
-           - model: "gemma3:12b"
            - base_url: "http://localhost:11434"
            - timeout: 120
            - temperature: 0.2
            - num_predict: -1 (unlimited)
+           - Note: model has no default and must be specified in parameters.yml
 
         2. ollama.defaults: Common defaults from parameters.yml
            - Applies to all functions unless overridden
-           - Example: {"model": "gemma3:12b", "timeout": 120}
+           - Example: {"model": "gpt-oss:20b", "timeout": 120}
+           - model parameter is REQUIRED in this section
 
         3. ollama.functions.{function_name}: Function-specific overrides
            - Highest priority - overrides both defaults and hardcoded values
@@ -112,17 +112,17 @@ def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
 
     Examples:
         Basic usage with defaults only:
-        >>> params = {"ollama": {"defaults": {"model": "gemma3:12b"}}}
+        >>> params = {"ollama": {"defaults": {"model": "gpt-oss:20b"}}}
         >>> config = get_ollama_config(params, "extract_knowledge")
         >>> config.model
-        'gemma3:12b'
+        'gpt-oss:20b'
         >>> config.timeout  # From HARDCODED_DEFAULTS
         120
 
         Function-specific override:
         >>> params = {
         ...     "ollama": {
-        ...         "defaults": {"model": "gemma3:12b", "timeout": 120},
+        ...         "defaults": {"model": "gpt-oss:20b", "timeout": 120},
         ...         "functions": {
         ...             "extract_knowledge": {"num_predict": 16384, "timeout": 300}
         ...         }
@@ -137,7 +137,7 @@ def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
         Partial override (other values from defaults):
         >>> params = {
         ...     "ollama": {
-        ...         "defaults": {"model": "gemma3:12b", "timeout": 120},
+        ...         "defaults": {"model": "gpt-oss:20b", "timeout": 120},
         ...         "functions": {"extract_topic": {"num_predict": 64}}
         ...     }
         ... }
@@ -145,7 +145,7 @@ def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
         >>> config.num_predict
         64
         >>> config.model  # From defaults
-        'gemma3:12b'
+        'gpt-oss:20b'
     """
     # Get defaults from parameters.yml
     defaults = params.get("ollama", {}).get("defaults", {})

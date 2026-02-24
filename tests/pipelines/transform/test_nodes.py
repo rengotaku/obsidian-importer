@@ -68,10 +68,12 @@ def _make_params() -> dict:
     """Helper to create default import params for testing."""
     return {
         "ollama": {
-            "model": "gemma3:12b",
-            "base_url": "http://localhost:11434",
-            "timeout": 120,
-            "temperature": 0.2,
+            "defaults": {
+                "model": "gemma3:12b",
+                "base_url": "http://localhost:11434",
+                "timeout": 120,
+                "temperature": 0.2,
+            },
             "max_retries": 3,
         },
     }

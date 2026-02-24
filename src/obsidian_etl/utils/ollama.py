@@ -50,7 +50,7 @@ def _do_warmup(model: str, base_url: str) -> None:
 def call_ollama(
     system_prompt: str,
     user_message: str,
-    model: str = "gemma3:12b",
+    model: str,
     base_url: str = "http://localhost:11434",
     num_ctx: int = 65536,
     num_predict: int = -1,

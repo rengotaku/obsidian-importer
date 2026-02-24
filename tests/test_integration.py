@@ -223,10 +223,12 @@ class TestE2EClaudeImport(unittest.TestCase):
                         "chunk_size": 25000,
                         "chunk_enabled": True,
                         "ollama": {
-                            "model": "gemma3:12b",
-                            "base_url": "http://localhost:11434",
-                            "timeout": 120,
-                            "temperature": 0.2,
+                            "defaults": {
+                                "model": "gemma3:12b",
+                                "base_url": "http://localhost:11434",
+                                "timeout": 120,
+                                "temperature": 0.2,
+                            },
                             "max_retries": 3,
                         },
                     }
@@ -240,6 +242,14 @@ class TestE2EClaudeImport(unittest.TestCase):
                             "daily": ["日常", "趣味"],
                         },
                         "base_path": self.tmp_dir,
+                        "ollama": {
+                            "defaults": {
+                                "model": "gemma3:12b",
+                                "base_url": "http://localhost:11434",
+                                "timeout": 120,
+                                "temperature": 0.2,
+                            },
+                        },
                     }
                 ),
             }
@@ -397,10 +407,12 @@ class TestResumeAfterFailure(unittest.TestCase):
                         "chunk_size": 25000,
                         "chunk_enabled": True,
                         "ollama": {
-                            "model": "gemma3:12b",
-                            "base_url": "http://localhost:11434",
-                            "timeout": 120,
-                            "temperature": 0.2,
+                            "defaults": {
+                                "model": "gemma3:12b",
+                                "base_url": "http://localhost:11434",
+                                "timeout": 120,
+                                "temperature": 0.2,
+                            },
                             "max_retries": 3,
                         },
                     }
@@ -414,6 +426,14 @@ class TestResumeAfterFailure(unittest.TestCase):
                             "daily": ["日常", "趣味"],
                         },
                         "base_path": self.tmp_dir,
+                        "ollama": {
+                            "defaults": {
+                                "model": "gemma3:12b",
+                                "base_url": "http://localhost:11434",
+                                "timeout": 120,
+                                "temperature": 0.2,
+                            },
+                        },
                     }
                 ),
             }
@@ -660,10 +680,12 @@ class TestPartialRunFromTo(unittest.TestCase):
                         "chunk_size": 25000,
                         "chunk_enabled": True,
                         "ollama": {
-                            "model": "gemma3:12b",
-                            "base_url": "http://localhost:11434",
-                            "timeout": 120,
-                            "temperature": 0.2,
+                            "defaults": {
+                                "model": "gemma3:12b",
+                                "base_url": "http://localhost:11434",
+                                "timeout": 120,
+                                "temperature": 0.2,
+                            },
                             "max_retries": 3,
                         },
                     }
@@ -677,6 +699,14 @@ class TestPartialRunFromTo(unittest.TestCase):
                             "daily": ["日常", "趣味"],
                         },
                         "base_path": self.tmp_dir,
+                        "ollama": {
+                            "defaults": {
+                                "model": "gemma3:12b",
+                                "base_url": "http://localhost:11434",
+                                "timeout": 120,
+                                "temperature": 0.2,
+                            },
+                        },
                     }
                 ),
             }
@@ -926,6 +956,14 @@ class TestE2EOpenAIImport(unittest.TestCase):
                             "daily": ["日常", "趣味"],
                         },
                         "base_path": self.tmp_dir,
+                        "ollama": {
+                            "defaults": {
+                                "model": "gemma3:12b",
+                                "base_url": "http://localhost:11434",
+                                "timeout": 120,
+                                "temperature": 0.2,
+                            },
+                        },
                     }
                 ),
             }
