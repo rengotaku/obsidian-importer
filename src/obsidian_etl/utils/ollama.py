@@ -14,6 +14,38 @@ import urllib.request
 
 logger = logging.getLogger(__name__)
 
+# Track which models have been warmed up
+_warmed_models: set[str] = set()
+
+
+def _do_warmup(model: str, base_url: str) -> None:
+    """Simple ping to load model into memory.
+
+    Args:
+        model: Model name to warm up.
+        base_url: Ollama server base URL.
+    """
+    try:
+        url = f"{base_url}/api/chat"
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": "hello"}],
+            "stream": False,
+            "options": {"num_predict": 1},  # Minimal response
+        }
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            resp.read()  # Consume response
+        logger.info(f"Model warmup completed: {model}")
+    except Exception as e:
+        logger.warning(f"Model warmup failed: {model}: {e}")
+
 
 def call_ollama(
     system_prompt: str,
@@ -42,6 +74,11 @@ def call_ollama(
         On success: (content, None).
         On failure: ("", error_message).
     """
+    # Warmup model on first use
+    if model not in _warmed_models:
+        _do_warmup(model, base_url)
+        _warmed_models.add(model)
+
     url = f"{base_url}/api/chat"
     payload = {
         "model": model,
