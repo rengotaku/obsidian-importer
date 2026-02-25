@@ -45,16 +45,16 @@
 
 ### Input
 
-- [ ] T005 Read: specs/062-warmup-fail-stop/tasks/ph1-output.md
+- [x] T005 Read: specs/062-warmup-fail-stop/tasks/ph1-output.md
 
 ### Test Implementation (RED)
 
-- [ ] T006 [P] [US1] Implement: OllamaWarmupError 例外のユニットテスト in tests/test_warmup_error.py
-- [ ] T007 [P] [US1] Implement: _do_warmup タイムアウト時の例外発生テスト in tests/test_warmup_error.py
-- [ ] T008 [P] [US1] Implement: _do_warmup 接続エラー時の例外発生テスト in tests/test_warmup_error.py
-- [ ] T009 [P] [US1] Implement: call_ollama が例外を伝播するテスト in tests/test_warmup_error.py
-- [ ] T010 Verify: `make test` FAIL (RED)
-- [ ] T011 Edit: specs/062-warmup-fail-stop/red-tests/ph2-test.md
+- [x] T006 [P] [US1] Implement: OllamaWarmupError 例外のユニットテスト in tests/test_warmup_error.py
+- [x] T007 [P] [US1] Implement: _do_warmup タイムアウト時の例外発生テスト in tests/test_warmup_error.py
+- [x] T008 [P] [US1] Implement: _do_warmup 接続エラー時の例外発生テスト in tests/test_warmup_error.py
+- [x] T009 [P] [US1] Implement: call_ollama が例外を伝播するテスト in tests/test_warmup_error.py
+- [x] T010 Verify: `make test` FAIL (RED)
+- [x] T011 Edit: specs/062-warmup-fail-stop/red-tests/ph2-test.md
 
 ### Implementation (GREEN)
 

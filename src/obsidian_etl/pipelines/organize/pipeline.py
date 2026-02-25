@@ -36,13 +36,13 @@ def create_pipeline(**kwargs) -> Pipeline:
         [
             node(
                 func=extract_topic_and_genre,
-                inputs=["markdown_notes", "params:organize"],
+                inputs=["markdown_notes", "parameters"],
                 outputs="classified_items",
                 name="extract_topic_and_genre",
             ),
             node(
                 func=analyze_other_genres,
-                inputs=["classified_items", "params:organize"],
+                inputs=["classified_items", "parameters"],
                 outputs="genre_suggestions_report",
                 name="analyze_other_genres",
             ),

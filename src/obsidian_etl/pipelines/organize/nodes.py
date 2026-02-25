@@ -217,7 +217,9 @@ def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, s
     config = get_ollama_config(params, "extract_topic_and_genre")
 
     # Parse genre config to get dynamic genre definitions
-    genre_vault_mapping = params.get("genre_vault_mapping", {})
+    # When params is full "parameters", access via organize section
+    organize_params = params.get("organize", params)
+    genre_vault_mapping = organize_params.get("genre_vault_mapping", {})
     genre_definitions, valid_genres = _parse_genre_config(genre_vault_mapping)
     genre_prompt = _build_genre_prompt(genre_definitions)
 
