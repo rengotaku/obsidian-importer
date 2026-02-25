@@ -58,7 +58,7 @@ def _do_warmup(model: str, base_url: str) -> None:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=120) as resp:
             resp.read()  # Consume response
         logger.info(f"Model warmup completed: {model}")
     except Exception as e:
