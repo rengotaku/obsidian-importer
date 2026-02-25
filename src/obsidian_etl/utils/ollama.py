@@ -14,6 +14,21 @@ import urllib.request
 
 logger = logging.getLogger(__name__)
 
+
+class OllamaWarmupError(Exception):
+    """Exception raised when Ollama model warmup fails.
+
+    Attributes:
+        model: Model name that failed to warm up.
+        reason: Reason for the warmup failure.
+    """
+
+    def __init__(self, model: str, reason: str):
+        self.model = model
+        self.reason = reason
+        super().__init__(f"Model warmup failed: {model}: {reason}")
+
+
 # Track which models have been warmed up
 _warmed_models: set[str] = set()
 
@@ -24,6 +39,9 @@ def _do_warmup(model: str, base_url: str) -> None:
     Args:
         model: Model name to warm up.
         base_url: Ollama server base URL.
+
+    Raises:
+        OllamaWarmupError: If warmup fails for any reason.
     """
     try:
         url = f"{base_url}/api/chat"
@@ -44,7 +62,8 @@ def _do_warmup(model: str, base_url: str) -> None:
             resp.read()  # Consume response
         logger.info(f"Model warmup completed: {model}")
     except Exception as e:
-        logger.warning(f"Model warmup failed: {model}: {e}")
+        logger.error(f"Model warmup failed: {model}: {e}")
+        raise OllamaWarmupError(model, str(e)) from e
 
 
 def call_ollama(
@@ -76,8 +95,8 @@ def call_ollama(
     """
     # Warmup model on first use
     if model not in _warmed_models:
-        _do_warmup(model, base_url)
-        _warmed_models.add(model)
+        _do_warmup(model, base_url)  # Raises OllamaWarmupError on failure
+        _warmed_models.add(model)  # Only add if warmup succeeded
 
     url = f"{base_url}/api/chat"
     payload = {

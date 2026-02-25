@@ -154,25 +154,6 @@ class TestDoWarmup(unittest.TestCase):
         self.assertEqual(request_obj.get_method(), "POST")
         self.assertIn("http://localhost:11434/api/chat", request_obj.full_url)
 
-    @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
-    def test_warmup_handles_failure_gracefully(self, mock_urlopen):
-        """_do_warmup がエラー時に例外を投げずに警告ログを出すこと。
-
-        Given: Ollama API がエラーを返す
-        When: _do_warmup が呼ばれる
-        Then: 例外は発生せず、警告ログが出力される
-        """
-        from obsidian_etl.utils.ollama import _do_warmup
-
-        # Mock connection error
-        mock_urlopen.side_effect = ConnectionError("Connection failed")
-
-        # Should not raise exception
-        try:
-            _do_warmup("gemma3:12b", "http://localhost:11434")
-        except Exception as e:
-            self.fail(f"_do_warmup should not raise exception: {e}")
-
 
 if __name__ == "__main__":
     unittest.main()

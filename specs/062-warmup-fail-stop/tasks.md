@@ -58,16 +58,16 @@
 
 ### Implementation (GREEN)
 
-- [ ] T012 Read: specs/062-warmup-fail-stop/red-tests/ph2-test.md
-- [ ] T013 [US1] Implement: OllamaWarmupError 例外クラス in src/obsidian_etl/utils/ollama.py
-- [ ] T014 [US1] Implement: _do_warmup で例外を raise（WARNING → ERROR 変更）in src/obsidian_etl/utils/ollama.py
-- [ ] T015 [US1] Implement: call_ollama で warmup 成功時のみ _warmed_models.add in src/obsidian_etl/utils/ollama.py
-- [ ] T016 Verify: `make test` PASS (GREEN)
+- [x] T012 Read: specs/062-warmup-fail-stop/red-tests/ph2-test.md
+- [x] T013 [US1] Implement: OllamaWarmupError 例外クラス in src/obsidian_etl/utils/ollama.py
+- [x] T014 [US1] Implement: _do_warmup で例外を raise（WARNING → ERROR 変更）in src/obsidian_etl/utils/ollama.py
+- [x] T015 [US1] Implement: call_ollama で warmup 成功時のみ _warmed_models.add in src/obsidian_etl/utils/ollama.py
+- [x] T016 Verify: `make test` PASS (GREEN)
 
 ### Verification
 
-- [ ] T017 Verify: `make test` 全テスト通過（既存テストの回帰なし）
-- [ ] T018 Edit: specs/062-warmup-fail-stop/tasks/ph2-output.md
+- [x] T017 Verify: `make test` 全テスト通過（既存テストの回帰なし）
+- [x] T018 Edit: specs/062-warmup-fail-stop/tasks/ph2-output.md
 
 **Checkpoint**: US1 完了 - ウォームアップ失敗時に例外が発生し、処理が停止する
 

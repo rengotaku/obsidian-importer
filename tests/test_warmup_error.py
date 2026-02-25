@@ -70,7 +70,12 @@ class TestDoWarmupRaisesOnTimeout(unittest.TestCase):
             _do_warmup("gemma3:12b", "http://localhost:11434")
 
         self.assertEqual(ctx.exception.model, "gemma3:12b")
-        self.assertIn("timeout", ctx.exception.reason.lower())
+        # Check for "timeout" or "timed out" in the reason
+        reason_lower = ctx.exception.reason.lower()
+        self.assertTrue(
+            "timeout" in reason_lower or "timed out" in reason_lower,
+            f"Expected timeout-related message, got: {ctx.exception.reason}",
+        )
 
 
 class TestDoWarmupRaisesOnConnectionError(unittest.TestCase):
