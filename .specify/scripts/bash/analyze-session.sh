@@ -83,16 +83,25 @@ fi
 # Data extraction
 # ============================================================
 
+# Filter to valid JSON lines only (handles corrupted session files)
+VALID_SESSION=$(mktemp)
+trap "rm -f '$VALID_SESSION'" EXIT
+while IFS= read -r line; do
+  if echo "$line" | jq -e '.' >/dev/null 2>&1; then
+    echo "$line" >> "$VALID_SESSION"
+  fi
+done < "$SESSION_FILE"
+
 # Session metadata
-START_TIME=$(jq -s '.[0].timestamp' "$SESSION_FILE" | tr -d '"')
-END_TIME=$(jq -s '.[-1].timestamp' "$SESSION_FILE" | tr -d '"')
+START_TIME=$(jq -s '.[0].timestamp' "$VALID_SESSION" | tr -d '"')
+END_TIME=$(jq -s '.[-1].timestamp' "$VALID_SESSION" | tr -d '"')
 
 # Tool usage (main session)
 MAIN_TOOLS=$(jq -s '
   [.[] | select(.type == "assistant") | .message.content |
    if type == "array" then .[] else . end |
    select(.name?) | {name, input}]
-' "$SESSION_FILE")
+' "$VALID_SESSION")
 
 # File operations
 FILE_OPS=$(echo "$MAIN_TOOLS" | jq '
@@ -111,7 +120,7 @@ ERRORS=$(jq -s '
    if type == "array" then .[] else empty end |
    select(.type? == "tool_result" and .is_error == true) |
    .content]
-' "$SESSION_FILE")
+' "$VALID_SESSION")
 
 # Subagents (detailed)
 SUBAGENTS="[]"

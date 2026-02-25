@@ -105,6 +105,43 @@ class TestErrorHandlerHookExitCode(unittest.TestCase):
         mock_exit.assert_not_called()
 
 
+class TestErrorHandlerHookWrappedError(unittest.TestCase):
+    """ErrorHandlerHook がラップされた OllamaWarmupError もハンドリングすること。"""
+
+    def setUp(self):
+        """Create hook instance and mock objects."""
+        self.hook = ErrorHandlerHook()
+        self.mock_node = MagicMock()
+        self.mock_node.__str__ = MagicMock(return_value="extract_knowledge")
+        self.mock_catalog = MagicMock()
+
+    @patch("obsidian_etl.hooks.sys.exit")
+    def test_on_node_error_catches_wrapped_warmup_error(self, mock_exit):
+        """ラップされた OllamaWarmupError もキャッチして sys.exit(3) を呼ぶこと。
+
+        Given: OllamaWarmupError が別の例外でラップされている
+        When: on_node_error が呼ばれる
+        Then: sys.exit(3) が呼ばれる
+        """
+        warmup_error = OllamaWarmupError(model="gemma3:12b", reason="Connection refused")
+        # Kedro などが例外をラップするケース
+        wrapped_error = RuntimeError("Node execution failed")
+        wrapped_error.__cause__ = warmup_error
+
+        with self.assertLogs("obsidian_etl.hooks", level="ERROR") as cm:
+            self.hook.on_node_error(
+                error=wrapped_error,
+                node=self.mock_node,
+                catalog=self.mock_catalog,
+                inputs={},
+                is_async=False,
+            )
+
+        mock_exit.assert_called_once_with(3)
+        log_output = "\n".join(cm.output)
+        self.assertIn("gemma3:12b", log_output)
+
+
 class TestErrorMessageContainsModelName(unittest.TestCase):
     """エラーメッセージにモデル名が含まれること。"""
 
