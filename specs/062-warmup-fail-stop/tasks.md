@@ -81,17 +81,17 @@
 
 ### Input
 
-- [ ] T019 Read: specs/062-warmup-fail-stop/tasks/ph1-output.md
-- [ ] T020 Read: specs/062-warmup-fail-stop/tasks/ph2-output.md
+- [x] T019 Read: specs/062-warmup-fail-stop/tasks/ph1-output.md
+- [x] T020 Read: specs/062-warmup-fail-stop/tasks/ph2-output.md
 
 ### Test Implementation (RED)
 
-- [ ] T021 [P] [US2] Implement: ErrorHandlerHook が OllamaWarmupError をキャッチするテスト in tests/test_hooks_warmup.py
-- [ ] T022 [P] [US2] Implement: 終了コード 3 で sys.exit するテスト in tests/test_hooks_warmup.py
-- [ ] T023 [P] [US2] Implement: エラーメッセージにモデル名が含まれるテスト in tests/test_hooks_warmup.py
-- [ ] T024 [P] [US2] Implement: エラーメッセージに推奨アクションが含まれるテスト in tests/test_hooks_warmup.py
-- [ ] T025 Verify: `make test` FAIL (RED)
-- [ ] T026 Edit: specs/062-warmup-fail-stop/red-tests/ph3-test.md
+- [x] T021 [P] [US2] Implement: ErrorHandlerHook が OllamaWarmupError をキャッチするテスト in tests/test_hooks_warmup.py
+- [x] T022 [P] [US2] Implement: 終了コード 3 で sys.exit するテスト in tests/test_hooks_warmup.py
+- [x] T023 [P] [US2] Implement: エラーメッセージにモデル名が含まれるテスト in tests/test_hooks_warmup.py
+- [x] T024 [P] [US2] Implement: エラーメッセージに推奨アクションが含まれるテスト in tests/test_hooks_warmup.py
+- [x] T025 Verify: `make test` FAIL (RED)
+- [x] T026 Edit: specs/062-warmup-fail-stop/red-tests/ph3-test.md
 
 ### Implementation (GREEN)
 
