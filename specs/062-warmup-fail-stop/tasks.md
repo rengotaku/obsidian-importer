@@ -95,16 +95,16 @@
 
 ### Implementation (GREEN)
 
-- [ ] T027 Read: specs/062-warmup-fail-stop/red-tests/ph3-test.md
-- [ ] T028 [US2] Implement: ErrorHandlerHook に OllamaWarmupError ハンドリング追加 in src/obsidian_etl/hooks.py
-- [ ] T029 [US2] Implement: sys.exit(3) 呼び出し in src/obsidian_etl/hooks.py
-- [ ] T030 [US2] Implement: モデル名・推奨アクションを含むエラーメッセージ出力 in src/obsidian_etl/hooks.py
-- [ ] T031 Verify: `make test` PASS (GREEN)
+- [x] T027 Read: specs/062-warmup-fail-stop/red-tests/ph3-test.md
+- [x] T028 [US2] Implement: ErrorHandlerHook に OllamaWarmupError ハンドリング追加 in src/obsidian_etl/hooks.py
+- [x] T029 [US2] Implement: sys.exit(3) 呼び出し in src/obsidian_etl/hooks.py
+- [x] T030 [US2] Implement: モデル名・推奨アクションを含むエラーメッセージ出力 in src/obsidian_etl/hooks.py
+- [x] T031 Verify: `make test` PASS (GREEN) - 8/8 warmup hook tests passed
 
 ### Verification
 
-- [ ] T032 Verify: `make test` 全テスト通過（US1 含む回帰なし）
-- [ ] T033 Edit: specs/062-warmup-fail-stop/tasks/ph3-output.md
+- [x] T032 Verify: `make test` 全テスト通過（US1 含む回帰なし）- Phase 2: 9/9, Phase 3: 8/8 all passing
+- [x] T033 Edit: specs/062-warmup-fail-stop/tasks/ph3-output.md
 
 **Checkpoint**: US2 完了 - エラーメッセージが明確で、ユーザーが問題を特定できる
 
