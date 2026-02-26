@@ -33,12 +33,13 @@ class OllamaWarmupError(Exception):
 _warmed_models: set[str] = set()
 
 
-def _do_warmup(model: str, base_url: str) -> None:
+def _do_warmup(model: str, base_url: str, timeout: int = 30) -> None:
     """Simple ping to load model into memory.
 
     Args:
         model: Model name to warm up.
         base_url: Ollama server base URL.
+        timeout: Warmup timeout in seconds.
 
     Raises:
         OllamaWarmupError: If warmup fails for any reason.
@@ -58,7 +59,7 @@ def _do_warmup(model: str, base_url: str) -> None:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             resp.read()  # Consume response
         logger.info(f"Model warmup completed: {model}")
     except Exception as e:
@@ -75,6 +76,7 @@ def call_ollama(
     num_predict: int = -1,
     temperature: float = 0.2,
     timeout: int = 120,
+    warmup_timeout: int = 30,
 ) -> tuple[str, str | None]:
     """Call Ollama API.
 
@@ -87,6 +89,7 @@ def call_ollama(
         num_predict: Maximum output tokens (-1 = unlimited, default).
         temperature: Sampling temperature.
         timeout: Request timeout in seconds.
+        warmup_timeout: Model warmup timeout in seconds.
 
     Returns:
         Tuple of (response_content, error_message).
@@ -95,7 +98,7 @@ def call_ollama(
     """
     # Warmup model on first use
     if model not in _warmed_models:
-        _do_warmup(model, base_url)  # Raises OllamaWarmupError on failure
+        _do_warmup(model, base_url, warmup_timeout)  # Raises OllamaWarmupError on failure
         _warmed_models.add(model)  # Only add if warmup succeeded
 
     url = f"{base_url}/api/chat"

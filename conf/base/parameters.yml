@@ -18,6 +18,7 @@ ollama:
     model: "gpt-oss:20b"
     base_url: "http://localhost:11434"
     timeout: 120
+    warmup_timeout: 120  # Model warmup timeout (seconds)
     temperature: 0.2
     num_predict: -1  # -1 = unlimited
 

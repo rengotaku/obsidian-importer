@@ -262,6 +262,7 @@ JSON形式で回答してください:
         model=config.model,
         base_url=config.base_url,
         timeout=config.timeout,
+        warmup_timeout=config.warmup_timeout,
         temperature=config.temperature,
         num_predict=config.num_predict,
     )
@@ -334,6 +335,7 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
         model=config.model,
         base_url=config.base_url,
         timeout=config.timeout,
+        warmup_timeout=config.warmup_timeout,
         temperature=config.temperature,
         num_predict=config.num_predict,
     )
@@ -731,6 +733,7 @@ JSON配列形式で回答してください:
         model=config.model,
         base_url=config.base_url,
         timeout=config.timeout,
+        warmup_timeout=config.warmup_timeout,
         temperature=config.temperature,
         num_predict=config.num_predict,
     )
