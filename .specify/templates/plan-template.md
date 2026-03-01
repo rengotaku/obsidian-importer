@@ -31,7 +31,36 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Review alignment with constitution principles (`.specify/memory/constitution.md`):
+
+- [ ] **Simplicity**: Does this design favor simplicity over complexity?
+  - Avoid unnecessary abstractions or frameworks
+  - Use standard library when practical
+  - Document complexity justifications in "Complexity Tracking" section if needed
+
+- [ ] **Breaking Changes**: Are breaking changes documented and justified?
+  - No backward compatibility constraints apply
+  - Changes improve design quality
+
+- [ ] **Testing**: Are test requirements clearly defined?
+  - Minimum 80% coverage target specified
+  - Unit tests planned for all business logic
+  - Integration tests planned for pipeline nodes
+  - E2E tests planned for critical workflows
+
+- [ ] **Code Quality**: Are linting requirements addressed?
+  - ruff and pylint checks will be enforced
+  - Type hints included for public APIs
+
+- [ ] **Idempotency**: Are operations designed to be idempotent?
+  - Re-running with identical inputs produces identical outputs
+  - Completed work can be safely skipped on re-run
+  - Resume safety guaranteed
+
+- [ ] **Traceability**: Is data lineage tracked?
+  - file_id (SHA256) for all processed items
+  - Duplicate detection mechanism defined
+  - Audit trail for transformations documented
 
 ## Project Structure
 

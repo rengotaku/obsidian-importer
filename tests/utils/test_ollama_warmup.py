@@ -46,8 +46,8 @@ class TestOllamaWarmup(unittest.TestCase):
             base_url="http://localhost:11434",
         )
 
-        # Warmup should be called
-        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434")
+        # Warmup should be called (with default warmup_timeout=30)
+        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434", 30)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -81,8 +81,8 @@ class TestOllamaWarmup(unittest.TestCase):
             base_url="http://localhost:11434",
         )
 
-        # Warmup should be called only once (on first call)
-        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434")
+        # Warmup should be called only once (on first call, with default warmup_timeout=30)
+        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434", 30)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -116,12 +116,12 @@ class TestOllamaWarmup(unittest.TestCase):
             base_url="http://localhost:11434",
         )
 
-        # Warmup should be called once for each model
+        # Warmup should be called once for each model (with default warmup_timeout=30)
         self.assertEqual(mock_warmup.call_count, 2)
         mock_warmup.assert_has_calls(
             [
-                call("gemma3:12b", "http://localhost:11434"),
-                call("llama3.2:3b", "http://localhost:11434"),
+                call("gemma3:12b", "http://localhost:11434", 30),
+                call("llama3.2:3b", "http://localhost:11434", 30),
             ]
         )
 
@@ -153,25 +153,6 @@ class TestDoWarmup(unittest.TestCase):
         request_obj = mock_urlopen.call_args[0][0]
         self.assertEqual(request_obj.get_method(), "POST")
         self.assertIn("http://localhost:11434/api/chat", request_obj.full_url)
-
-    @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
-    def test_warmup_handles_failure_gracefully(self, mock_urlopen):
-        """_do_warmup がエラー時に例外を投げずに警告ログを出すこと。
-
-        Given: Ollama API がエラーを返す
-        When: _do_warmup が呼ばれる
-        Then: 例外は発生せず、警告ログが出力される
-        """
-        from obsidian_etl.utils.ollama import _do_warmup
-
-        # Mock connection error
-        mock_urlopen.side_effect = ConnectionError("Connection failed")
-
-        # Should not raise exception
-        try:
-            _do_warmup("gemma3:12b", "http://localhost:11434")
-        except Exception as e:
-            self.fail(f"_do_warmup should not raise exception: {e}")
 
 
 if __name__ == "__main__":

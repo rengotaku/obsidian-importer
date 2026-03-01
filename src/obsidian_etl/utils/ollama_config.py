@@ -16,6 +16,7 @@ class OllamaConfig:
     model: str
     base_url: str = "http://localhost:11434"
     timeout: int = 120
+    warmup_timeout: int = 30  # Model warmup timeout
     temperature: float = 0.2
     num_predict: int = -1  # -1 = unlimited
 
@@ -24,6 +25,7 @@ class OllamaConfig:
 HARDCODED_DEFAULTS = {
     "base_url": "http://localhost:11434",
     "timeout": 120,
+    "warmup_timeout": 30,
     "temperature": 0.2,
     "num_predict": -1,
 }
@@ -47,12 +49,17 @@ def _validate_config(config: dict) -> dict:
         dict: Validated configuration
 
     Raises:
-        ValueError: If timeout or temperature is out of valid range
+        ValueError: If timeout, warmup_timeout, or temperature is out of valid range
     """
     # Timeout validation (1-600 seconds)
     timeout = config.get("timeout", HARDCODED_DEFAULTS["timeout"])
     if timeout < 1 or timeout > 600:
         raise ValueError(f"timeout must be between 1 and 600, got {timeout}")
+
+    # Warmup timeout validation (1-600 seconds)
+    warmup_timeout = config.get("warmup_timeout", HARDCODED_DEFAULTS["warmup_timeout"])
+    if warmup_timeout < 1 or warmup_timeout > 600:
+        raise ValueError(f"warmup_timeout must be between 1 and 600, got {warmup_timeout}")
 
     # Temperature validation (0.0-2.0)
     temperature = config.get("temperature", HARDCODED_DEFAULTS["temperature"])

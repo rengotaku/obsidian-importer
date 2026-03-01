@@ -13,6 +13,8 @@ from pathlib import Path
 
 from kedro.framework.hooks import hook_impl
 
+from obsidian_etl.utils.ollama import OllamaWarmupError
+
 logger = logging.getLogger(__name__)
 
 
@@ -148,6 +150,29 @@ class ErrorHandlerHook:
         is_async: bool,
     ) -> None:
         """Log error details when a node fails."""
+        # Check for OllamaWarmupError (direct or wrapped)
+        warmup_error = None
+        if isinstance(error, OllamaWarmupError):
+            warmup_error = error
+        elif error.__cause__ and isinstance(error.__cause__, OllamaWarmupError):
+            warmup_error = error.__cause__
+
+        if warmup_error:
+            logger.error("")
+            logger.error("❌ Error: Ollama model warmup failed")
+            logger.error("")
+            logger.error(f"  Model: {warmup_error.model}")
+            logger.error(f"  Reason: {warmup_error.reason}")
+            logger.error("")
+            logger.error("  Ollama サーバーが起動していることを確認してください:")
+            logger.error("    ollama serve")
+            logger.error("")
+            logger.error("  モデルがダウンロード済みであることを確認してください:")
+            logger.error(f"    ollama pull {warmup_error.model}")
+            logger.error("")
+            sys.exit(3)
+
+        # Handle other errors with default behavior
         logger.error(f"Node '{node}' failed: {error}")
 
 

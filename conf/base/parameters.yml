@@ -18,6 +18,7 @@ ollama:
     model: "gpt-oss:20b"
     base_url: "http://localhost:11434"
     timeout: 120
+    warmup_timeout: 300  # Model warmup timeout (seconds) - 20B model needs ~4 min to load
     temperature: 0.2
     num_predict: -1  # -1 = unlimited
 
@@ -40,7 +41,7 @@ ollama:
 
     # Topic and genre extraction: short JSON output
     extract_topic_and_genre:
-      num_predict: 256
+      num_predict: 512  # 256 → 512: 日本語JSONが途中で切れる問題を修正
       timeout: 120
 
 # ============================================================

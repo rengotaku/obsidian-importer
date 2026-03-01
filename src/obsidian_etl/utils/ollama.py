@@ -14,17 +14,39 @@ import urllib.request
 
 logger = logging.getLogger(__name__)
 
+
+class OllamaWarmupError(Exception):
+    """Exception raised when Ollama model warmup fails.
+
+    Attributes:
+        model: Model name that failed to warm up.
+        reason: Reason for the warmup failure.
+    """
+
+    def __init__(self, model: str, reason: str):
+        self.model = model
+        self.reason = reason
+        super().__init__(f"Model warmup failed: {model}: {reason}")
+
+
 # Track which models have been warmed up
 _warmed_models: set[str] = set()
 
 
-def _do_warmup(model: str, base_url: str) -> None:
+def _do_warmup(model: str, base_url: str, timeout: int = 30) -> None:
     """Simple ping to load model into memory.
 
     Args:
         model: Model name to warm up.
         base_url: Ollama server base URL.
+        timeout: Warmup timeout in seconds.
+
+    Raises:
+        OllamaWarmupError: If warmup fails for any reason.
     """
+    import time
+
+    start_time = time.time()
     try:
         url = f"{base_url}/api/chat"
         payload = {
@@ -40,11 +62,14 @@ def _do_warmup(model: str, base_url: str) -> None:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             resp.read()  # Consume response
-        logger.info(f"Model warmup completed: {model}")
+        elapsed = time.time() - start_time
+        logger.info(f"Model warmup completed: {model} ({elapsed:.1f}s)")
     except Exception as e:
-        logger.warning(f"Model warmup failed: {model}: {e}")
+        elapsed = time.time() - start_time
+        logger.error(f"Model warmup failed: {model} ({elapsed:.1f}s): {e}")
+        raise OllamaWarmupError(model, str(e)) from e
 
 
 def call_ollama(
@@ -56,6 +81,7 @@ def call_ollama(
     num_predict: int = -1,
     temperature: float = 0.2,
     timeout: int = 120,
+    warmup_timeout: int = 30,
 ) -> tuple[str, str | None]:
     """Call Ollama API.
 
@@ -68,6 +94,7 @@ def call_ollama(
         num_predict: Maximum output tokens (-1 = unlimited, default).
         temperature: Sampling temperature.
         timeout: Request timeout in seconds.
+        warmup_timeout: Model warmup timeout in seconds.
 
     Returns:
         Tuple of (response_content, error_message).
@@ -76,8 +103,8 @@ def call_ollama(
     """
     # Warmup model on first use
     if model not in _warmed_models:
-        _do_warmup(model, base_url)
-        _warmed_models.add(model)
+        _do_warmup(model, base_url, warmup_timeout)  # Raises OllamaWarmupError on failure
+        _warmed_models.add(model)  # Only add if warmup succeeded
 
     url = f"{base_url}/api/chat"
     payload = {
@@ -90,6 +117,9 @@ def call_ollama(
         "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
     }
 
+    # Calculate context length for debugging
+    context_len = len(system_prompt) + len(user_message)
+
     try:
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
@@ -101,14 +131,21 @@ def call_ollama(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read().decode("utf-8"))
             content = result.get("message", {}).get("content", "")
+            # Log empty response for debugging
+            if not content.strip():
+                logger.warning(f"Empty response from LLM (context_len={context_len} chars)")
             return content, None
     except urllib.error.URLError as e:
+        logger.warning(f"Connection error (context_len={context_len} chars): {e.reason}")
         return "", f"Connection error: {e.reason}"
     except TimeoutError:
+        logger.warning(f"Timeout ({timeout}s) (context_len={context_len} chars)")
         return "", f"Timeout ({timeout}s)"
     except json.JSONDecodeError as e:
+        logger.warning(f"JSON parse error (context_len={context_len} chars): {e}")
         return "", f"JSON parse error: {e}"
     except Exception as e:
+        logger.warning(f"API error (context_len={context_len} chars): {e}")
         return "", f"API error: {e}"
 
 
