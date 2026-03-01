@@ -93,21 +93,21 @@
 
 ### Input
 
-- [ ] T023 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
-- [ ] T024 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph2-output.md
+- [x] T023 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
+- [x] T024 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph2-output.md
 
 ### Test Implementation (RED)
 
-- [ ] T025 [P] [US2] OllamaError 基底クラスのテストを実装: tests/utils/test_ollama_exceptions.py
-- [ ] T026 [P] [US2] OllamaEmptyResponseError のテストを実装: tests/utils/test_ollama_exceptions.py
-- [ ] T027 [P] [US2] OllamaTimeoutError のテストを実装: tests/utils/test_ollama_exceptions.py
-- [ ] T028 [P] [US2] OllamaConnectionError のテストを実装: tests/utils/test_ollama_exceptions.py
-- [ ] T029 [P] [US3] context_len 属性のテストを実装: tests/utils/test_ollama_exceptions.py
-- [ ] T030 [P] [US2] call_ollama 空レスポンス時の例外スローテストを実装: tests/utils/test_ollama.py
-- [ ] T031 [P] [US2] call_ollama タイムアウト時の例外スローテストを実装: tests/utils/test_ollama.py
-- [ ] T032 [P] [US2] call_ollama 正常時の戻り値テストを実装: tests/utils/test_ollama.py
-- [ ] T033 Verify `make test` FAIL (RED)
-- [ ] T034 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph3-test.md
+- [x] T025 [P] [US2] OllamaError 基底クラスのテストを実装: tests/utils/test_ollama_exceptions.py
+- [x] T026 [P] [US2] OllamaEmptyResponseError のテストを実装: tests/utils/test_ollama_exceptions.py
+- [x] T027 [P] [US2] OllamaTimeoutError のテストを実装: tests/utils/test_ollama_exceptions.py
+- [x] T028 [P] [US2] OllamaConnectionError のテストを実装: tests/utils/test_ollama_exceptions.py
+- [x] T029 [P] [US3] context_len 属性のテストを実装: tests/utils/test_ollama_exceptions.py
+- [x] T030 [P] [US2] call_ollama 空レスポンス時の例外スローテストを実装: tests/utils/test_ollama.py
+- [x] T031 [P] [US2] call_ollama タイムアウト時の例外スローテストを実装: tests/utils/test_ollama.py
+- [x] T032 [P] [US2] call_ollama 正常時の戻り値テストを実装: tests/utils/test_ollama.py
+- [x] T033 Verify `make test` FAIL (RED)
+- [x] T034 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph3-test.md
 
 ### Implementation (GREEN)
 
