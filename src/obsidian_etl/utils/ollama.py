@@ -32,19 +32,13 @@ class OllamaError(Exception):
 class OllamaEmptyResponseError(OllamaError):
     """LLM returned empty or whitespace-only response."""
 
-    pass
-
 
 class OllamaTimeoutError(OllamaError):
     """Request timed out."""
 
-    pass
-
 
 class OllamaConnectionError(OllamaError):
     """Failed to connect to Ollama server."""
-
-    pass
 
 
 class OllamaWarmupError(Exception):

@@ -205,7 +205,7 @@ def extract_topic_and_genre(
         set_file_id(file_id)
 
         # Extract topic and genre via LLM
-        topic, genre = _extract_topic_and_genre_via_llm(content, params, file_id=file_id)
+        topic, genre = _extract_topic_and_genre_via_llm(content, params)
 
         # Add fields to item
         item["topic"] = topic
@@ -215,15 +215,12 @@ def extract_topic_and_genre(
     return result
 
 
-def _extract_topic_and_genre_via_llm(
-    content: str, params: dict, file_id: str = ""
-) -> tuple[str, str]:
+def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, str]:
     """Helper to extract topic and genre via LLM.
 
     Args:
         content: Markdown content with frontmatter
         params: Parameters dict with ollama settings and genre_vault_mapping
-        file_id: File identifier for logging
 
     Returns:
         tuple[str, str]: (topic, genre) - topic is lowercase, genre from config
@@ -283,7 +280,7 @@ JSON形式で回答してください:
             num_predict=config.num_predict,
         )
     except OllamaError as e:
-        logger.warning(f"[{file_id}] Failed to extract topic and genre via LLM: {e}")
+        logger.warning(f"Failed to extract topic and genre via LLM: {e}")
         return "", "other"
 
     # Parse JSON response
@@ -296,7 +293,7 @@ JSON形式で回答してください:
 
         # Validate genre using dynamic valid_genres from config
         if genre not in valid_genres:
-            logger.warning(f"[{file_id}] Invalid genre '{genre}', defaulting to 'other'")
+            logger.warning(f"Invalid genre '{genre}', defaulting to 'other'")
             genre = "other"
 
         return topic, genre
@@ -304,9 +301,7 @@ JSON形式で回答してください:
     except (json.JSONDecodeError, AttributeError) as e:
         # Log response content for debugging (truncate to 200 chars)
         response_preview = repr(response[:200]) if response else "None"
-        logger.warning(
-            f"[{file_id}] Failed to parse LLM response as JSON: {e}, response={response_preview}"
-        )
+        logger.warning(f"Failed to parse LLM response as JSON: {e}, response={response_preview}")
         return "", "other"
 
 

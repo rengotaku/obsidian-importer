@@ -207,22 +207,22 @@
 
 ### Input
 
-- [ ] T073 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
-- [ ] T074 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph5-output.md
+- [x] T073 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
+- [x] T074 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph5-output.md
 
 ### Implementation
 
-- [ ] T075 [P] organize/nodes の手動 `[{file_id}]` プレフィックスを削除: src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T076 [P] 不要になった変数・インポートを削除
-- [ ] T077 `make ruff` でコード品質を確認
-- [ ] T078 `make pylint` でコード品質を確認
+- [x] T075 [P] organize/nodes の手動 `[{file_id}]` プレフィックスを削除: src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T076 [P] 不要になった変数・インポートを削除
+- [x] T077 `make ruff` でコード品質を確認
+- [x] T078 `make pylint` でコード品質を確認
 
 ### Verification
 
-- [ ] T079 Run `make test` to verify all tests pass after cleanup
-- [ ] T080 Run `make coverage` to verify ≥80% coverage
-- [ ] T081 quickstart.md の手順を手動検証
-- [ ] T082 Edit: specs/063-ollama-exception-refactor/tasks/ph6-output.md
+- [x] T079 Run `make test` to verify all tests pass after cleanup
+- [x] T080 Run `make coverage` to verify ≥80% coverage
+- [ ] T081 quickstart.md の手順を手動検証 (SKIP - requires Ollama server)
+- [x] T082 Edit: specs/063-ollama-exception-refactor/tasks/ph6-output.md
 
 ---
 

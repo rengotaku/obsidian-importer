@@ -887,7 +887,7 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
 
             # Also mock the actual API call to avoid network calls
             with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
-                mock_call_ollama.return_value = ('{"topic": "python", "genre": "engineer"}', None)
+                mock_call_ollama.return_value = '{"topic": "python", "genre": "engineer"}'
                 _extract_topic_and_genre_via_llm(content, params)
 
             # Verify get_ollama_config was called with correct arguments
@@ -911,7 +911,7 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
 
         # Mock call_ollama to capture the arguments
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
-            mock_call_ollama.return_value = ('{"topic": "aws", "genre": "devops"}', None)
+            mock_call_ollama.return_value = '{"topic": "aws", "genre": "devops"}'
             _extract_topic_and_genre_via_llm(content, params)
 
             # Verify call_ollama was called with the correct model
@@ -968,7 +968,7 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
 
         # Mock call_ollama to capture the arguments
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
-            mock_call_ollama.return_value = ('{"topic": "docker", "genre": "devops"}', None)
+            mock_call_ollama.return_value = '{"topic": "docker", "genre": "devops"}'
             _extract_topic_and_genre_via_llm(content, params)
 
             # Verify call_ollama was called with the correct num_predict
@@ -1672,7 +1672,9 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
         }
 
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
-            mock_call.return_value = (None, "Connection error")
+            from obsidian_etl.utils.ollama import OllamaConnectionError
+
+            mock_call.side_effect = OllamaConnectionError("Connection error")
             result = _suggest_new_genres_via_llm(other_items, params)
 
         self.assertIsInstance(result, list)
@@ -1698,7 +1700,7 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
         }
 
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
-            mock_call.return_value = ("not valid json {{{", None)
+            mock_call.return_value = "not valid json {{{"
             result = _suggest_new_genres_via_llm(other_items, params)
 
         self.assertIsInstance(result, list)
