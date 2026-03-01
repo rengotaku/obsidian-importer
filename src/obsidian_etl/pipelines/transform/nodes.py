@@ -26,6 +26,7 @@ from pathlib import Path
 
 from obsidian_etl.utils import knowledge_extractor
 from obsidian_etl.utils.compression_validator import validate_compression
+from obsidian_etl.utils.log_context import set_file_id
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,7 @@ def extract_knowledge(
     )
 
     for partition_id, load_func in to_process:
+        set_file_id(partition_id)
         item = load_func()
         processed += 1
         start_time = time.time()

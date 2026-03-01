@@ -14,6 +14,7 @@ from collections.abc import Callable
 
 import yaml
 
+from obsidian_etl.utils.log_context import set_file_id
 from obsidian_etl.utils.ollama import OllamaError, call_ollama
 from obsidian_etl.utils.ollama_config import get_ollama_config
 from obsidian_etl.utils.timing import timed_node
@@ -199,6 +200,9 @@ def extract_topic_and_genre(
             logger.warning(
                 f"file_id is empty: key={repr(key)}, metadata_keys={list(metadata.keys())}"
             )
+
+        # Set file_id in logging context
+        set_file_id(file_id)
 
         # Extract topic and genre via LLM
         topic, genre = _extract_topic_and_genre_via_llm(content, params, file_id=file_id)

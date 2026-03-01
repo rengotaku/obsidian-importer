@@ -185,17 +185,17 @@
 
 ### Implementation (GREEN)
 
-- [ ] T065 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph5-test.md
-- [ ] T066 [P] [US1] transform/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/transform/nodes.py
-- [ ] T067 [P] [US1] organize/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T068 [P] [US1] extract_claude/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/extract_claude/nodes.py
-- [ ] T069 [P] [US1] extract_openai/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/extract_openai/nodes.py
-- [ ] T070 Verify `make test` PASS (GREEN)
+- [x] T065 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph5-test.md
+- [x] T066 [P] [US1] transform/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/transform/nodes.py
+- [x] T067 [P] [US1] organize/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T068 [P] [US1] extract_claude/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/extract_claude/nodes.py
+- [x] T069 [P] [US1] extract_openai/nodes のパーティションループに set_file_id を追加: src/obsidian_etl/pipelines/extract_openai/nodes.py
+- [x] T070 Verify `make test` PASS (GREEN)
 
 ### Verification
 
-- [ ] T071 Verify `make test` passes all tests (no regressions)
-- [ ] T072 Edit: specs/063-ollama-exception-refactor/tasks/ph5-output.md
+- [x] T071 Verify `make test` passes all tests (no regressions)
+- [x] T072 Edit: specs/063-ollama-exception-refactor/tasks/ph5-output.md
 
 **Checkpoint**: パーティション処理中のログに [file_id] が自動付与されることを確認
 

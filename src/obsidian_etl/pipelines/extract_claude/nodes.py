@@ -9,6 +9,7 @@ import zipfile
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
 from obsidian_etl.utils.file_id import generate_file_id
+from obsidian_etl.utils.log_context import set_file_id
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,9 @@ def parse_claude_json(
         # Generate file_id
         virtual_path = f"conversations/{conv_uuid}.md"
         file_id = generate_file_id(content, virtual_path)
+
+        # Set file_id in logging context
+        set_file_id(file_id)
 
         # Check if chunking needed
         if should_chunk(normalized_messages):
