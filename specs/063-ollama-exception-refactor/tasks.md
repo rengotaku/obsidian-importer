@@ -58,15 +58,15 @@
 
 ### Input
 
-- [ ] T010 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph1-output.md
+- [x] T010 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph1-output.md
 
 ### Test Implementation (RED)
 
-- [ ] T011 [P] [US1] set_file_id/get_file_id/clear_file_id のテストを実装: tests/utils/test_log_context.py
-- [ ] T012 [P] [US1] ContextAwareFormatter のテストを実装（file_id ありの場合）: tests/utils/test_log_context.py
-- [ ] T013 [P] [US1] ContextAwareFormatter のテストを実装（file_id なしの場合）: tests/utils/test_log_context.py
-- [ ] T014 Verify `make test` FAIL (RED)
-- [ ] T015 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph2-test.md
+- [x] T011 [P] [US1] set_file_id/get_file_id/clear_file_id のテストを実装: tests/utils/test_log_context.py
+- [x] T012 [P] [US1] ContextAwareFormatter のテストを実装（file_id ありの場合）: tests/utils/test_log_context.py
+- [x] T013 [P] [US1] ContextAwareFormatter のテストを実装（file_id なしの場合）: tests/utils/test_log_context.py
+- [x] T014 Verify `make test` FAIL (RED)
+- [x] T015 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph2-test.md
 
 ### Implementation (GREEN)
 
