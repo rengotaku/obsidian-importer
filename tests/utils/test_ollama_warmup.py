@@ -46,8 +46,8 @@ class TestOllamaWarmup(unittest.TestCase):
             base_url="http://localhost:11434",
         )
 
-        # Warmup should be called
-        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434")
+        # Warmup should be called (with default warmup_timeout=30)
+        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434", 30)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -81,8 +81,8 @@ class TestOllamaWarmup(unittest.TestCase):
             base_url="http://localhost:11434",
         )
 
-        # Warmup should be called only once (on first call)
-        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434")
+        # Warmup should be called only once (on first call, with default warmup_timeout=30)
+        mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434", 30)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -116,12 +116,12 @@ class TestOllamaWarmup(unittest.TestCase):
             base_url="http://localhost:11434",
         )
 
-        # Warmup should be called once for each model
+        # Warmup should be called once for each model (with default warmup_timeout=30)
         self.assertEqual(mock_warmup.call_count, 2)
         mock_warmup.assert_has_calls(
             [
-                call("gemma3:12b", "http://localhost:11434"),
-                call("llama3.2:3b", "http://localhost:11434"),
+                call("gemma3:12b", "http://localhost:11434", 30),
+                call("llama3.2:3b", "http://localhost:11434", 30),
             ]
         )
 

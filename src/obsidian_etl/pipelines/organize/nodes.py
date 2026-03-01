@@ -192,8 +192,16 @@ def extract_topic_and_genre(
             # Extract content for LLM (dict format)
             content = item.get("content", "")
 
+        # Extract file_id from metadata for logging (fallback to key)
+        metadata = item.get("metadata", {})
+        file_id = metadata.get("file_id") or key  # Use `or` to handle None/empty string
+        if not file_id:
+            logger.warning(
+                f"file_id is empty: key={repr(key)}, metadata_keys={list(metadata.keys())}"
+            )
+
         # Extract topic and genre via LLM
-        topic, genre = _extract_topic_and_genre_via_llm(content, params)
+        topic, genre = _extract_topic_and_genre_via_llm(content, params, file_id=file_id)
 
         # Add fields to item
         item["topic"] = topic
@@ -203,12 +211,15 @@ def extract_topic_and_genre(
     return result
 
 
-def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, str]:
+def _extract_topic_and_genre_via_llm(
+    content: str, params: dict, file_id: str = ""
+) -> tuple[str, str]:
     """Helper to extract topic and genre via LLM.
 
     Args:
         content: Markdown content with frontmatter
         params: Parameters dict with ollama settings and genre_vault_mapping
+        file_id: File identifier for logging
 
     Returns:
         tuple[str, str]: (topic, genre) - topic is lowercase, genre from config
@@ -268,7 +279,7 @@ JSON形式で回答してください:
     )
 
     if error:
-        logger.warning(f"Failed to extract topic and genre via LLM: {error}")
+        logger.warning(f"[{file_id}] Failed to extract topic and genre via LLM: {error}")
         return "", "other"
 
     # Parse JSON response
@@ -281,13 +292,17 @@ JSON形式で回答してください:
 
         # Validate genre using dynamic valid_genres from config
         if genre not in valid_genres:
-            logger.warning(f"Invalid genre '{genre}', defaulting to 'other'")
+            logger.warning(f"[{file_id}] Invalid genre '{genre}', defaulting to 'other'")
             genre = "other"
 
         return topic, genre
 
     except (json.JSONDecodeError, AttributeError) as e:
-        logger.warning(f"Failed to parse LLM response as JSON: {e}")
+        # Log response content for debugging (truncate to 200 chars)
+        response_preview = repr(response[:200]) if response else "None"
+        logger.warning(
+            f"[{file_id}] Failed to parse LLM response as JSON: {e}, response={response_preview}"
+        )
         return "", "other"
 
 
@@ -752,7 +767,9 @@ JSON配列形式で回答してください:
             return []
         return suggestions
     except (json.JSONDecodeError, AttributeError) as e:
-        logger.warning(f"Failed to parse LLM response as JSON: {e}")
+        # Log response content for debugging (truncate to 200 chars)
+        response_preview = repr(response[:200]) if response else "None"
+        logger.warning(f"Failed to parse LLM response as JSON: {e}, response={response_preview}")
         return []
 
 

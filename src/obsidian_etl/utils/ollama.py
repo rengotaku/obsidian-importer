@@ -44,6 +44,9 @@ def _do_warmup(model: str, base_url: str, timeout: int = 30) -> None:
     Raises:
         OllamaWarmupError: If warmup fails for any reason.
     """
+    import time
+
+    start_time = time.time()
     try:
         url = f"{base_url}/api/chat"
         payload = {
@@ -61,9 +64,11 @@ def _do_warmup(model: str, base_url: str, timeout: int = 30) -> None:
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             resp.read()  # Consume response
-        logger.info(f"Model warmup completed: {model}")
+        elapsed = time.time() - start_time
+        logger.info(f"Model warmup completed: {model} ({elapsed:.1f}s)")
     except Exception as e:
-        logger.error(f"Model warmup failed: {model}: {e}")
+        elapsed = time.time() - start_time
+        logger.error(f"Model warmup failed: {model} ({elapsed:.1f}s): {e}")
         raise OllamaWarmupError(model, str(e)) from e
 
 
@@ -112,6 +117,9 @@ def call_ollama(
         "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
     }
 
+    # Calculate context length for debugging
+    context_len = len(system_prompt) + len(user_message)
+
     try:
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
@@ -123,14 +131,21 @@ def call_ollama(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read().decode("utf-8"))
             content = result.get("message", {}).get("content", "")
+            # Log empty response for debugging
+            if not content.strip():
+                logger.warning(f"Empty response from LLM (context_len={context_len} chars)")
             return content, None
     except urllib.error.URLError as e:
+        logger.warning(f"Connection error (context_len={context_len} chars): {e.reason}")
         return "", f"Connection error: {e.reason}"
     except TimeoutError:
+        logger.warning(f"Timeout ({timeout}s) (context_len={context_len} chars)")
         return "", f"Timeout ({timeout}s)"
     except json.JSONDecodeError as e:
+        logger.warning(f"JSON parse error (context_len={context_len} chars): {e}")
         return "", f"JSON parse error: {e}"
     except Exception as e:
+        logger.warning(f"API error (context_len={context_len} chars): {e}")
         return "", f"API error: {e}"
 
 
