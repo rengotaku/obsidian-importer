@@ -136,15 +136,15 @@
 
 ### Input
 
-- [ ] T044 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
-- [ ] T045 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph3-output.md
+- [x] T044 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
+- [x] T045 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph3-output.md
 
 ### Test Implementation (RED)
 
-- [ ] T046 [P] [US2] knowledge_extractor の例外ハンドリングテストを更新: tests/utils/test_knowledge_extractor.py
-- [ ] T047 [P] [US2] organize/nodes の例外ハンドリングテストを更新: tests/pipelines/organize/test_nodes.py
-- [ ] T048 Verify `make test` FAIL (RED)
-- [ ] T049 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph4-test.md
+- [x] T046 [P] [US2] knowledge_extractor の例外ハンドリングテストを更新: tests/utils/test_knowledge_extractor.py
+- [x] T047 [P] [US2] organize/nodes の例外ハンドリングテストを更新: tests/pipelines/organize/test_nodes.py
+- [x] T048 Verify `make test` FAIL (RED)
+- [x] T049 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph4-test.md
 
 ### Implementation (GREEN)
 

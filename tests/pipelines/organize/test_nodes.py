@@ -1898,5 +1898,364 @@ class TestGenreConfigValidation(unittest.TestCase):
             )
 
 
+# ============================================================
+# Phase 4 (063-ollama-exception-refactor): Exception handling tests
+# ============================================================
+
+
+class TestExtractTopicAndGenreViaLlmExceptionHandling(unittest.TestCase):
+    """_extract_topic_and_genre_via_llm: OllamaError 例外ハンドリング。
+
+    063-ollama-exception-refactor Phase 4: US2
+    call_ollama が OllamaError をスローした場合、
+    _extract_topic_and_genre_via_llm は ("", "other") を返し、処理を継続する。
+    """
+
+    def setUp(self):
+        """Import exception classes and target function."""
+        from obsidian_etl.utils.ollama import (
+            OllamaConnectionError,
+            OllamaEmptyResponseError,
+            OllamaError,
+            OllamaTimeoutError,
+        )
+
+        self.OllamaError = OllamaError
+        self.OllamaEmptyResponseError = OllamaEmptyResponseError
+        self.OllamaTimeoutError = OllamaTimeoutError
+        self.OllamaConnectionError = OllamaConnectionError
+
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_and_genre_via_llm
+
+        self.func = _extract_topic_and_genre_via_llm
+
+    def _make_params(self) -> dict:
+        """Create params with genre_vault_mapping."""
+        return {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                },
+            },
+            "genre_vault_mapping": _make_genre_config_new_format(),
+        }
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_ollama_error_returns_default(self, mock_call_ollama):
+        """OllamaError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaError("Test error")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_empty_response_error(self, mock_call_ollama):
+        """OllamaEmptyResponseError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaEmptyResponseError(
+            "Empty response", context_len=500
+        )
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_timeout_error(self, mock_call_ollama):
+        """OllamaTimeoutError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaTimeoutError("Timeout (30s)")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_connection_error(self, mock_call_ollama):
+        """OllamaConnectionError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaConnectionError("Connection refused")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.logger")
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_logs_warning_on_error(self, mock_call_ollama, mock_logger):
+        """OllamaError 発生時にログが出力されること。"""
+        mock_call_ollama.side_effect = self.OllamaError("LLM failed")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        self.func(content, params)
+
+        mock_logger.warning.assert_called()
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_success_returns_topic_and_genre(self, mock_call_ollama):
+        """正常時に call_ollama が str を返し、topic/genre を取得できること。"""
+        # call_ollama now returns str directly (not tuple)
+        mock_call_ollama.return_value = '{"topic": "python", "genre": "engineer"}'
+
+        content = "## 要約\n\nPython プログラミング入門"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "python")
+        self.assertEqual(genre, "engineer")
+
+
+class TestExtractTopicViaLlmExceptionHandling(unittest.TestCase):
+    """_extract_topic_via_llm: OllamaError 例外ハンドリング。
+
+    063-ollama-exception-refactor Phase 4: US2
+    call_ollama が OllamaError をスローした場合、
+    _extract_topic_via_llm は None を返し、処理を継続する。
+    """
+
+    def setUp(self):
+        """Import exception classes and target function."""
+        from obsidian_etl.utils.ollama import (
+            OllamaConnectionError,
+            OllamaEmptyResponseError,
+            OllamaError,
+            OllamaTimeoutError,
+        )
+
+        self.OllamaError = OllamaError
+        self.OllamaEmptyResponseError = OllamaEmptyResponseError
+        self.OllamaTimeoutError = OllamaTimeoutError
+        self.OllamaConnectionError = OllamaConnectionError
+
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        self.func = _extract_topic_via_llm
+
+    def _make_params(self) -> dict:
+        """Create params for topic extraction."""
+        return {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                },
+            },
+        }
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_ollama_error_returns_none(self, mock_call_ollama):
+        """OllamaError 発生時に None を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaError("Test error")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertIsNone(result)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_empty_response_error_returns_none(self, mock_call_ollama):
+        """OllamaEmptyResponseError 発生時に None を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaEmptyResponseError("Empty response")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertIsNone(result)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_timeout_error_returns_none(self, mock_call_ollama):
+        """OllamaTimeoutError 発生時に None を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaTimeoutError("Timeout (30s)")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertIsNone(result)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.logger")
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_logs_warning_on_error(self, mock_call_ollama, mock_logger):
+        """OllamaError 発生時にログが出力されること。"""
+        mock_call_ollama.side_effect = self.OllamaError("LLM failed")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        self.func(content, params)
+
+        mock_logger.warning.assert_called()
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_success_returns_topic(self, mock_call_ollama):
+        """正常時に call_ollama が str を返し、topic を取得できること。"""
+        # call_ollama now returns str directly (not tuple)
+        mock_call_ollama.return_value = "python"
+
+        content = "## 要約\n\nPython プログラミング入門"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertEqual(result, "python")
+
+
+class TestSuggestNewGenresViaLlmExceptionHandling(unittest.TestCase):
+    """_suggest_new_genres_via_llm: OllamaError 例外ハンドリング。
+
+    063-ollama-exception-refactor Phase 4: US2
+    call_ollama が OllamaError をスローした場合、
+    _suggest_new_genres_via_llm は空リスト [] を返し、処理を継続する。
+    """
+
+    def setUp(self):
+        """Import exception classes and target function."""
+        from obsidian_etl.utils.ollama import (
+            OllamaConnectionError,
+            OllamaEmptyResponseError,
+            OllamaError,
+            OllamaTimeoutError,
+        )
+
+        self.OllamaError = OllamaError
+        self.OllamaEmptyResponseError = OllamaEmptyResponseError
+        self.OllamaTimeoutError = OllamaTimeoutError
+        self.OllamaConnectionError = OllamaConnectionError
+
+        from obsidian_etl.pipelines.organize.nodes import _suggest_new_genres_via_llm
+
+        self.func = _suggest_new_genres_via_llm
+
+    def _make_other_items(self, count: int = 5) -> list[dict]:
+        """Create other-classified items for suggestion."""
+        return [
+            {
+                "metadata": {"title": f"テスト {i}"},
+                "content": f"テスト内容 {i}",
+                "genre": "other",
+            }
+            for i in range(count)
+        ]
+
+    def _make_params(self) -> dict:
+        """Create params for genre suggestion."""
+        return {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                },
+            },
+            "genre_vault_mapping": _make_genre_config_new_format(),
+        }
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_ollama_error_returns_empty_list(self, mock_call_ollama):
+        """OllamaError 発生時に空リストを返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaError("Test error")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_timeout_error_returns_empty_list(self, mock_call_ollama):
+        """OllamaTimeoutError 発生時に空リストを返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaTimeoutError("Timeout (120s)")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_connection_error_returns_empty_list(self, mock_call_ollama):
+        """OllamaConnectionError 発生時に空リストを返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaConnectionError("Connection refused")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.logger")
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_logs_warning_on_error(self, mock_call_ollama, mock_logger):
+        """OllamaError 発生時にログが出力されること。"""
+        mock_call_ollama.side_effect = self.OllamaError("LLM failed")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        self.func(other_items, params)
+
+        mock_logger.warning.assert_called()
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_success_returns_suggestions(self, mock_call_ollama):
+        """正常時に call_ollama が str を返し、提案リストを取得できること。"""
+        import json
+
+        # call_ollama now returns str directly (not tuple)
+        mock_call_ollama.return_value = json.dumps(
+            [
+                {
+                    "suggested_genre": "cooking",
+                    "suggested_description": "料理/レシピ/食材",
+                    "sample_titles": ["テスト 0", "テスト 1"],
+                    "content_count": 3,
+                },
+            ]
+        )
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 1)
+        self.assertEqual(result[0]["suggested_genre"], "cooking")
+
+
 if __name__ == "__main__":
     unittest.main()
