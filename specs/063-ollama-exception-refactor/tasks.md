@@ -70,16 +70,16 @@
 
 ### Implementation (GREEN)
 
-- [ ] T016 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph2-test.md
-- [ ] T017 [P] [US1] log_context モジュールを作成（contextvars 定義）: src/obsidian_etl/utils/log_context.py
-- [ ] T018 [P] [US1] ContextAwareFormatter を実装: src/obsidian_etl/utils/log_context.py
-- [ ] T019 [US1] logging.yml にカスタムフォーマッターを設定: conf/base/logging.yml
-- [ ] T020 Verify `make test` PASS (GREEN)
+- [x] T016 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph2-test.md
+- [x] T017 [P] [US1] log_context モジュールを作成（contextvars 定義）: src/obsidian_etl/utils/log_context.py
+- [x] T018 [P] [US1] ContextAwareFormatter を実装: src/obsidian_etl/utils/log_context.py
+- [x] T019 [US1] logging.yml にカスタムフォーマッターを設定: conf/base/logging.yml
+- [x] T020 Verify `make test` PASS (GREEN)
 
 ### Verification
 
-- [ ] T021 Verify `make test` passes all tests (no regressions)
-- [ ] T022 Edit: specs/063-ollama-exception-refactor/tasks/ph2-output.md
+- [x] T021 Verify `make test` passes all tests (no regressions)
+- [x] T022 Edit: specs/063-ollama-exception-refactor/tasks/ph2-output.md
 
 **Checkpoint**: ログコンテキスト機能が独立して動作することを確認
 

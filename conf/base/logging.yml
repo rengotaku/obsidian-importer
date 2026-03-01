@@ -7,17 +7,22 @@ formatters:
     format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     datefmt: "%Y-%m-%dT%H:%M:%S"
 
+  context_aware:
+    (): obsidian_etl.utils.log_context.ContextAwareFormatter
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    datefmt: "%Y-%m-%dT%H:%M:%S"
+
 handlers:
   console:
     class: logging.StreamHandler
     level: INFO
-    formatter: simple
+    formatter: context_aware
     stream: ext://sys.stdout
 
   info_file:
     class: logging.FileHandler
     level: INFO
-    formatter: simple
+    formatter: context_aware
     filename: logs/info.log
     mode: a
 
