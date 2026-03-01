@@ -1636,7 +1636,7 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
         )
 
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
-            mock_call.return_value = (llm_response, None)
+            mock_call.return_value = llm_response
             result = _suggest_new_genres_via_llm(other_items, params)
 
         self.assertIsInstance(result, list)

@@ -14,7 +14,7 @@ from collections.abc import Callable
 
 import yaml
 
-from obsidian_etl.utils.ollama import call_ollama
+from obsidian_etl.utils.ollama import OllamaError, call_ollama
 from obsidian_etl.utils.ollama_config import get_ollama_config
 from obsidian_etl.utils.timing import timed_node
 
@@ -267,19 +267,19 @@ JSON形式で回答してください:
 主題とジャンルをJSON形式で答えてください。"""
 
     # Call Ollama API
-    response, error = call_ollama(
-        system_prompt,
-        user_message,
-        model=config.model,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-        num_predict=config.num_predict,
-    )
-
-    if error:
-        logger.warning(f"[{file_id}] Failed to extract topic and genre via LLM: {error}")
+    try:
+        response = call_ollama(
+            system_prompt,
+            user_message,
+            model=config.model,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+            num_predict=config.num_predict,
+        )
+    except OllamaError as e:
+        logger.warning(f"[{file_id}] Failed to extract topic and genre via LLM: {e}")
         return "", "other"
 
     # Parse JSON response
@@ -344,19 +344,19 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
 主題を1-3単語で答えてください。"""
 
     # Call Ollama API
-    response, error = call_ollama(
-        system_prompt,
-        user_message,
-        model=config.model,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-        num_predict=config.num_predict,
-    )
-
-    if error:
-        logger.warning(f"Failed to extract topic via LLM: {error}")
+    try:
+        response = call_ollama(
+            system_prompt,
+            user_message,
+            model=config.model,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+            num_predict=config.num_predict,
+        )
+    except OllamaError as e:
+        logger.warning(f"Failed to extract topic via LLM: {e}")
         return None
 
     topic = response.strip()
@@ -742,19 +742,19 @@ JSON配列形式で回答してください:
 新しいジャンルを提案してください。"""
 
     # Call Ollama API
-    response, error = call_ollama(
-        system_prompt,
-        user_message,
-        model=config.model,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-        num_predict=config.num_predict,
-    )
-
-    if error:
-        logger.warning(f"Failed to suggest genres via LLM: {error}")
+    try:
+        response = call_ollama(
+            system_prompt,
+            user_message,
+            model=config.model,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+            num_predict=config.num_predict,
+        )
+    except OllamaError as e:
+        logger.warning(f"Failed to suggest genres via LLM: {e}")
         return []
 
     # Parse JSON response

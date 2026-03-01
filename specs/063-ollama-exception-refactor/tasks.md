@@ -148,18 +148,18 @@
 
 ### Implementation (GREEN)
 
-- [ ] T050 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph4-test.md
-- [ ] T051 [P] [US2] translate_summary の呼び出し元を更新: src/obsidian_etl/utils/knowledge_extractor.py
-- [ ] T052 [P] [US2] extract_knowledge の呼び出し元を更新: src/obsidian_etl/utils/knowledge_extractor.py
-- [ ] T053 [P] [US2] _extract_topic_and_genre_via_llm の呼び出し元を更新: src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T054 [P] [US2] _extract_topic_via_llm の呼び出し元を更新: src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T055 [P] [US2] _suggest_new_genres_via_llm の呼び出し元を更新: src/obsidian_etl/pipelines/organize/nodes.py
-- [ ] T056 Verify `make test` PASS (GREEN)
+- [x] T050 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph4-test.md
+- [x] T051 [P] [US2] translate_summary の呼び出し元を更新: src/obsidian_etl/utils/knowledge_extractor.py
+- [x] T052 [P] [US2] extract_knowledge の呼び出し元を更新: src/obsidian_etl/utils/knowledge_extractor.py
+- [x] T053 [P] [US2] _extract_topic_and_genre_via_llm の呼び出し元を更新: src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T054 [P] [US2] _extract_topic_via_llm の呼び出し元を更新: src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T055 [P] [US2] _suggest_new_genres_via_llm の呼び出し元を更新: src/obsidian_etl/pipelines/organize/nodes.py
+- [x] T056 Verify `make test` PASS (GREEN)
 
 ### Verification
 
-- [ ] T057 Verify `make test` passes all tests (no regressions)
-- [ ] T058 Edit: specs/063-ollama-exception-refactor/tasks/ph4-output.md
+- [x] T057 Verify `make test` passes all tests (no regressions)
+- [x] T058 Edit: specs/063-ollama-exception-refactor/tasks/ph4-output.md
 
 **Checkpoint**: すべての呼び出し元が例外ベースに移行し、処理が継続することを確認
 
