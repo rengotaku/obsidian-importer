@@ -111,18 +111,18 @@
 
 ### Implementation (GREEN)
 
-- [ ] T035 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph3-test.md
-- [ ] T036 [P] [US2] OllamaError 基底クラスを実装: src/obsidian_etl/utils/ollama.py
-- [ ] T037 [P] [US2] OllamaEmptyResponseError を実装: src/obsidian_etl/utils/ollama.py
-- [ ] T038 [P] [US2] OllamaTimeoutError を実装: src/obsidian_etl/utils/ollama.py
-- [ ] T039 [P] [US2] OllamaConnectionError を実装: src/obsidian_etl/utils/ollama.py
-- [ ] T040 [US2] call_ollama を例外ベースに変更: src/obsidian_etl/utils/ollama.py
-- [ ] T041 Verify `make test` PASS (GREEN) - 新規テストのみ
+- [x] T035 Read RED tests: specs/063-ollama-exception-refactor/red-tests/ph3-test.md
+- [x] T036 [P] [US2] OllamaError 基底クラスを実装: src/obsidian_etl/utils/ollama.py
+- [x] T037 [P] [US2] OllamaEmptyResponseError を実装: src/obsidian_etl/utils/ollama.py
+- [x] T038 [P] [US2] OllamaTimeoutError を実装: src/obsidian_etl/utils/ollama.py
+- [x] T039 [P] [US2] OllamaConnectionError を実装: src/obsidian_etl/utils/ollama.py
+- [x] T040 [US2] call_ollama を例外ベースに変更: src/obsidian_etl/utils/ollama.py
+- [x] T041 Verify `make test` PASS (GREEN) - 新規テストのみ
 
 ### Verification
 
-- [ ] T042 Verify `make test` passes all tests
-- [ ] T043 Edit: specs/063-ollama-exception-refactor/tasks/ph3-output.md
+- [x] T042 Verify `make test` passes all tests
+- [x] T043 Edit: specs/063-ollama-exception-refactor/tasks/ph3-output.md
 
 **Checkpoint**: 例外クラスと call_ollama の例外スローが独立して動作することを確認
 
