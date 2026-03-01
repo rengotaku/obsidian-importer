@@ -1846,5 +1846,128 @@ class TestPromptQualityInstructions(unittest.TestCase):
         )
 
 
+# ============================================================
+# Phase 5 RED Tests (063-ollama-exception-refactor):
+# file_id context setting in partition processing
+# ============================================================
+
+
+class TestExtractKnowledgeFileIdContext(unittest.TestCase):
+    """extract_knowledge: set_file_id called for each partition.
+
+    US1: エラー発生時のファイル特定
+    FR-002: パーティション処理開始時に file_id がコンテキストに設定される
+
+    Tests verify that extract_knowledge calls set_file_id(partition_id)
+    at the start of each partition processing loop iteration, so that
+    all subsequent log messages automatically include [file_id] prefix.
+    """
+
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        if output_dir.exists():
+            for pattern in ["conv-*.json", "item-*.json", "fileid-*.json"]:
+                for f in output_dir.glob(pattern):
+                    f.unlink()
+
+    def tearDown(self):
+        self.setUp()
+
+    @patch("obsidian_etl.pipelines.transform.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_set_file_id_called_for_each_partition(self, mock_llm_extract, mock_set_file_id):
+        """パーティションループ内で set_file_id が各パーティションに対して呼ばれること。
+
+        extract_knowledge のパーティションループ内で、各アイテムの処理前に
+        set_file_id(partition_id) が呼び出されることを検証する。
+        """
+        mock_llm_extract.return_value = (
+            {
+                "title": "テスト",
+                "summary": "テスト要約",
+                "summary_content": "テスト内容",
+            },
+            None,
+        )
+
+        items = {
+            "fileid-a": _make_parsed_item(item_id="a", file_id="aaa111bbb222"),
+            "fileid-b": _make_parsed_item(item_id="b", file_id="bbb222ccc333"),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_params()
+
+        extract_knowledge(partitioned_input, params)
+
+        # set_file_id should have been called for each partition
+        self.assertEqual(mock_set_file_id.call_count, 2)
+
+        # Verify called with partition_id values
+        call_args_list = [call[0][0] for call in mock_set_file_id.call_args_list]
+        self.assertIn("fileid-a", call_args_list)
+        self.assertIn("fileid-b", call_args_list)
+
+    @patch("obsidian_etl.pipelines.transform.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_set_file_id_called_before_llm(self, mock_llm_extract, mock_set_file_id):
+        """set_file_id が LLM 呼び出しの前に呼ばれること。
+
+        set_file_id がパーティション処理の冒頭で呼ばれ、
+        LLM 呼び出し時にはすでにコンテキストに file_id が設定されていることを検証する。
+        """
+        call_order = []
+
+        def track_set_file_id(file_id):
+            call_order.append(("set_file_id", file_id))
+
+        def track_llm(*args, **kwargs):
+            call_order.append(("llm_call", None))
+            return (
+                {
+                    "title": "テスト",
+                    "summary": "テスト要約",
+                    "summary_content": "テスト内容",
+                },
+                None,
+            )
+
+        mock_set_file_id.side_effect = track_set_file_id
+        mock_llm_extract.side_effect = track_llm
+
+        items = {"fileid-order": _make_parsed_item(item_id="order", file_id="order1234567")}
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_params()
+
+        extract_knowledge(partitioned_input, params)
+
+        # Verify set_file_id was called before LLM call
+        self.assertGreaterEqual(len(call_order), 2)
+        set_idx = next(i for i, c in enumerate(call_order) if c[0] == "set_file_id")
+        llm_idx = next(i for i, c in enumerate(call_order) if c[0] == "llm_call")
+        self.assertLess(set_idx, llm_idx, "set_file_id must be called before LLM call")
+
+    @patch("obsidian_etl.pipelines.transform.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_set_file_id_called_even_on_llm_failure(self, mock_llm_extract, mock_set_file_id):
+        """LLM が失敗した場合でも set_file_id は呼ばれること。
+
+        LLM 失敗時のログにも file_id プレフィックスが付与されるため、
+        set_file_id は LLM 呼び出し前に必ず呼ばれる必要がある。
+        """
+        mock_llm_extract.return_value = (None, "Connection error: refused")
+
+        items = {"fileid-fail": _make_parsed_item(item_id="fail", file_id="fail12345678")}
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_params()
+
+        extract_knowledge(partitioned_input, params)
+
+        # set_file_id should still be called even when LLM fails
+        mock_set_file_id.assert_called_once_with("fileid-fail")
+
+
 if __name__ == "__main__":
     unittest.main()

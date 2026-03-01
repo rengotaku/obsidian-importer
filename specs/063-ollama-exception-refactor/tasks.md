@@ -173,15 +173,15 @@
 
 ### Input
 
-- [ ] T059 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
-- [ ] T060 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph4-output.md
+- [x] T059 Read setup analysis: specs/063-ollama-exception-refactor/tasks/ph1-output.md
+- [x] T060 Read previous phase output: specs/063-ollama-exception-refactor/tasks/ph4-output.md
 
 ### Test Implementation (RED)
 
-- [ ] T061 [P] [US1] transform/nodes での file_id 設定テストを実装: tests/pipelines/transform/test_nodes.py
-- [ ] T062 [P] [US1] organize/nodes での file_id 設定テストを実装: tests/pipelines/organize/test_nodes.py
-- [ ] T063 Verify `make test` FAIL (RED)
-- [ ] T064 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph5-test.md
+- [x] T061 [P] [US1] transform/nodes での file_id 設定テストを実装: tests/pipelines/transform/test_nodes.py
+- [x] T062 [P] [US1] organize/nodes での file_id 設定テストを実装: tests/pipelines/organize/test_nodes.py
+- [x] T063 Verify `make test` FAIL (RED)
+- [x] T064 Generate RED output: specs/063-ollama-exception-refactor/red-tests/ph5-test.md
 
 ### Implementation (GREEN)
 

@@ -2257,5 +2257,131 @@ class TestSuggestNewGenresViaLlmExceptionHandling(unittest.TestCase):
         self.assertEqual(result[0]["suggested_genre"], "cooking")
 
 
+# ============================================================
+# Phase 5 RED Tests (063-ollama-exception-refactor):
+# file_id context setting in organize partition processing
+# ============================================================
+
+
+class TestExtractTopicAndGenreFileIdContext(unittest.TestCase):
+    """extract_topic_and_genre: set_file_id called for each partition.
+
+    US1: エラー発生時のファイル特定
+    FR-002: パーティション処理開始時に file_id がコンテキストに設定される
+
+    Tests verify that extract_topic_and_genre calls set_file_id(file_id)
+    at the start of each partition processing loop iteration, so that
+    all subsequent log messages automatically include [file_id] prefix.
+    """
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_called_for_each_partition(self, mock_llm, mock_set_file_id):
+        """パーティションループ内で set_file_id が各パーティションに対して呼ばれること。
+
+        extract_topic_and_genre のパーティションループ内で、各アイテムの処理前に
+        set_file_id(file_id) が呼び出されることを検証する。
+        """
+        mock_llm.return_value = ("python", "engineer")
+
+        items = {
+            "item-a": _make_markdown_item(item_id="a", file_id="aaa111bbb222", title="Python入門"),
+            "item-b": _make_markdown_item(item_id="b", file_id="bbb222ccc333", title="React入門"),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # set_file_id should have been called for each partition
+        self.assertEqual(mock_set_file_id.call_count, 2)
+
+        # Verify called with file_id values (from metadata)
+        call_args_list = [call[0][0] for call in mock_set_file_id.call_args_list]
+        self.assertIn("aaa111bbb222", call_args_list)
+        self.assertIn("bbb222ccc333", call_args_list)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_called_before_llm(self, mock_llm, mock_set_file_id):
+        """set_file_id が LLM 呼び出しの前に呼ばれること。
+
+        set_file_id がパーティション処理の冒頭で呼ばれ、
+        LLM 呼び出し時にはすでにコンテキストに file_id が設定されていることを検証する。
+        """
+        call_order = []
+
+        def track_set_file_id(file_id):
+            call_order.append(("set_file_id", file_id))
+
+        def track_llm(*args, **kwargs):
+            call_order.append(("llm_call", None))
+            return ("python", "engineer")
+
+        mock_set_file_id.side_effect = track_set_file_id
+        mock_llm.side_effect = track_llm
+
+        items = {
+            "item-order": _make_markdown_item(
+                item_id="order", file_id="order1234567", title="Test"
+            ),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # Verify set_file_id was called before LLM call
+        self.assertGreaterEqual(len(call_order), 2)
+        set_idx = next(i for i, c in enumerate(call_order) if c[0] == "set_file_id")
+        llm_idx = next(i for i, c in enumerate(call_order) if c[0] == "llm_call")
+        self.assertLess(set_idx, llm_idx, "set_file_id must be called before LLM call")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_uses_metadata_file_id(self, mock_llm, mock_set_file_id):
+        """set_file_id にメタデータの file_id が渡されること。
+
+        organize/nodes.py では metadata.get("file_id") で取得した file_id を
+        set_file_id に渡す必要がある（partition_id ではなく）。
+        """
+        mock_llm.return_value = ("topic", "ai")
+
+        items = {
+            "partition-key-123": _make_markdown_item(
+                item_id="test", file_id="metadata_fid_1", title="AI Test"
+            ),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # Should use file_id from metadata, not the partition key
+        mock_set_file_id.assert_called_once_with("metadata_fid_1")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_fallback_to_key(self, mock_llm, mock_set_file_id):
+        """metadata に file_id がない場合、partition key にフォールバックすること。
+
+        file_id が metadata に存在しない場合、partition key を set_file_id に渡す。
+        """
+        mock_llm.return_value = ("topic", "other")
+
+        # Create item without file_id in metadata
+        item = _make_markdown_item(item_id="no-fid", title="No FileId")
+        item["metadata"].pop("file_id", None)
+        item["file_id"] = ""
+
+        partitioned_input = _make_partitioned_input({"fallback-key": item})
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # Should fallback to partition key when file_id is missing
+        mock_set_file_id.assert_called_once_with("fallback-key")
+
+
 if __name__ == "__main__":
     unittest.main()
