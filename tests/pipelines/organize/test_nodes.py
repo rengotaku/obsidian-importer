@@ -887,7 +887,7 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
 
             # Also mock the actual API call to avoid network calls
             with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
-                mock_call_ollama.return_value = ('{"topic": "python", "genre": "engineer"}', None)
+                mock_call_ollama.return_value = '{"topic": "python", "genre": "engineer"}'
                 _extract_topic_and_genre_via_llm(content, params)
 
             # Verify get_ollama_config was called with correct arguments
@@ -911,7 +911,7 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
 
         # Mock call_ollama to capture the arguments
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
-            mock_call_ollama.return_value = ('{"topic": "aws", "genre": "devops"}', None)
+            mock_call_ollama.return_value = '{"topic": "aws", "genre": "devops"}'
             _extract_topic_and_genre_via_llm(content, params)
 
             # Verify call_ollama was called with the correct model
@@ -968,7 +968,7 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
 
         # Mock call_ollama to capture the arguments
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
-            mock_call_ollama.return_value = ('{"topic": "docker", "genre": "devops"}', None)
+            mock_call_ollama.return_value = '{"topic": "docker", "genre": "devops"}'
             _extract_topic_and_genre_via_llm(content, params)
 
             # Verify call_ollama was called with the correct num_predict
@@ -1636,7 +1636,7 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
         )
 
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
-            mock_call.return_value = (llm_response, None)
+            mock_call.return_value = llm_response
             result = _suggest_new_genres_via_llm(other_items, params)
 
         self.assertIsInstance(result, list)
@@ -1672,7 +1672,9 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
         }
 
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
-            mock_call.return_value = (None, "Connection error")
+            from obsidian_etl.utils.ollama import OllamaConnectionError
+
+            mock_call.side_effect = OllamaConnectionError("Connection error")
             result = _suggest_new_genres_via_llm(other_items, params)
 
         self.assertIsInstance(result, list)
@@ -1698,7 +1700,7 @@ class TestAnalyzeOtherGenres(unittest.TestCase):
         }
 
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call:
-            mock_call.return_value = ("not valid json {{{", None)
+            mock_call.return_value = "not valid json {{{"
             result = _suggest_new_genres_via_llm(other_items, params)
 
         self.assertIsInstance(result, list)
@@ -1896,6 +1898,491 @@ class TestGenreConfigValidation(unittest.TestCase):
                 or "フォールバック" in warning_calls,
                 f"Warning should mention fallback/empty config, got: {warning_calls}",
             )
+
+
+# ============================================================
+# Phase 4 (063-ollama-exception-refactor): Exception handling tests
+# ============================================================
+
+
+class TestExtractTopicAndGenreViaLlmExceptionHandling(unittest.TestCase):
+    """_extract_topic_and_genre_via_llm: OllamaError 例外ハンドリング。
+
+    063-ollama-exception-refactor Phase 4: US2
+    call_ollama が OllamaError をスローした場合、
+    _extract_topic_and_genre_via_llm は ("", "other") を返し、処理を継続する。
+    """
+
+    def setUp(self):
+        """Import exception classes and target function."""
+        from obsidian_etl.utils.ollama import (
+            OllamaConnectionError,
+            OllamaEmptyResponseError,
+            OllamaError,
+            OllamaTimeoutError,
+        )
+
+        self.OllamaError = OllamaError
+        self.OllamaEmptyResponseError = OllamaEmptyResponseError
+        self.OllamaTimeoutError = OllamaTimeoutError
+        self.OllamaConnectionError = OllamaConnectionError
+
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_and_genre_via_llm
+
+        self.func = _extract_topic_and_genre_via_llm
+
+    def _make_params(self) -> dict:
+        """Create params with genre_vault_mapping."""
+        return {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                },
+            },
+            "genre_vault_mapping": _make_genre_config_new_format(),
+        }
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_ollama_error_returns_default(self, mock_call_ollama):
+        """OllamaError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaError("Test error")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_empty_response_error(self, mock_call_ollama):
+        """OllamaEmptyResponseError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaEmptyResponseError(
+            "Empty response", context_len=500
+        )
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_timeout_error(self, mock_call_ollama):
+        """OllamaTimeoutError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaTimeoutError("Timeout (30s)")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_connection_error(self, mock_call_ollama):
+        """OllamaConnectionError 発生時に ("", "other") を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaConnectionError("Connection refused")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "")
+        self.assertEqual(genre, "other")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.logger")
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_logs_warning_on_error(self, mock_call_ollama, mock_logger):
+        """OllamaError 発生時にログが出力されること。"""
+        mock_call_ollama.side_effect = self.OllamaError("LLM failed")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        self.func(content, params)
+
+        mock_logger.warning.assert_called()
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_success_returns_topic_and_genre(self, mock_call_ollama):
+        """正常時に call_ollama が str を返し、topic/genre を取得できること。"""
+        # call_ollama now returns str directly (not tuple)
+        mock_call_ollama.return_value = '{"topic": "python", "genre": "engineer"}'
+
+        content = "## 要約\n\nPython プログラミング入門"
+        params = self._make_params()
+
+        topic, genre = self.func(content, params)
+
+        self.assertEqual(topic, "python")
+        self.assertEqual(genre, "engineer")
+
+
+class TestExtractTopicViaLlmExceptionHandling(unittest.TestCase):
+    """_extract_topic_via_llm: OllamaError 例外ハンドリング。
+
+    063-ollama-exception-refactor Phase 4: US2
+    call_ollama が OllamaError をスローした場合、
+    _extract_topic_via_llm は None を返し、処理を継続する。
+    """
+
+    def setUp(self):
+        """Import exception classes and target function."""
+        from obsidian_etl.utils.ollama import (
+            OllamaConnectionError,
+            OllamaEmptyResponseError,
+            OllamaError,
+            OllamaTimeoutError,
+        )
+
+        self.OllamaError = OllamaError
+        self.OllamaEmptyResponseError = OllamaEmptyResponseError
+        self.OllamaTimeoutError = OllamaTimeoutError
+        self.OllamaConnectionError = OllamaConnectionError
+
+        from obsidian_etl.pipelines.organize.nodes import _extract_topic_via_llm
+
+        self.func = _extract_topic_via_llm
+
+    def _make_params(self) -> dict:
+        """Create params for topic extraction."""
+        return {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                },
+            },
+        }
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_ollama_error_returns_none(self, mock_call_ollama):
+        """OllamaError 発生時に None を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaError("Test error")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertIsNone(result)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_empty_response_error_returns_none(self, mock_call_ollama):
+        """OllamaEmptyResponseError 発生時に None を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaEmptyResponseError("Empty response")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertIsNone(result)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_timeout_error_returns_none(self, mock_call_ollama):
+        """OllamaTimeoutError 発生時に None を返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaTimeoutError("Timeout (30s)")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertIsNone(result)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.logger")
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_logs_warning_on_error(self, mock_call_ollama, mock_logger):
+        """OllamaError 発生時にログが出力されること。"""
+        mock_call_ollama.side_effect = self.OllamaError("LLM failed")
+
+        content = "## 要約\n\nテスト内容"
+        params = self._make_params()
+
+        self.func(content, params)
+
+        mock_logger.warning.assert_called()
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_success_returns_topic(self, mock_call_ollama):
+        """正常時に call_ollama が str を返し、topic を取得できること。"""
+        # call_ollama now returns str directly (not tuple)
+        mock_call_ollama.return_value = "python"
+
+        content = "## 要約\n\nPython プログラミング入門"
+        params = self._make_params()
+
+        result = self.func(content, params)
+
+        self.assertEqual(result, "python")
+
+
+class TestSuggestNewGenresViaLlmExceptionHandling(unittest.TestCase):
+    """_suggest_new_genres_via_llm: OllamaError 例外ハンドリング。
+
+    063-ollama-exception-refactor Phase 4: US2
+    call_ollama が OllamaError をスローした場合、
+    _suggest_new_genres_via_llm は空リスト [] を返し、処理を継続する。
+    """
+
+    def setUp(self):
+        """Import exception classes and target function."""
+        from obsidian_etl.utils.ollama import (
+            OllamaConnectionError,
+            OllamaEmptyResponseError,
+            OllamaError,
+            OllamaTimeoutError,
+        )
+
+        self.OllamaError = OllamaError
+        self.OllamaEmptyResponseError = OllamaEmptyResponseError
+        self.OllamaTimeoutError = OllamaTimeoutError
+        self.OllamaConnectionError = OllamaConnectionError
+
+        from obsidian_etl.pipelines.organize.nodes import _suggest_new_genres_via_llm
+
+        self.func = _suggest_new_genres_via_llm
+
+    def _make_other_items(self, count: int = 5) -> list[dict]:
+        """Create other-classified items for suggestion."""
+        return [
+            {
+                "metadata": {"title": f"テスト {i}"},
+                "content": f"テスト内容 {i}",
+                "genre": "other",
+            }
+            for i in range(count)
+        ]
+
+    def _make_params(self) -> dict:
+        """Create params for genre suggestion."""
+        return {
+            "ollama": {
+                "defaults": {
+                    "model": "gemma3:12b",
+                    "base_url": "http://localhost:11434",
+                    "timeout": 120,
+                    "temperature": 0.2,
+                },
+            },
+            "genre_vault_mapping": _make_genre_config_new_format(),
+        }
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_ollama_error_returns_empty_list(self, mock_call_ollama):
+        """OllamaError 発生時に空リストを返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaError("Test error")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_timeout_error_returns_empty_list(self, mock_call_ollama):
+        """OllamaTimeoutError 発生時に空リストを返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaTimeoutError("Timeout (120s)")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_catches_connection_error_returns_empty_list(self, mock_call_ollama):
+        """OllamaConnectionError 発生時に空リストを返すこと。"""
+        mock_call_ollama.side_effect = self.OllamaConnectionError("Connection refused")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.logger")
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_logs_warning_on_error(self, mock_call_ollama, mock_logger):
+        """OllamaError 発生時にログが出力されること。"""
+        mock_call_ollama.side_effect = self.OllamaError("LLM failed")
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        self.func(other_items, params)
+
+        mock_logger.warning.assert_called()
+
+    @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")
+    def test_success_returns_suggestions(self, mock_call_ollama):
+        """正常時に call_ollama が str を返し、提案リストを取得できること。"""
+        import json
+
+        # call_ollama now returns str directly (not tuple)
+        mock_call_ollama.return_value = json.dumps(
+            [
+                {
+                    "suggested_genre": "cooking",
+                    "suggested_description": "料理/レシピ/食材",
+                    "sample_titles": ["テスト 0", "テスト 1"],
+                    "content_count": 3,
+                },
+            ]
+        )
+
+        other_items = self._make_other_items()
+        params = self._make_params()
+
+        result = self.func(other_items, params)
+
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 1)
+        self.assertEqual(result[0]["suggested_genre"], "cooking")
+
+
+# ============================================================
+# Phase 5 RED Tests (063-ollama-exception-refactor):
+# file_id context setting in organize partition processing
+# ============================================================
+
+
+class TestExtractTopicAndGenreFileIdContext(unittest.TestCase):
+    """extract_topic_and_genre: set_file_id called for each partition.
+
+    US1: エラー発生時のファイル特定
+    FR-002: パーティション処理開始時に file_id がコンテキストに設定される
+
+    Tests verify that extract_topic_and_genre calls set_file_id(file_id)
+    at the start of each partition processing loop iteration, so that
+    all subsequent log messages automatically include [file_id] prefix.
+    """
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_called_for_each_partition(self, mock_llm, mock_set_file_id):
+        """パーティションループ内で set_file_id が各パーティションに対して呼ばれること。
+
+        extract_topic_and_genre のパーティションループ内で、各アイテムの処理前に
+        set_file_id(file_id) が呼び出されることを検証する。
+        """
+        mock_llm.return_value = ("python", "engineer")
+
+        items = {
+            "item-a": _make_markdown_item(item_id="a", file_id="aaa111bbb222", title="Python入門"),
+            "item-b": _make_markdown_item(item_id="b", file_id="bbb222ccc333", title="React入門"),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # set_file_id should have been called for each partition
+        self.assertEqual(mock_set_file_id.call_count, 2)
+
+        # Verify called with file_id values (from metadata)
+        call_args_list = [call[0][0] for call in mock_set_file_id.call_args_list]
+        self.assertIn("aaa111bbb222", call_args_list)
+        self.assertIn("bbb222ccc333", call_args_list)
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_called_before_llm(self, mock_llm, mock_set_file_id):
+        """set_file_id が LLM 呼び出しの前に呼ばれること。
+
+        set_file_id がパーティション処理の冒頭で呼ばれ、
+        LLM 呼び出し時にはすでにコンテキストに file_id が設定されていることを検証する。
+        """
+        call_order = []
+
+        def track_set_file_id(file_id):
+            call_order.append(("set_file_id", file_id))
+
+        def track_llm(*args, **kwargs):
+            call_order.append(("llm_call", None))
+            return ("python", "engineer")
+
+        mock_set_file_id.side_effect = track_set_file_id
+        mock_llm.side_effect = track_llm
+
+        items = {
+            "item-order": _make_markdown_item(
+                item_id="order", file_id="order1234567", title="Test"
+            ),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # Verify set_file_id was called before LLM call
+        self.assertGreaterEqual(len(call_order), 2)
+        set_idx = next(i for i, c in enumerate(call_order) if c[0] == "set_file_id")
+        llm_idx = next(i for i, c in enumerate(call_order) if c[0] == "llm_call")
+        self.assertLess(set_idx, llm_idx, "set_file_id must be called before LLM call")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_uses_metadata_file_id(self, mock_llm, mock_set_file_id):
+        """set_file_id にメタデータの file_id が渡されること。
+
+        organize/nodes.py では metadata.get("file_id") で取得した file_id を
+        set_file_id に渡す必要がある（partition_id ではなく）。
+        """
+        mock_llm.return_value = ("topic", "ai")
+
+        items = {
+            "partition-key-123": _make_markdown_item(
+                item_id="test", file_id="metadata_fid_1", title="AI Test"
+            ),
+        }
+        partitioned_input = _make_partitioned_input(items)
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # Should use file_id from metadata, not the partition key
+        mock_set_file_id.assert_called_once_with("metadata_fid_1")
+
+    @patch("obsidian_etl.pipelines.organize.nodes.set_file_id")
+    @patch("obsidian_etl.pipelines.organize.nodes._extract_topic_and_genre_via_llm")
+    def test_set_file_id_fallback_to_key(self, mock_llm, mock_set_file_id):
+        """metadata に file_id がない場合、partition key にフォールバックすること。
+
+        file_id が metadata に存在しない場合、partition key を set_file_id に渡す。
+        """
+        mock_llm.return_value = ("topic", "other")
+
+        # Create item without file_id in metadata
+        item = _make_markdown_item(item_id="no-fid", title="No FileId")
+        item["metadata"].pop("file_id", None)
+        item["file_id"] = ""
+
+        partitioned_input = _make_partitioned_input({"fallback-key": item})
+        params = _make_organize_params()
+
+        extract_topic_and_genre(partitioned_input, params)
+
+        # Should fallback to partition key when file_id is missing
+        mock_set_file_id.assert_called_once_with("fallback-key")
 
 
 if __name__ == "__main__":

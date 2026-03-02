@@ -15,6 +15,32 @@ import urllib.request
 logger = logging.getLogger(__name__)
 
 
+class OllamaError(Exception):
+    """Base exception for Ollama API errors.
+
+    Attributes:
+        message: Error message.
+        context_len: Length of context (system_prompt + user_message) in characters.
+    """
+
+    def __init__(self, message: str, context_len: int = 0) -> None:
+        self.message = message
+        self.context_len = context_len
+        super().__init__(message)
+
+
+class OllamaEmptyResponseError(OllamaError):
+    """LLM returned empty or whitespace-only response."""
+
+
+class OllamaTimeoutError(OllamaError):
+    """Request timed out."""
+
+
+class OllamaConnectionError(OllamaError):
+    """Failed to connect to Ollama server."""
+
+
 class OllamaWarmupError(Exception):
     """Exception raised when Ollama model warmup fails.
 
@@ -82,7 +108,7 @@ def call_ollama(
     temperature: float = 0.2,
     timeout: int = 120,
     warmup_timeout: int = 30,
-) -> tuple[str, str | None]:
+) -> str:
     """Call Ollama API.
 
     Args:
@@ -97,9 +123,13 @@ def call_ollama(
         warmup_timeout: Model warmup timeout in seconds.
 
     Returns:
-        Tuple of (response_content, error_message).
-        On success: (content, None).
-        On failure: ("", error_message).
+        Response content string.
+
+    Raises:
+        OllamaEmptyResponseError: LLM returned empty or whitespace-only response.
+        OllamaTimeoutError: Request timed out.
+        OllamaConnectionError: Failed to connect to Ollama server.
+        OllamaWarmupError: Model warmup failed.
     """
     # Warmup model on first use
     if model not in _warmed_models:
@@ -131,22 +161,26 @@ def call_ollama(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read().decode("utf-8"))
             content = result.get("message", {}).get("content", "")
-            # Log empty response for debugging
+            # Raise exception for empty response
             if not content.strip():
                 logger.warning(f"Empty response from LLM (context_len={context_len} chars)")
-            return content, None
+                raise OllamaEmptyResponseError("Empty response from LLM", context_len=context_len)
+            return content
     except urllib.error.URLError as e:
         logger.warning(f"Connection error (context_len={context_len} chars): {e.reason}")
-        return "", f"Connection error: {e.reason}"
-    except TimeoutError:
+        raise OllamaConnectionError(f"Connection error: {e.reason}", context_len=context_len) from e
+    except TimeoutError as e:
         logger.warning(f"Timeout ({timeout}s) (context_len={context_len} chars)")
-        return "", f"Timeout ({timeout}s)"
+        raise OllamaTimeoutError(f"Timeout ({timeout}s)", context_len=context_len) from e
     except json.JSONDecodeError as e:
         logger.warning(f"JSON parse error (context_len={context_len} chars): {e}")
-        return "", f"JSON parse error: {e}"
+        raise OllamaConnectionError(f"JSON parse error: {e}", context_len=context_len) from e
+    except OllamaEmptyResponseError:
+        # Re-raise our own exceptions
+        raise
     except Exception as e:
         logger.warning(f"API error (context_len={context_len} chars): {e}")
-        return "", f"API error: {e}"
+        raise OllamaConnectionError(f"API error: {e}", context_len=context_len) from e
 
 
 def check_ollama_connection(base_url: str = "http://localhost:11434") -> tuple[bool, str | None]:

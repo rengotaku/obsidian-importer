@@ -26,6 +26,7 @@ from pathlib import Path
 
 from obsidian_etl.utils import knowledge_extractor
 from obsidian_etl.utils.compression_validator import validate_compression
+from obsidian_etl.utils.log_context import iter_with_file_id
 from obsidian_etl.utils.timing import timed_node
 
 logger = logging.getLogger(__name__)
@@ -123,8 +124,7 @@ def extract_knowledge(
         f"(existing={skipped_existing}, file={skipped_file}), to_process={remaining}"
     )
 
-    for partition_id, load_func in to_process:
-        item = load_func()
+    for partition_id, item in iter_with_file_id(to_process):
         processed += 1
         start_time = time.time()
 

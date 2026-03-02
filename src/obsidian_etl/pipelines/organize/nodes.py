@@ -14,7 +14,8 @@ from collections.abc import Callable
 
 import yaml
 
-from obsidian_etl.utils.ollama import call_ollama
+from obsidian_etl.utils.log_context import iter_with_file_id
+from obsidian_etl.utils.ollama import OllamaError, call_ollama
 from obsidian_etl.utils.ollama_config import get_ollama_config
 from obsidian_etl.utils.timing import timed_node
 
@@ -144,9 +145,7 @@ def extract_topic_and_genre(
     """
     result = {}
 
-    for key, load_func in partitioned_input.items():
-        item = load_func()
-
+    for key, item in iter_with_file_id(partitioned_input):
         # Handle both dict (unit tests) and string (real pipeline) inputs
         if isinstance(item, str):
             # Parse markdown frontmatter
@@ -165,7 +164,7 @@ def extract_topic_and_genre(
                     frontmatter = yaml.safe_load(frontmatter_text) or {}
                 except yaml.YAMLError as e:
                     # If YAML parse fails, try to extract key fields manually
-                    logger.warning(f"YAML parse error for {key}: {e}")
+                    logger.warning(f"YAML parse error: {e}")
                     frontmatter = {}
                     for line in frontmatter_text.split("\n"):
                         if line.startswith("title:"):
@@ -192,16 +191,8 @@ def extract_topic_and_genre(
             # Extract content for LLM (dict format)
             content = item.get("content", "")
 
-        # Extract file_id from metadata for logging (fallback to key)
-        metadata = item.get("metadata", {})
-        file_id = metadata.get("file_id") or key  # Use `or` to handle None/empty string
-        if not file_id:
-            logger.warning(
-                f"file_id is empty: key={repr(key)}, metadata_keys={list(metadata.keys())}"
-            )
-
         # Extract topic and genre via LLM
-        topic, genre = _extract_topic_and_genre_via_llm(content, params, file_id=file_id)
+        topic, genre = _extract_topic_and_genre_via_llm(content, params)
 
         # Add fields to item
         item["topic"] = topic
@@ -211,19 +202,19 @@ def extract_topic_and_genre(
     return result
 
 
-def _extract_topic_and_genre_via_llm(
-    content: str, params: dict, file_id: str = ""
-) -> tuple[str, str]:
+def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, str]:
     """Helper to extract topic and genre via LLM.
 
     Args:
         content: Markdown content with frontmatter
         params: Parameters dict with ollama settings and genre_vault_mapping
-        file_id: File identifier for logging
 
     Returns:
         tuple[str, str]: (topic, genre) - topic is lowercase, genre from config
                         Returns ("", "other") on extraction failure
+
+    Note:
+        Caller is responsible for setting file_id_context for logging.
     """
     config = get_ollama_config(params, "extract_topic_and_genre")
 
@@ -266,20 +257,20 @@ JSON形式で回答してください:
 
 主題とジャンルをJSON形式で答えてください。"""
 
-    # Call Ollama API
-    response, error = call_ollama(
-        system_prompt,
-        user_message,
-        model=config.model,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-        num_predict=config.num_predict,
-    )
-
-    if error:
-        logger.warning(f"[{file_id}] Failed to extract topic and genre via LLM: {error}")
+    # Call Ollama API (file_id context is set by caller)
+    try:
+        response = call_ollama(
+            system_prompt,
+            user_message,
+            model=config.model,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+            num_predict=config.num_predict,
+        )
+    except OllamaError as e:
+        logger.warning(f"Failed to extract topic and genre via LLM: {e}")
         return "", "other"
 
     # Parse JSON response
@@ -292,7 +283,7 @@ JSON形式で回答してください:
 
         # Validate genre using dynamic valid_genres from config
         if genre not in valid_genres:
-            logger.warning(f"[{file_id}] Invalid genre '{genre}', defaulting to 'other'")
+            logger.warning(f"Invalid genre '{genre}', defaulting to 'other'")
             genre = "other"
 
         return topic, genre
@@ -300,9 +291,7 @@ JSON形式で回答してください:
     except (json.JSONDecodeError, AttributeError) as e:
         # Log response content for debugging (truncate to 200 chars)
         response_preview = repr(response[:200]) if response else "None"
-        logger.warning(
-            f"[{file_id}] Failed to parse LLM response as JSON: {e}, response={response_preview}"
-        )
+        logger.warning(f"Failed to parse LLM response as JSON: {e}, response={response_preview}")
         return "", "other"
 
 
@@ -344,19 +333,19 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
 主題を1-3単語で答えてください。"""
 
     # Call Ollama API
-    response, error = call_ollama(
-        system_prompt,
-        user_message,
-        model=config.model,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-        num_predict=config.num_predict,
-    )
-
-    if error:
-        logger.warning(f"Failed to extract topic via LLM: {error}")
+    try:
+        response = call_ollama(
+            system_prompt,
+            user_message,
+            model=config.model,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+            num_predict=config.num_predict,
+        )
+    except OllamaError as e:
+        logger.warning(f"Failed to extract topic via LLM: {e}")
         return None
 
     topic = response.strip()
@@ -742,19 +731,19 @@ JSON配列形式で回答してください:
 新しいジャンルを提案してください。"""
 
     # Call Ollama API
-    response, error = call_ollama(
-        system_prompt,
-        user_message,
-        model=config.model,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-        num_predict=config.num_predict,
-    )
-
-    if error:
-        logger.warning(f"Failed to suggest genres via LLM: {error}")
+    try:
+        response = call_ollama(
+            system_prompt,
+            user_message,
+            model=config.model,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+            num_predict=config.num_predict,
+        )
+    except OllamaError as e:
+        logger.warning(f"Failed to suggest genres via LLM: {e}")
         return []
 
     # Parse JSON response

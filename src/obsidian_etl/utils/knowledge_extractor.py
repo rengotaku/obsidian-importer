@@ -11,7 +11,7 @@ import logging
 import re
 from pathlib import Path
 
-from obsidian_etl.utils.ollama import call_ollama, parse_markdown_response
+from obsidian_etl.utils.ollama import OllamaError, call_ollama, parse_markdown_response
 from obsidian_etl.utils.ollama_config import get_ollama_config
 
 logger = logging.getLogger(__name__)
@@ -78,19 +78,20 @@ def translate_summary(summary: str, params: dict) -> tuple[str | None, str | Non
     prompt = load_prompt(SUMMARY_PROMPT_PATH)
     config = get_ollama_config(params, "translate_summary")
 
-    response, error = call_ollama(
-        prompt,
-        f"以下の英語サマリーを日本語に翻訳してください:\n\n{summary}",
-        model=config.model,
-        base_url=config.base_url,
-        num_predict=config.num_predict,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-    )
-
-    if error:
-        return None, error
+    try:
+        response = call_ollama(
+            prompt,
+            f"以下の英語サマリーを日本語に翻訳してください:\n\n{summary}",
+            model=config.model,
+            base_url=config.base_url,
+            num_predict=config.num_predict,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+        )
+    except OllamaError as e:
+        logger.warning(f"Failed to translate summary: {e}")
+        return None, str(e)
 
     data, parse_error = parse_markdown_response(response)
     if parse_error:
@@ -125,19 +126,20 @@ def extract_knowledge(
     # Build user message
     user_message = _build_user_message(content, conversation_name, created_at, source_provider)
 
-    response, error = call_ollama(
-        prompt,
-        user_message,
-        model=config.model,
-        base_url=config.base_url,
-        num_predict=config.num_predict,
-        timeout=config.timeout,
-        warmup_timeout=config.warmup_timeout,
-        temperature=config.temperature,
-    )
-
-    if error:
-        return None, error
+    try:
+        response = call_ollama(
+            prompt,
+            user_message,
+            model=config.model,
+            base_url=config.base_url,
+            num_predict=config.num_predict,
+            timeout=config.timeout,
+            warmup_timeout=config.warmup_timeout,
+            temperature=config.temperature,
+        )
+    except OllamaError as e:
+        logger.warning(f"Failed to extract knowledge: {e}")
+        return None, str(e)
 
     data, parse_error = parse_markdown_response(response)
 

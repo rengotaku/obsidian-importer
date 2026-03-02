@@ -8,17 +8,20 @@ formatters:
     datefmt: "%Y-%m-%dT%H:%M:%S"
 
 handlers:
-  console:
-    class: logging.StreamHandler
-    level: INFO
-    formatter: simple
-    stream: ext://sys.stdout
+  # Rich console handler with [file_id] prefix support
+  rich:
+    class: obsidian_etl.utils.log_context.ContextAwareRichHandler
+    rich_tracebacks: true
+    tracebacks_show_locals: false
 
+  # File handler for persistent logs
   info_file:
-    class: logging.FileHandler
+    class: logging.handlers.RotatingFileHandler
     level: INFO
     formatter: simple
     filename: logs/info.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 3
     mode: a
 
 loggers:
@@ -30,4 +33,4 @@ loggers:
 
 root:
   level: WARNING
-  handlers: [console]
+  handlers: [rich]
