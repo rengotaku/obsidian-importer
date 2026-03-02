@@ -14,7 +14,7 @@ from collections.abc import Callable
 
 import yaml
 
-from obsidian_etl.utils.log_context import set_file_id
+from obsidian_etl.utils.log_context import iter_with_file_id
 from obsidian_etl.utils.ollama import OllamaError, call_ollama
 from obsidian_etl.utils.ollama_config import get_ollama_config
 from obsidian_etl.utils.timing import timed_node
@@ -145,9 +145,7 @@ def extract_topic_and_genre(
     """
     result = {}
 
-    for key, load_func in partitioned_input.items():
-        item = load_func()
-
+    for key, item in iter_with_file_id(partitioned_input):
         # Handle both dict (unit tests) and string (real pipeline) inputs
         if isinstance(item, str):
             # Parse markdown frontmatter
@@ -166,7 +164,7 @@ def extract_topic_and_genre(
                     frontmatter = yaml.safe_load(frontmatter_text) or {}
                 except yaml.YAMLError as e:
                     # If YAML parse fails, try to extract key fields manually
-                    logger.warning(f"YAML parse error for {key}: {e}")
+                    logger.warning(f"YAML parse error: {e}")
                     frontmatter = {}
                     for line in frontmatter_text.split("\n"):
                         if line.startswith("title:"):
@@ -193,17 +191,6 @@ def extract_topic_and_genre(
             # Extract content for LLM (dict format)
             content = item.get("content", "")
 
-        # Extract file_id from metadata for logging (fallback to key)
-        metadata = item.get("metadata", {})
-        file_id = metadata.get("file_id") or key  # Use `or` to handle None/empty string
-        if not file_id:
-            logger.warning(
-                f"file_id is empty: key={repr(key)}, metadata_keys={list(metadata.keys())}"
-            )
-
-        # Set file_id in logging context
-        set_file_id(file_id)
-
         # Extract topic and genre via LLM
         topic, genre = _extract_topic_and_genre_via_llm(content, params)
 
@@ -225,6 +212,9 @@ def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, s
     Returns:
         tuple[str, str]: (topic, genre) - topic is lowercase, genre from config
                         Returns ("", "other") on extraction failure
+
+    Note:
+        Caller is responsible for setting file_id_context for logging.
     """
     config = get_ollama_config(params, "extract_topic_and_genre")
 
@@ -267,7 +257,7 @@ JSON形式で回答してください:
 
 主題とジャンルをJSON形式で答えてください。"""
 
-    # Call Ollama API
+    # Call Ollama API (file_id context is set by caller)
     try:
         response = call_ollama(
             system_prompt,

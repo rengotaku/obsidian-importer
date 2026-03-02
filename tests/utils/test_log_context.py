@@ -383,5 +383,148 @@ class TestContextAwareFormatterIsLoggingFormatter(unittest.TestCase):
         self.assertIs(handler.formatter, formatter)
 
 
+class TestExtractFileIdFromFrontmatter(unittest.TestCase):
+    """_extract_file_id_from_frontmatter: YAML frontmatter から file_id を抽出する。"""
+
+    def test_extract_basic(self):
+        """基本的な frontmatter から file_id を抽出できること。"""
+        from obsidian_etl.utils.log_context import _extract_file_id_from_frontmatter
+
+        content = """---
+title: Test
+file_id: abc123def456
+---
+
+# Content
+"""
+        result = _extract_file_id_from_frontmatter(content)
+        self.assertEqual(result, "abc123def456")
+
+    def test_extract_with_double_quotes(self):
+        """ダブルクォートで囲まれた file_id を抽出できること。"""
+        from obsidian_etl.utils.log_context import _extract_file_id_from_frontmatter
+
+        content = """---
+file_id: "xyz789"
+---
+"""
+        result = _extract_file_id_from_frontmatter(content)
+        self.assertEqual(result, "xyz789")
+
+    def test_extract_with_single_quotes(self):
+        """シングルクォートで囲まれた file_id を抽出できること。"""
+        from obsidian_etl.utils.log_context import _extract_file_id_from_frontmatter
+
+        content = """---
+file_id: 'single123'
+---
+"""
+        result = _extract_file_id_from_frontmatter(content)
+        self.assertEqual(result, "single123")
+
+    def test_no_frontmatter(self):
+        """frontmatter がない場合は None を返すこと。"""
+        from obsidian_etl.utils.log_context import _extract_file_id_from_frontmatter
+
+        content = "# No frontmatter here"
+        result = _extract_file_id_from_frontmatter(content)
+        self.assertIsNone(result)
+
+    def test_no_file_id_field(self):
+        """frontmatter はあるが file_id がない場合は None を返すこと。"""
+        from obsidian_etl.utils.log_context import _extract_file_id_from_frontmatter
+
+        content = """---
+title: Test
+tags:
+  - tag1
+---
+"""
+        result = _extract_file_id_from_frontmatter(content)
+        self.assertIsNone(result)
+
+    def test_empty_file_id(self):
+        """file_id が空の場合は None を返すこと。"""
+        from obsidian_etl.utils.log_context import _extract_file_id_from_frontmatter
+
+        content = """---
+file_id:
+---
+"""
+        result = _extract_file_id_from_frontmatter(content)
+        self.assertIsNone(result)
+
+    def test_unclosed_frontmatter(self):
+        """frontmatter が閉じられていない場合は None を返すこと。"""
+        from obsidian_etl.utils.log_context import _extract_file_id_from_frontmatter
+
+        content = """---
+file_id: abc123
+title: Unclosed
+"""
+        result = _extract_file_id_from_frontmatter(content)
+        self.assertIsNone(result)
+
+
+class TestIterWithFileIdMarkdown(unittest.TestCase):
+    """iter_with_file_id: Markdown 文字列から file_id を抽出する。"""
+
+    def tearDown(self):
+        """各テスト後にコンテキストをクリアする。"""
+        from obsidian_etl.utils.log_context import clear_file_id
+
+        clear_file_id()
+
+    def test_extracts_file_id_from_markdown_frontmatter(self):
+        """Markdown frontmatter から file_id を抽出してコンテキストに設定すること。"""
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = """---
+file_id: hash123
+---
+
+# Content
+"""
+        partitioned_input = {"test.md": lambda: content}
+
+        for key, item in iter_with_file_id(partitioned_input):
+            current_file_id = get_file_id()
+            self.assertEqual(current_file_id, "hash123")
+            self.assertEqual(key, "test.md")
+            self.assertEqual(item, content)
+
+    def test_falls_back_to_key_if_no_file_id(self):
+        """frontmatter に file_id がない場合はキーにフォールバックすること。"""
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = """---
+title: No file_id
+---
+
+# Content
+"""
+        partitioned_input = {"fallback_key.md": lambda: content}
+
+        for key, item in iter_with_file_id(partitioned_input):
+            current_file_id = get_file_id()
+            self.assertEqual(current_file_id, "fallback_key.md")
+
+    def test_clears_file_id_after_iteration(self):
+        """イテレーション完了後に file_id がクリアされること。"""
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = """---
+file_id: temp123
+---
+"""
+        partitioned_input = {"test.md": lambda: content}
+
+        for _ in iter_with_file_id(partitioned_input):
+            self.assertEqual(get_file_id(), "temp123")
+
+        # After iteration, file_id should be cleared
+        self.assertEqual(get_file_id(), "")
+
+
 if __name__ == "__main__":
     unittest.main()

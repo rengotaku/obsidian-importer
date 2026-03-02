@@ -8,6 +8,9 @@ SESSION_DIR := $(BASE_DIR)/.staging/@session
 LLM_EXPORTS_DIR := $(BASE_DIR)/.staging/@llm_exports
 COMMA := ,
 
+# Kedro logging configuration (enables [file_id] prefix in logs)
+export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
+
 .PHONY: help setup setup-dev test coverage check lint ruff pylint clean
 .PHONY: rag-index rag-search rag-ask rag-status
 .PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
@@ -87,6 +90,7 @@ setup: $(VENV_DIR)/bin/activate
 	@mkdir -p data/02_intermediate/parsed
 	@mkdir -p data/03_primary/transformed data/03_primary/transformed_knowledge
 	@mkdir -p data/07_model_output/notes data/07_model_output/organized
+	@mkdir -p logs
 	@echo ""
 	@echo "Setting up local config..."
 	@if [ ! -f conf/local/parameters_organize.yml ]; then \

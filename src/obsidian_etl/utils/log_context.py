@@ -13,8 +13,13 @@ US1: エラー発生時のファイル特定
 
 from __future__ import annotations
 
+import copy
 import logging
+from collections.abc import Generator
+from contextlib import contextmanager
 from contextvars import ContextVar
+
+from kedro.logging import RichHandler
 
 # ContextVar for file_id (default: empty string)
 # Thread-safe and async-safe context storage
@@ -63,6 +68,111 @@ def clear_file_id() -> None:
         ''
     """
     _file_id_var.set("")
+
+
+def _extract_file_id_from_frontmatter(content: str) -> str | None:
+    """Extract file_id from YAML frontmatter in Markdown content.
+
+    Args:
+        content: Markdown content with optional YAML frontmatter
+
+    Returns:
+        file_id if found in frontmatter, None otherwise
+    """
+    if not content.startswith("---"):
+        return None
+
+    # Find the closing ---
+    end_idx = content.find("---", 3)
+    if end_idx == -1:
+        return None
+
+    frontmatter = content[3:end_idx]
+
+    # Simple YAML parsing for file_id line
+    for line in frontmatter.split("\n"):
+        line = line.strip()
+        if line.startswith("file_id:"):
+            # Extract value after colon
+            value = line[8:].strip()
+            # Remove quotes if present
+            if (value.startswith('"') and value.endswith('"')) or (
+                value.startswith("'") and value.endswith("'")
+            ):
+                value = value[1:-1]
+            return value if value else None
+
+    return None
+
+
+@contextmanager
+def file_id_context(file_id: str) -> Generator[None, None, None]:
+    """Context manager for file_id scope.
+
+    Sets file_id at entry and clears it at exit, ensuring file_id
+    is only active during the specific processing block.
+
+    Args:
+        file_id: File identifier to set for this context
+
+    Example:
+        >>> with file_id_context("abc123"):
+        ...     logger.info("Processing file")  # [abc123] Processing file
+        >>> logger.info("After processing")  # After processing (no prefix)
+    """
+    set_file_id(file_id)
+    try:
+        yield
+    finally:
+        clear_file_id()
+
+
+def iter_with_file_id(
+    partitioned_input: dict[str, callable] | list[tuple[str, callable]],
+) -> Generator[tuple[str, any], None, None]:
+    """Iterate partitions with file_id context automatically set.
+
+    This utility ensures consistent file_id logging across all partition
+    processing nodes. The file_id context is automatically set after
+    loading the item, using the item's metadata.file_id if available,
+    falling back to the partition key.
+
+    Args:
+        partitioned_input: Either:
+            - Kedro PartitionedDataset-style dict (partition_key -> load_func)
+            - Pre-filtered list of (partition_key, load_func) tuples
+
+    Yields:
+        tuple[str, any]: (partition_key, loaded_item) with file_id context active
+
+    Example:
+        >>> for key, item in iter_with_file_id(partitioned_input):
+        ...     process(item)  # logs will have [file_id] prefix
+
+    Note:
+        - file_id is extracted from item["metadata"]["file_id"] or item["file_id"]
+        - Falls back to partition key if file_id not found
+        - Use this instead of manually iterating with file_id_context
+    """
+    # Handle both dict and list of tuples
+    items = partitioned_input.items() if isinstance(partitioned_input, dict) else partitioned_input
+
+    for key, load_func in items:
+        item = load_func()
+
+        # Extract file_id from item, fallback to key
+        file_id = key
+        if isinstance(item, dict):
+            # Try metadata.file_id first, then top-level file_id
+            file_id = item.get("metadata", {}).get("file_id") or item.get("file_id") or key
+        elif isinstance(item, str):
+            # Parse frontmatter from Markdown content
+            extracted = _extract_file_id_from_frontmatter(item)
+            if extracted:
+                file_id = extracted
+
+        with file_id_context(file_id):
+            yield key, item
 
 
 class ContextAwareFormatter(logging.Formatter):
@@ -118,3 +228,45 @@ class ContextAwareFormatter(logging.Formatter):
             return result
         # No prefix when file_id is not set
         return super().format(record)
+
+
+class ContextAwareRichHandler(RichHandler):
+    """Rich logging handler that prepends [file_id] to messages.
+
+    Extends Kedro's RichHandler to automatically add [file_id] prefix
+    to log messages when file_id is set in the context, while preserving
+    Rich's colored output formatting.
+
+    FR-003: file_id が設定されている場合のみ [file_id] プレフィックスを出力
+
+    Example:
+        In logging.yml:
+        ```yaml
+        handlers:
+          rich:
+            class: obsidian_etl.utils.log_context.ContextAwareRichHandler
+            rich_tracebacks: true
+        ```
+    """
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Emit a log record with optional [file_id] prefix.
+
+        Only applies [file_id] prefix to obsidian_etl.* loggers to avoid
+        polluting Kedro's internal log messages.
+
+        Args:
+            record: Log record to emit
+
+        Note:
+            Creates a copy of the record to avoid side effects on other handlers.
+        """
+        file_id = get_file_id()
+        # Only apply prefix to obsidian_etl.* loggers
+        if file_id and record.name.startswith("obsidian_etl"):
+            # Create a copy to avoid affecting other handlers
+            updated_record = copy.copy(record)
+            updated_record.msg = f"[{file_id}] {record.msg}"
+            super().emit(updated_record)
+        else:
+            super().emit(record)
