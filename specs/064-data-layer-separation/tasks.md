@@ -61,21 +61,21 @@
 
 ### Implementation (GREEN)
 
-- [ ] T011 Read: `specs/064-data-layer-separation/red-tests/ph2-test.md`
-- [ ] T012 [US1] Edit: `conf/base/catalog.yml` の `classified_items` パスを `data/05_model_input/classified` に変更
-- [ ] T013 [P] [US1] Edit: `conf/base/catalog.yml` の `existing_classified_items` パスを `data/05_model_input/classified` に変更
-- [ ] T014 [P] [US1] Edit: `conf/base/catalog.yml` の `topic_extracted_items` パスを `data/05_model_input/topic_extracted` に変更
-- [ ] T015 [P] [US1] Edit: `conf/base/catalog.yml` の `normalized_items` パスを `data/05_model_input/normalized` に変更
-- [ ] T016 [P] [US1] Edit: `conf/base/catalog.yml` の `cleaned_items` パスを `data/05_model_input/cleaned` に変更
-- [ ] T017 [P] [US1] Edit: `conf/base/catalog.yml` の `vault_determined_items` パスを `data/05_model_input/vault_determined` に変更
-- [ ] T018 [P] [US1] Edit: `conf/base/catalog.yml` の `organized_items` パスを `data/05_model_input/organized` に変更
-- [ ] T019 [US1] Create: `data/05_model_input/` ディレクトリ構造を作成（.gitkeep 含む）
-- [ ] T020 Verify: `make test` PASS (GREEN)
+- [x] T011 Read: `specs/064-data-layer-separation/red-tests/ph2-test.md`
+- [x] T012 [US1] Edit: `conf/base/catalog.yml` の `classified_items` パスを `data/05_model_input/classified` に変更
+- [x] T013 [P] [US1] Edit: `conf/base/catalog.yml` の `existing_classified_items` パスを `data/05_model_input/classified` に変更
+- [x] T014 [P] [US1] Edit: `conf/base/catalog.yml` の `topic_extracted_items` パスを `data/05_model_input/topic_extracted` に変更
+- [x] T015 [P] [US1] Edit: `conf/base/catalog.yml` の `normalized_items` パスを `data/05_model_input/normalized` に変更
+- [x] T016 [P] [US1] Edit: `conf/base/catalog.yml` の `cleaned_items` パスを `data/05_model_input/cleaned` に変更
+- [x] T017 [P] [US1] Edit: `conf/base/catalog.yml` の `vault_determined_items` パスを `data/05_model_input/vault_determined` に変更
+- [x] T018 [P] [US1] Edit: `conf/base/catalog.yml` の `organized_items` パスを `data/05_model_input/organized` に変更
+- [x] T019 [US1] Create: `data/05_model_input/` ディレクトリ構造を作成（.gitkeep 含む）
+- [x] T020 Verify: `make test` PASS (GREEN)
 
 ### Verification
 
-- [ ] T021 Verify: `make test` がすべてのテストを通過
-- [ ] T022 Edit: `specs/064-data-layer-separation/tasks/ph2-output.md` に Phase 2 結果を記録
+- [x] T021 Verify: `make test` がすべてのテストを通過
+- [x] T022 Edit: `specs/064-data-layer-separation/tasks/ph2-output.md` に Phase 2 結果を記録
 
 **Checkpoint**: catalog.yml の更新が完了し、パイプラインが新しいパスで動作可能
 
