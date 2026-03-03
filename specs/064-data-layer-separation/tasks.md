@@ -50,7 +50,7 @@
 
 ### Input
 
-- [ ] T006 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
+- [X] T006 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
 
 ### Test Implementation (RED)
 
@@ -89,8 +89,8 @@
 
 ### Input
 
-- [ ] T023 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
-- [ ] T024 Read: `specs/064-data-layer-separation/tasks/ph2-output.md`
+- [X] T023 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
+- [X] T024 Read: `specs/064-data-layer-separation/tasks/ph2-output.md`
 
 ### Test Implementation (RED)
 
@@ -129,8 +129,8 @@
 
 ### Input
 
-- [ ] T041 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
-- [ ] T042 Read: `specs/064-data-layer-separation/tasks/ph3-output.md`
+- [X] T041 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
+- [X] T042 Read: `specs/064-data-layer-separation/tasks/ph3-output.md`
 
 ### Test Implementation (RED)
 
