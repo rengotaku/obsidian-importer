@@ -94,13 +94,13 @@
 
 ### Test Implementation (RED)
 
-- [ ] T025 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に移行元にファイルなしの場合のテストを作成
-- [ ] T026 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に JSON ファイル移行テストを作成
-- [ ] T027 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に既存ファイルスキップテストを作成
-- [ ] T028 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` にサマリー出力テストを作成
-- [ ] T029 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に dry-run モードテストを作成
-- [ ] T030 Verify: `make test` FAIL (RED) - 移行スクリプトがまだ存在しないため
-- [ ] T031 Edit: `specs/064-data-layer-separation/red-tests/ph3-test.md` に RED テスト結果を記録
+- [x] T025 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に移行元にファイルなしの場合のテストを作成
+- [x] T026 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に JSON ファイル移行テストを作成
+- [x] T027 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に既存ファイルスキップテストを作成
+- [x] T028 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` にサマリー出力テストを作成
+- [x] T029 [P] [US2] Implement: `tests/unit/test_migrate_data_layers.py` に dry-run モードテストを作成
+- [x] T030 Verify: `make test` FAIL (RED) - 移行スクリプトがまだ存在しないため
+- [x] T031 Edit: `specs/064-data-layer-separation/red-tests/ph3-test.md` に RED テスト結果を記録
 
 ### Implementation (GREEN)
 
