@@ -164,23 +164,23 @@
 
 ### Input
 
-- [ ] T056 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
-- [ ] T057 Read: `specs/064-data-layer-separation/tasks/ph4-output.md`
+- [x] T056 Read: `specs/064-data-layer-separation/tasks/ph1-output.md`
+- [x] T057 Read: `specs/064-data-layer-separation/tasks/ph4-output.md`
 
 ### Implementation
 
-- [ ] T058 [P] Edit: `CLAUDE.md` のフォルダ構成セクションを更新（05_model_input 追加）
-- [ ] T059 [P] Edit: `.gitignore` に `data/05_model_input/` を追加（必要に応じて）
-- [ ] T060 [P] Edit: テストの fixture パス参照を新構造に更新
-- [ ] T061 Run: `quickstart.md` の手順に従って検証
-- [ ] T062 [P] Remove: 不要になった旧パス参照コードの削除
+- [x] T058 [P] Edit: `CLAUDE.md` のフォルダ構成セクションを更新（05_model_input 追加）
+- [x] T059 [P] Edit: `.gitignore` に `data/05_model_input/` を追加（必要に応じて）
+- [x] T060 [P] Edit: テストの fixture パス参照を新構造に更新
+- [x] T061 Run: `quickstart.md` の手順に従って検証
+- [x] T062 [P] Remove: 不要になった旧パス参照コードの削除
 
 ### Verification
 
-- [ ] T063 Verify: `make test` がすべてのテストを通過
-- [ ] T064 Verify: `make lint` が通過
-- [ ] T065 Verify: `make coverage` が 80% 以上
-- [ ] T066 Edit: `specs/064-data-layer-separation/tasks/ph5-output.md` に Phase 5 結果を記録
+- [x] T063 Verify: `make test` がすべてのテストを通過
+- [x] T064 Verify: `make lint` が通過
+- [x] T065 Verify: `make coverage` が 80% 以上
+- [x] T066 Edit: `specs/064-data-layer-separation/tasks/ph5-output.md` に Phase 5 結果を記録
 
 ---
 
