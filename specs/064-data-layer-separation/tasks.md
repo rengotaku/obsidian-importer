@@ -134,11 +134,11 @@
 
 ### Test Implementation (RED)
 
-- [ ] T043 [P] [US3] Implement: `tests/unit/test_log_context.py` に str パス入力の正常処理テストを追加
-- [ ] T044 [P] [US3] Implement: `tests/unit/test_log_context.py` に dict 入力で TypeError テストを追加
-- [ ] T045 [P] [US3] Implement: `tests/unit/test_log_context.py` に frontmatter から file_id 抽出テストを追加
-- [ ] T046 Verify: `make test` FAIL (RED) - 現在の実装は dict も受け付けるため
-- [ ] T047 Edit: `specs/064-data-layer-separation/red-tests/ph4-test.md` に RED テスト結果を記録
+- [x] T043 [P] [US3] Implement: `tests/utils/test_log_context.py` に str パス入力の正常処理テストを追加
+- [x] T044 [P] [US3] Implement: `tests/utils/test_log_context.py` に dict 入力で TypeError テストを追加
+- [x] T045 [P] [US3] Implement: `tests/utils/test_log_context.py` に frontmatter から file_id 抽出テストを追加
+- [x] T046 Verify: `make test` FAIL (RED) - 現在の実装は dict も受け付けるため
+- [x] T047 Edit: `specs/064-data-layer-separation/red-tests/ph4-test.md` に RED テスト結果を記録
 
 ### Implementation (GREEN)
 
