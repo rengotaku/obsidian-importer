@@ -142,17 +142,17 @@
 
 ### Implementation (GREEN)
 
-- [ ] T048 Read: `specs/064-data-layer-separation/red-tests/ph4-test.md`
-- [ ] T049 [US3] Edit: `src/obsidian_etl/utils/log_context.py` の `iter_with_file_id` から dict 対応コードを削除
-- [ ] T050 [US3] Edit: `src/obsidian_etl/utils/log_context.py` の `iter_with_file_id` に str 型チェックを追加
-- [ ] T051 [US3] Edit: `src/obsidian_etl/utils/log_context.py` の docstring を更新
-- [ ] T052 Verify: `make test` PASS (GREEN)
+- [x] T048 Read: `specs/064-data-layer-separation/red-tests/ph4-test.md`
+- [x] T049 [US3] Edit: `src/obsidian_etl/utils/log_context.py` の `iter_with_file_id` から dict 対応コードを削除
+- [x] T050 [US3] Edit: `src/obsidian_etl/utils/log_context.py` の `iter_with_file_id` に str 型チェックを追加
+- [x] T051 [US3] Edit: `src/obsidian_etl/utils/log_context.py` の docstring を更新
+- [x] T052 Verify: `make test` PASS (GREEN)
 
 ### Verification
 
-- [ ] T053 Verify: `make test` がすべてのテストを通過（US1, US2 のリグレッションなし）
-- [ ] T054 Verify: `make lint` が通過（ruff + pylint）
-- [ ] T055 Edit: `specs/064-data-layer-separation/tasks/ph4-output.md` に Phase 4 結果を記録
+- [x] T053 Verify: `make test` がすべてのテストを通過（US1, US2 のリグレッションなし）
+- [x] T054 Verify: `make lint` が通過（ruff + pylint）
+- [x] T055 Edit: `specs/064-data-layer-separation/tasks/ph4-output.md` に Phase 4 結果を記録
 
 **Checkpoint**: `iter_with_file_id` の簡素化が完了し、コードの複雑さが軽減
 
