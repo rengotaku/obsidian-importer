@@ -104,18 +104,18 @@
 
 ### Implementation (GREEN)
 
-- [ ] T032 Read: `specs/064-data-layer-separation/red-tests/ph3-test.md`
-- [ ] T033 [US2] Create: `scripts/migrate_data_layers.py` に `MigrationResult` データクラスを定義
-- [ ] T034 [US2] Implement: `scripts/migrate_data_layers.py` に `migrate_json_to_model_input()` 関数を実装
-- [ ] T035 [US2] Implement: `scripts/migrate_data_layers.py` に dry-run モードを実装
-- [ ] T036 [US2] Implement: `scripts/migrate_data_layers.py` にサマリー出力機能を実装
-- [ ] T037 [US2] Implement: `scripts/migrate_data_layers.py` に CLI インターフェースを追加
-- [ ] T038 Verify: `make test` PASS (GREEN)
+- [x] T032 Read: `specs/064-data-layer-separation/red-tests/ph3-test.md`
+- [x] T033 [US2] Create: `scripts/migrate_data_layers.py` に `MigrationResult` データクラスを定義
+- [x] T034 [US2] Implement: `scripts/migrate_data_layers.py` に `migrate_json_to_model_input()` 関数を実装
+- [x] T035 [US2] Implement: `scripts/migrate_data_layers.py` に dry-run モードを実装
+- [x] T036 [US2] Implement: `scripts/migrate_data_layers.py` にサマリー出力機能を実装
+- [x] T037 [US2] Implement: `scripts/migrate_data_layers.py` に CLI インターフェースを追加
+- [x] T038 Verify: `make test` PASS (GREEN)
 
 ### Verification
 
-- [ ] T039 Verify: `make test` がすべてのテストを通過（US1 のリグレッションなし）
-- [ ] T040 Edit: `specs/064-data-layer-separation/tasks/ph3-output.md` に Phase 3 結果を記録
+- [x] T039 Verify: `make test` がすべてのテストを通過（US1 のリグレッションなし）
+- [x] T040 Edit: `specs/064-data-layer-separation/tasks/ph3-output.md` に Phase 3 結果を記録
 
 **Checkpoint**: 移行スクリプトが完成し、既存データを安全に移行可能
 
