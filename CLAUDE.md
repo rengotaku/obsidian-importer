@@ -233,6 +233,7 @@ file_id: abc123
 - Python 3.11+（Python 3.13 compatible） + Kedro 1.1.1, kedro-datasets, requests (urllib) (062-warmup-fail-stop)
 - Python 3.11+ (pyproject.toml で `requires-python = ">=3.11"`) + Kedro 1.1.1, kedro-datasets>=9.0, PyYAML>=6.0, requests>=2.28 (063-ollama-exception-refactor)
 - ファイルシステム (Markdown, JSON, JSONL) - Kedro PartitionedDataset (063-ollama-exception-refactor)
+- ファイルシステム (Kedro PartitionedDataset) (064-data-layer-separation)
 
 ## Recent Changes
 - 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+

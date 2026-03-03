@@ -54,10 +54,10 @@
 
 ### Test Implementation (RED)
 
-- [ ] T007 [P] [US1] Implement: `tests/unit/test_catalog_paths.py` に JSON データセットのパス検証テストを作成
-- [ ] T008 [P] [US1] Implement: `tests/unit/test_catalog_paths.py` に MD データセットのパス検証テストを作成
-- [ ] T009 Verify: `make test` FAIL (RED) - 新パスがまだ設定されていないため
-- [ ] T010 Edit: `specs/064-data-layer-separation/red-tests/ph2-test.md` に RED テスト結果を記録
+- [x] T007 [P] [US1] Implement: `tests/unit/test_catalog_paths.py` に JSON データセットのパス検証テストを作成
+- [x] T008 [P] [US1] Implement: `tests/unit/test_catalog_paths.py` に MD データセットのパス検証テストを作成
+- [x] T009 Verify: `make test` FAIL (RED) - 新パスがまだ設定されていないため
+- [x] T010 Edit: `specs/064-data-layer-separation/red-tests/ph2-test.md` に RED テスト結果を記録
 
 ### Implementation (GREEN)
 
