@@ -39,10 +39,15 @@ ollama:
       num_predict: 64
       timeout: 30
 
-    # Topic and genre extraction: short JSON output
+    # Topic and genre extraction: short output (topic + genre per item)
     extract_topic_and_genre:
-      num_predict: 512  # 256 → 512: 日本語JSONが途中で切れる問題を修正
+      num_predict: 512
       timeout: 120
+
+    # Genre suggestion: long JSON output (up to 3 suggestions with descriptions)
+    suggest_genres:
+      num_predict: 4096  # Issue#46: 日本語JSON配列に十分なトークン数
+      timeout: 180
 
 # ============================================================
 # Import Parameters

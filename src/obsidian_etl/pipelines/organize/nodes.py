@@ -691,7 +691,7 @@ def _suggest_new_genres_via_llm(other_items: list[dict], params: dict) -> list[d
     if not other_items:
         return []
 
-    config = get_ollama_config(params, "extract_topic_and_genre")
+    config = get_ollama_config(params, "suggest_genres")
 
     # Collect titles and content samples for LLM analysis
     titles = []
