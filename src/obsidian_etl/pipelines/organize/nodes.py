@@ -270,7 +270,7 @@ JSON形式で回答してください:
             num_predict=config.num_predict,
         )
     except OllamaError as e:
-        logger.warning(f"Failed to extract topic and genre via LLM: {e}")
+        logger.warning(f"Failed to extract topic/genre (context_len={e.context_len}): {e.message}")
         return "", "other"
 
     # Parse JSON response
@@ -345,7 +345,7 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
             num_predict=config.num_predict,
         )
     except OllamaError as e:
-        logger.warning(f"Failed to extract topic via LLM: {e}")
+        logger.warning(f"Failed to extract topic (context_len={e.context_len}): {e.message}")
         return None
 
     topic = response.strip()
@@ -743,7 +743,7 @@ JSON配列形式で回答してください:
             num_predict=config.num_predict,
         )
     except OllamaError as e:
-        logger.warning(f"Failed to suggest genres via LLM: {e}")
+        logger.warning(f"Failed to suggest genres (context_len={e.context_len}): {e.message}")
         return []
 
     # Parse JSON response

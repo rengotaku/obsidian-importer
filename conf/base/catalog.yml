@@ -121,80 +121,80 @@ review_notes:
 
 classified_items:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/classified
+  path: data/05_model_input/classified
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: model_input
 
 # Resume version (read-only reference to same location)
 existing_classified_items:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/classified
+  path: data/05_model_input/classified
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: model_input
 
 topic_extracted_items:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/topic_extracted
+  path: data/05_model_input/topic_extracted
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: model_input
 
 normalized_items:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/normalized
+  path: data/05_model_input/normalized
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: model_input
 
 cleaned_items:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/cleaned
+  path: data/05_model_input/cleaned
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: model_input
 
 vault_determined_items:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/vault_determined
+  path: data/05_model_input/vault_determined
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: model_input
 
 organized_items:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/organized
+  path: data/05_model_input/organized
   dataset:
     type: json.JSONDataset
   filename_suffix: ".json"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: model_input
 
 organized_notes:
   type: partitions.PartitionedDataset

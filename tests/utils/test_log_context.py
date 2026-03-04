@@ -526,5 +526,180 @@ file_id: temp123
         self.assertEqual(get_file_id(), "")
 
 
+class TestIterWithFileIdStrOnly(unittest.TestCase):
+    """iter_with_file_id: str 入力のみをサポートし、dict は TypeError を送出する。
+
+    Phase 4 RED tests (US3 - ログ処理の簡素化):
+    データレイヤー分離後、iter_with_file_id は Markdown 文字列のみを
+    処理すればよいため、dict 対応コードを削除し TypeError を送出する。
+    """
+
+    def tearDown(self):
+        """各テスト後にコンテキストをクリアする。"""
+        from obsidian_etl.utils.log_context import clear_file_id
+
+        clear_file_id()
+
+    def test_str_input_with_frontmatter_extracts_file_id(self):
+        """str 入力で frontmatter に file_id がある場合、正しく抽出されること。
+
+        FR-006: iter_with_file_id は文字列入力のみを受け付ける
+        Acceptance Scenario 1: str パス入力 → 正常処理、file_id 抽出
+        """
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = """---
+title: Test Note
+file_id: abc123def456
+tags:
+  - test
+---
+
+# Test Content
+Some markdown text here.
+"""
+        partitioned_input = {"note.md": lambda: content}
+
+        for key, item in iter_with_file_id(partitioned_input):
+            self.assertEqual(get_file_id(), "abc123def456")
+            self.assertEqual(key, "note.md")
+            self.assertIsInstance(item, str)
+
+    def test_str_input_without_frontmatter_falls_back_to_key(self):
+        """str 入力で frontmatter がない場合、パーティションキーにフォールバックすること。
+
+        Acceptance Scenario 1: str パス入力 → file_id なしの場合はキーを使用
+        """
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = "# Simple Markdown\nNo frontmatter here."
+        partitioned_input = {"simple_note.md": lambda: content}
+
+        for key, item in iter_with_file_id(partitioned_input):
+            self.assertEqual(get_file_id(), "simple_note.md")
+            self.assertEqual(key, "simple_note.md")
+
+    def test_str_input_with_empty_frontmatter_falls_back_to_key(self):
+        """str 入力で frontmatter はあるが file_id がない場合、キーにフォールバックすること。"""
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = """---
+title: Note Without File ID
+---
+
+# Content
+"""
+        partitioned_input = {"key_fallback.md": lambda: content}
+
+        for key, item in iter_with_file_id(partitioned_input):
+            self.assertEqual(get_file_id(), "key_fallback.md")
+
+    def test_dict_input_raises_type_error(self):
+        """dict 入力の場合、TypeError が送出されること。
+
+        FR-006: iter_with_file_id は文字列入力のみを受け付ける
+        Acceptance Scenario 2: dict 入力 → TypeError
+        """
+        from obsidian_etl.utils.log_context import iter_with_file_id
+
+        dict_content = {"metadata": {"file_id": "old_style"}, "content": "text"}
+        partitioned_input = {"item.json": lambda: dict_content}
+
+        with self.assertRaises(TypeError) as ctx:
+            # Must consume the generator to trigger the error
+            list(iter_with_file_id(partitioned_input))
+
+        self.assertIn("str", str(ctx.exception))
+
+    def test_dict_input_without_metadata_raises_type_error(self):
+        """metadata なしの dict 入力でも TypeError が送出されること。
+
+        Edge case: dict のバリエーション
+        """
+        from obsidian_etl.utils.log_context import iter_with_file_id
+
+        dict_content = {"key": "value"}
+        partitioned_input = {"plain.json": lambda: dict_content}
+
+        with self.assertRaises(TypeError) as ctx:
+            list(iter_with_file_id(partitioned_input))
+
+        self.assertIn("str", str(ctx.exception))
+
+    def test_multiple_str_items_all_processed(self):
+        """複数の str アイテムがすべて正常に処理されること。"""
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content_a = """---
+file_id: aaa111
+---
+# Note A
+"""
+        content_b = """---
+file_id: bbb222
+---
+# Note B
+"""
+        partitioned_input = {
+            "a.md": lambda: content_a,
+            "b.md": lambda: content_b,
+        }
+
+        results = []
+        for key, item in iter_with_file_id(partitioned_input):
+            results.append((key, get_file_id()))
+
+        self.assertEqual(len(results), 2)
+        # Verify file_ids were correctly extracted (order may vary for dict)
+        file_ids = {fid for _, fid in results}
+        self.assertIn("aaa111", file_ids)
+        self.assertIn("bbb222", file_ids)
+
+    def test_file_id_context_active_during_yield(self):
+        """yield 中に file_id コンテキストがアクティブであること。"""
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = """---
+file_id: ctx_active
+---
+# Content
+"""
+        partitioned_input = {"test.md": lambda: content}
+
+        context_was_active = False
+        for _key, _item in iter_with_file_id(partitioned_input):
+            if get_file_id() == "ctx_active":
+                context_was_active = True
+
+        self.assertTrue(context_was_active)
+        # After iteration, context should be cleared
+        self.assertEqual(get_file_id(), "")
+
+    def test_list_of_tuples_input_with_str_content(self):
+        """list[tuple] 形式の入力で str コンテンツが正常に処理されること。"""
+        from obsidian_etl.utils.log_context import get_file_id, iter_with_file_id
+
+        content = """---
+file_id: tuple_input
+---
+# Content
+"""
+        partitioned_input = [("note.md", lambda: content)]
+
+        for key, item in iter_with_file_id(partitioned_input):
+            self.assertEqual(get_file_id(), "tuple_input")
+            self.assertEqual(key, "note.md")
+
+    def test_list_of_tuples_with_dict_raises_type_error(self):
+        """list[tuple] 形式の入力で dict コンテンツの場合、TypeError が送出されること。"""
+        from obsidian_etl.utils.log_context import iter_with_file_id
+
+        dict_content = {"content": "should fail"}
+        partitioned_input = [("item.json", lambda: dict_content)]
+
+        with self.assertRaises(TypeError):
+            list(iter_with_file_id(partitioned_input))
+
+
 if __name__ == "__main__":
     unittest.main()

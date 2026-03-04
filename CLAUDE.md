@@ -17,6 +17,13 @@ obsidian-importer/
 │   ├── 01_raw/                # 入力（ZIP）
 │   ├── 02_intermediate/       # パース済み
 │   ├── 03_primary/            # LLM 処理済み
+│   ├── 05_model_input/        # モデル入力（JSON）
+│   │   ├── classified/        # ジャンル分類済みデータ
+│   │   ├── cleaned/           # クリーンアップ済みデータ
+│   │   ├── normalized/        # 正規化済みデータ
+│   │   ├── topic_extracted/   # トピック抽出済みデータ
+│   │   ├── vault_determined/  # Vault 振り分け済みデータ
+│   │   └── organized/         # 整理済みデータ（JSON）
 │   └── 07_model_output/       # 最終 Markdown
 │       ├── notes/             # 通常出力
 │       ├── review/            # レビュー対象（圧縮率低）
@@ -65,6 +72,8 @@ kedro run --to-nodes=format_markdown
 ```
 data/01_raw/*.zip → data/02_intermediate/parsed/*.json
                   → data/03_primary/transformed/*.json
+                  → data/05_model_input/classified/*.json
+                  → data/05_model_input/normalized/*.json
                   → data/07_model_output/notes/*.md
                   → data/07_model_output/organized/*.md
 ```
@@ -233,6 +242,7 @@ file_id: abc123
 - Python 3.11+（Python 3.13 compatible） + Kedro 1.1.1, kedro-datasets, requests (urllib) (062-warmup-fail-stop)
 - Python 3.11+ (pyproject.toml で `requires-python = ">=3.11"`) + Kedro 1.1.1, kedro-datasets>=9.0, PyYAML>=6.0, requests>=2.28 (063-ollama-exception-refactor)
 - ファイルシステム (Markdown, JSON, JSONL) - Kedro PartitionedDataset (063-ollama-exception-refactor)
+- ファイルシステム (Kedro PartitionedDataset) (064-data-layer-separation)
 
 ## Recent Changes
 - 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+
