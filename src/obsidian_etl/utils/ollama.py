@@ -161,19 +161,15 @@ def call_ollama(
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read().decode("utf-8"))
             content = result.get("message", {}).get("content", "")
-            # Raise exception for empty response
+            # Raise exception for empty response (caller logs it)
             if not content.strip():
-                logger.warning(f"Empty response from LLM (context_len={context_len} chars)")
                 raise OllamaEmptyResponseError("Empty response from LLM", context_len=context_len)
             return content
     except urllib.error.URLError as e:
-        logger.warning(f"Connection error (context_len={context_len} chars): {e.reason}")
         raise OllamaConnectionError(f"Connection error: {e.reason}", context_len=context_len) from e
     except TimeoutError as e:
-        logger.warning(f"Timeout ({timeout}s) (context_len={context_len} chars)")
         raise OllamaTimeoutError(f"Timeout ({timeout}s)", context_len=context_len) from e
     except json.JSONDecodeError as e:
-        logger.warning(f"JSON parse error (context_len={context_len} chars): {e}")
         raise OllamaConnectionError(f"JSON parse error: {e}", context_len=context_len) from e
     except OllamaEmptyResponseError:
         # Re-raise our own exceptions
