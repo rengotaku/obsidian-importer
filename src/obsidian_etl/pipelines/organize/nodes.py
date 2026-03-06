@@ -216,11 +216,11 @@ def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, s
     Note:
         Caller is responsible for setting file_id_context for logging.
     """
+    # Get ollama config from full parameters (ollama is at top level)
     config = get_ollama_config(params, "extract_topic_and_genre")
 
     # Parse genre config to get dynamic genre definitions
-    # When params is full "parameters", access via organize section
-    organize_params = params.get("organize", params)
+    organize_params = params.get("organize", {})
     genre_vault_mapping = organize_params.get("genre_vault_mapping", {})
     genre_definitions, valid_genres = _parse_genre_config(genre_vault_mapping)
     genre_prompt = _build_genre_prompt(genre_definitions)
@@ -305,6 +305,7 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
     Returns:
         str | None: Extracted topic or None on failure
     """
+    # Get ollama config from full parameters (ollama is at top level)
     config = get_ollama_config(params, "extract_topic")
 
     # Extract body text (skip frontmatter)
@@ -691,6 +692,7 @@ def _suggest_new_genres_via_llm(other_items: list[dict], params: dict) -> list[d
     if not other_items:
         return []
 
+    # Get ollama config from full parameters (ollama is at top level)
     config = get_ollama_config(params, "suggest_genres")
 
     # Collect titles and content samples for LLM analysis

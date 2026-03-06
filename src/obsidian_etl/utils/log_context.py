@@ -134,8 +134,8 @@ def iter_with_file_id(
 
     This utility ensures consistent file_id logging across all partition
     processing nodes. The file_id context is automatically set after
-    loading the item, extracting file_id from Markdown frontmatter if
-    available, otherwise falling back to the partition key.
+    loading the item, extracting file_id from appropriate source based
+    on item type.
 
     Args:
         partitioned_input: Either:
@@ -145,17 +145,15 @@ def iter_with_file_id(
     Yields:
         tuple[str, any]: (partition_key, loaded_item) with file_id context active
 
-    Raises:
-        TypeError: If loaded item is dict (only str input supported)
-
     Example:
         >>> for key, item in iter_with_file_id(partitioned_input):
         ...     process(item)  # logs will have [file_id] prefix
 
     Note:
-        - Only supports str input (Markdown content)
-        - file_id is extracted from frontmatter "file_id" field
-        - Falls back to partition key if file_id not found in frontmatter
+        - Supports both dict (JSON) and str (Markdown) input
+        - For dict: extracts file_id from metadata.file_id or file_id field
+        - For str: extracts file_id from frontmatter "file_id" field
+        - Falls back to partition key if file_id not found
         - Use this instead of manually iterating with file_id_context
     """
     # Handle both dict and list of tuples
@@ -164,16 +162,13 @@ def iter_with_file_id(
     for key, load_func in items:
         item = load_func()
 
-        # Only str input is supported
-        if isinstance(item, dict):
-            raise TypeError(
-                "iter_with_file_id only supports str input. "
-                "Received dict. Use str-based PartitionedDataset."
-            )
-
         # Extract file_id from item, fallback to key
         file_id = key
-        if isinstance(item, str):
+
+        if isinstance(item, dict):
+            # Extract from dict (JSON input)
+            file_id = item.get("metadata", {}).get("file_id") or item.get("file_id") or key
+        elif isinstance(item, str):
             # Parse frontmatter from Markdown content
             extracted = _extract_file_id_from_frontmatter(item)
             if extracted:

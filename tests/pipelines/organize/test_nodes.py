@@ -1953,7 +1953,9 @@ class TestExtractTopicAndGenreViaLlmExceptionHandling(unittest.TestCase):
                     "temperature": 0.2,
                 },
             },
-            "genre_vault_mapping": _make_genre_config_new_format(),
+            "organize": {
+                "genre_vault_mapping": _make_genre_config_new_format(),
+            },
         }
 
     @patch("obsidian_etl.pipelines.organize.nodes.call_ollama")

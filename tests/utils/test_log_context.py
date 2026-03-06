@@ -594,37 +594,50 @@ title: Note Without File ID
         for key, item in iter_with_file_id(partitioned_input):
             self.assertEqual(get_file_id(), "key_fallback.md")
 
-    def test_dict_input_raises_type_error(self):
-        """dict 入力の場合、TypeError が送出されること。
+    def test_dict_input_extracts_file_id_from_metadata(self):
+        """dict 入力の場合、metadata.file_id から file_id を抽出すること。
 
-        FR-006: iter_with_file_id は文字列入力のみを受け付ける
-        Acceptance Scenario 2: dict 入力 → TypeError
+        FR-006: iter_with_file_id は dict と str 両方を受け付ける
+        Acceptance Scenario 2: dict 入力 → metadata.file_id を抽出
         """
         from obsidian_etl.utils.log_context import iter_with_file_id
 
-        dict_content = {"metadata": {"file_id": "old_style"}, "content": "text"}
+        dict_content = {"metadata": {"file_id": "extracted_id"}, "content": "text"}
         partitioned_input = {"item.json": lambda: dict_content}
 
-        with self.assertRaises(TypeError) as ctx:
-            # Must consume the generator to trigger the error
-            list(iter_with_file_id(partitioned_input))
+        results = list(iter_with_file_id(partitioned_input))
 
-        self.assertIn("str", str(ctx.exception))
+        self.assertEqual(len(results), 1)
+        key, item = results[0]
+        self.assertEqual(key, "item.json")
+        self.assertEqual(item, dict_content)
 
-    def test_dict_input_without_metadata_raises_type_error(self):
-        """metadata なしの dict 入力でも TypeError が送出されること。
+    def test_dict_input_without_metadata_falls_back_to_file_id(self):
+        """metadata なしの dict 入力では file_id フィールドから抽出、なければ key にフォールバック。
 
         Edge case: dict のバリエーション
         """
         from obsidian_etl.utils.log_context import iter_with_file_id
 
-        dict_content = {"key": "value"}
-        partitioned_input = {"plain.json": lambda: dict_content}
+        # file_id フィールドがある場合
+        dict_with_file_id = {"file_id": "direct_id", "key": "value"}
+        partitioned_input = {"item1.json": lambda: dict_with_file_id}
 
-        with self.assertRaises(TypeError) as ctx:
-            list(iter_with_file_id(partitioned_input))
+        results = list(iter_with_file_id(partitioned_input))
+        self.assertEqual(len(results), 1)
+        key, item = results[0]
+        self.assertEqual(key, "item1.json")
+        self.assertEqual(item, dict_with_file_id)
 
-        self.assertIn("str", str(ctx.exception))
+        # file_id も metadata もない場合は key にフォールバック
+        dict_without_file_id = {"key": "value"}
+        partitioned_input2 = {"item2.json": lambda: dict_without_file_id}
+
+        results2 = list(iter_with_file_id(partitioned_input2))
+        self.assertEqual(len(results2), 1)
+        key2, item2 = results2[0]
+        self.assertEqual(key2, "item2.json")
+        self.assertEqual(item2, dict_without_file_id)
 
     def test_multiple_str_items_all_processed(self):
         """複数の str アイテムがすべて正常に処理されること。"""
@@ -690,15 +703,19 @@ file_id: tuple_input
             self.assertEqual(get_file_id(), "tuple_input")
             self.assertEqual(key, "note.md")
 
-    def test_list_of_tuples_with_dict_raises_type_error(self):
-        """list[tuple] 形式の入力で dict コンテンツの場合、TypeError が送出されること。"""
+    def test_list_of_tuples_with_dict_processes_correctly(self):
+        """list[tuple] 形式の入力で dict コンテンツの場合、正しく処理されること。"""
         from obsidian_etl.utils.log_context import iter_with_file_id
 
-        dict_content = {"content": "should fail"}
+        dict_content = {"file_id": "tuple_id", "content": "should work"}
         partitioned_input = [("item.json", lambda: dict_content)]
 
-        with self.assertRaises(TypeError):
-            list(iter_with_file_id(partitioned_input))
+        results = list(iter_with_file_id(partitioned_input))
+
+        self.assertEqual(len(results), 1)
+        key, item = results[0]
+        self.assertEqual(key, "item.json")
+        self.assertEqual(item, dict_content)
 
 
 if __name__ == "__main__":
