@@ -212,7 +212,7 @@ def create_search_pipeline(
 # =============================================================================
 
 
-def _convert_to_search_result(doc: "HaystackDocument", score: float) -> SearchResult:
+def _convert_to_search_result(doc: HaystackDocument, score: float) -> SearchResult:
     """Convert Haystack Document to SearchResult."""
     meta = doc.meta or {}
     return SearchResult(

@@ -200,6 +200,33 @@ class TestE2EClaudeImport(unittest.TestCase):
         transformed_knowledge_ds = PartitionedMemoryDataset()
         classified_items_ds = PartitionedMemoryDataset()
 
+        import_params = {
+            "provider": "claude",
+            "min_messages": 3,
+            "chunk_size": 25000,
+            "chunk_enabled": True,
+        }
+
+        organize_params = {
+            "genre_keywords": {
+                "engineer": ["Python", "asyncio", "フレームワーク", "API"],
+                "business": ["ビジネス", "マネジメント"],
+                "economy": ["経済", "投資"],
+                "daily": ["日常", "趣味"],
+            },
+            "base_path": self.tmp_dir,
+        }
+
+        ollama_params = {
+            "defaults": {
+                "model": "gemma3:12b",
+                "base_url": "http://localhost:11434",
+                "timeout": 120,
+                "temperature": 0.2,
+            },
+            "max_retries": 3,
+        }
+
         return DataCatalog(
             datasets={
                 "raw_claude_conversations": ZipMemoryDataset(self.conversations),
@@ -216,42 +243,13 @@ class TestE2EClaudeImport(unittest.TestCase):
                 "organized_notes": PartitionedMemoryDataset(),  # Phase 2: renamed from organized_items
                 "organized_items": PartitionedMemoryDataset(),  # Legacy compatibility
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
-                "params:import": MemoryDataset(
-                    {
-                        "provider": "claude",
-                        "min_messages": 3,
-                        "chunk_size": 25000,
-                        "chunk_enabled": True,
-                        "ollama": {
-                            "defaults": {
-                                "model": "gemma3:12b",
-                                "base_url": "http://localhost:11434",
-                                "timeout": 120,
-                                "temperature": 0.2,
-                            },
-                            "max_retries": 3,
-                        },
-                    }
-                ),
-                "params:organize": MemoryDataset(
-                    {
-                        "genre_keywords": {
-                            "engineer": ["Python", "asyncio", "フレームワーク", "API"],
-                            "business": ["ビジネス", "マネジメント"],
-                            "economy": ["経済", "投資"],
-                            "daily": ["日常", "趣味"],
-                        },
-                        "base_path": self.tmp_dir,
-                        "ollama": {
-                            "defaults": {
-                                "model": "gemma3:12b",
-                                "base_url": "http://localhost:11434",
-                                "timeout": 120,
-                                "temperature": 0.2,
-                            },
-                        },
-                    }
-                ),
+                "parameters": MemoryDataset({
+                    "import": import_params,
+                    "organize": organize_params,
+                    "ollama": ollama_params,
+                }),
+                "params:import": MemoryDataset(import_params),
+                "params:organize": MemoryDataset(organize_params),
             }
         )
 
@@ -382,6 +380,33 @@ class TestResumeAfterFailure(unittest.TestCase):
         transformed_knowledge_ds = PartitionedMemoryDataset()
         classified_items_ds = PartitionedMemoryDataset()
 
+        import_params = {
+            "provider": "claude",
+            "min_messages": 3,
+            "chunk_size": 25000,
+            "chunk_enabled": True,
+        }
+
+        organize_params = {
+            "genre_keywords": {
+                "engineer": ["Python", "asyncio", "フレームワーク", "API"],
+                "business": ["ビジネス", "マネジメント"],
+                "economy": ["経済", "投資"],
+                "daily": ["日常", "趣味"],
+            },
+            "base_path": self.tmp_dir,
+        }
+
+        ollama_params = {
+            "defaults": {
+                "model": "gemma3:12b",
+                "base_url": "http://localhost:11434",
+                "timeout": 120,
+                "temperature": 0.2,
+            },
+            "max_retries": 3,
+        }
+
         return DataCatalog(
             datasets={
                 "raw_claude_conversations": ZipMemoryDataset(self.conversations),
@@ -400,42 +425,13 @@ class TestResumeAfterFailure(unittest.TestCase):
                 "organized_notes": PartitionedMemoryDataset(),
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "topic_extracted_items": PartitionedMemoryDataset(),
-                "params:import": MemoryDataset(
-                    {
-                        "provider": "claude",
-                        "min_messages": 3,
-                        "chunk_size": 25000,
-                        "chunk_enabled": True,
-                        "ollama": {
-                            "defaults": {
-                                "model": "gemma3:12b",
-                                "base_url": "http://localhost:11434",
-                                "timeout": 120,
-                                "temperature": 0.2,
-                            },
-                            "max_retries": 3,
-                        },
-                    }
-                ),
-                "params:organize": MemoryDataset(
-                    {
-                        "genre_keywords": {
-                            "engineer": ["Python", "asyncio", "フレームワーク", "API"],
-                            "business": ["ビジネス", "マネジメント"],
-                            "economy": ["経済", "投資"],
-                            "daily": ["日常", "趣味"],
-                        },
-                        "base_path": self.tmp_dir,
-                        "ollama": {
-                            "defaults": {
-                                "model": "gemma3:12b",
-                                "base_url": "http://localhost:11434",
-                                "timeout": 120,
-                                "temperature": 0.2,
-                            },
-                        },
-                    }
-                ),
+                "parameters": MemoryDataset({
+                    "import": import_params,
+                    "organize": organize_params,
+                    "ollama": ollama_params,
+                }),
+                "params:import": MemoryDataset(import_params),
+                "params:organize": MemoryDataset(organize_params),
             }
         )
 
@@ -658,6 +654,33 @@ class TestPartialRunFromTo(unittest.TestCase):
         transformed_knowledge_ds = PartitionedMemoryDataset()
         classified_items_ds = PartitionedMemoryDataset()
 
+        import_params = {
+            "provider": "claude",
+            "min_messages": 3,
+            "chunk_size": 25000,
+            "chunk_enabled": True,
+        }
+
+        organize_params = {
+            "genre_keywords": {
+                "engineer": ["Python", "asyncio", "フレームワーク", "API"],
+                "business": ["ビジネス", "マネジメント"],
+                "economy": ["経済", "投資"],
+                "daily": ["日常", "趣味"],
+            },
+            "base_path": self.tmp_dir,
+        }
+
+        ollama_params = {
+            "defaults": {
+                "model": "gemma3:12b",
+                "base_url": "http://localhost:11434",
+                "timeout": 120,
+                "temperature": 0.2,
+            },
+            "max_retries": 3,
+        }
+
         return DataCatalog(
             datasets={
                 "raw_claude_conversations": MemoryDataset([]),
@@ -673,42 +696,13 @@ class TestPartialRunFromTo(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
-                "params:import": MemoryDataset(
-                    {
-                        "provider": "claude",
-                        "min_messages": 3,
-                        "chunk_size": 25000,
-                        "chunk_enabled": True,
-                        "ollama": {
-                            "defaults": {
-                                "model": "gemma3:12b",
-                                "base_url": "http://localhost:11434",
-                                "timeout": 120,
-                                "temperature": 0.2,
-                            },
-                            "max_retries": 3,
-                        },
-                    }
-                ),
-                "params:organize": MemoryDataset(
-                    {
-                        "genre_keywords": {
-                            "engineer": ["Python", "asyncio", "フレームワーク", "API"],
-                            "business": ["ビジネス", "マネジメント"],
-                            "economy": ["経済", "投資"],
-                            "daily": ["日常", "趣味"],
-                        },
-                        "base_path": self.tmp_dir,
-                        "ollama": {
-                            "defaults": {
-                                "model": "gemma3:12b",
-                                "base_url": "http://localhost:11434",
-                                "timeout": 120,
-                                "temperature": 0.2,
-                            },
-                        },
-                    }
-                ),
+                "parameters": MemoryDataset({
+                    "import": import_params,
+                    "organize": organize_params,
+                    "ollama": ollama_params,
+                }),
+                "params:import": MemoryDataset(import_params),
+                "params:organize": MemoryDataset(organize_params),
             }
         )
 
@@ -917,6 +911,33 @@ class TestE2EOpenAIImport(unittest.TestCase):
         transformed_knowledge_ds = PartitionedMemoryDataset()
         classified_items_ds = PartitionedMemoryDataset()
 
+        import_params = {
+            "provider": "openai",
+            "min_messages": 3,
+            "chunk_size": 25000,
+            "chunk_enabled": True,
+        }
+
+        organize_params = {
+            "genre_keywords": {
+                "engineer": ["Python", "asyncio", "フレームワーク", "API"],
+                "business": ["ビジネス", "マネジメント"],
+                "economy": ["経済", "投資"],
+                "daily": ["日常", "趣味"],
+            },
+            "base_path": self.tmp_dir,
+        }
+
+        ollama_params = {
+            "defaults": {
+                "model": "gemma3:12b",
+                "base_url": "http://localhost:11434",
+                "timeout": 120,
+                "temperature": 0.2,
+            },
+            "max_retries": 3,
+        }
+
         return DataCatalog(
             datasets={
                 "raw_openai_conversations": OpenAIZipMemoryDataset(self.conversations),
@@ -932,40 +953,13 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
-                "params:import": MemoryDataset(
-                    {
-                        "provider": "openai",
-                        "min_messages": 3,
-                        "chunk_size": 25000,
-                        "chunk_enabled": True,
-                        "ollama": {
-                            "model": "gemma3:12b",
-                            "base_url": "http://localhost:11434",
-                            "timeout": 120,
-                            "temperature": 0.2,
-                            "max_retries": 3,
-                        },
-                    }
-                ),
-                "params:organize": MemoryDataset(
-                    {
-                        "genre_keywords": {
-                            "engineer": ["Python", "asyncio", "フレームワーク", "API"],
-                            "business": ["ビジネス", "マネジメント"],
-                            "economy": ["経済", "投資"],
-                            "daily": ["日常", "趣味"],
-                        },
-                        "base_path": self.tmp_dir,
-                        "ollama": {
-                            "defaults": {
-                                "model": "gemma3:12b",
-                                "base_url": "http://localhost:11434",
-                                "timeout": 120,
-                                "temperature": 0.2,
-                            },
-                        },
-                    }
-                ),
+                "parameters": MemoryDataset({
+                    "import": import_params,
+                    "organize": organize_params,
+                    "ollama": ollama_params,
+                }),
+                "params:import": MemoryDataset(import_params),
+                "params:organize": MemoryDataset(organize_params),
             }
         )
 

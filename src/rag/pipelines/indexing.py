@@ -16,7 +16,7 @@ from haystack.components.writers import DocumentWriter
 from haystack_integrations.components.embedders.ollama import OllamaDocumentEmbedder
 from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
 
-from src.rag.config import OllamaConfig, RAGConfig, VAULTS_DIR, ollama_config, rag_config
+from src.rag.config import VAULTS_DIR, OllamaConfig, RAGConfig, ollama_config, rag_config
 from src.rag.exceptions import IndexingError
 
 if TYPE_CHECKING:
@@ -168,7 +168,7 @@ def scan_vault(vault_path: Path, vault_name: str) -> list[Document]:
             )
             documents.append(doc)
 
-        except Exception as e:
+        except Exception:
             # Skip files that cannot be read but log the error
             # In production, this could be logged
             continue
