@@ -34,6 +34,7 @@ source_dir = "src"
 [tool.coverage.run]
 source = ["src/obsidian_etl"]
 omit = ["*/tests/*", "*/__pycache__/*"]
+relative_files = true
 
 [tool.coverage.report]
 fail_under = 80
