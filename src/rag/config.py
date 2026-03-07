@@ -1,6 +1,7 @@
 """
 RAG Configuration - 設定値、定数、パス定義
 """
+
 from __future__ import annotations
 
 import os

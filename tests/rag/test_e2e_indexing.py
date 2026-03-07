@@ -4,6 +4,7 @@ E2E Tests for Indexing Pipeline
 Tests the complete indexing flow from vault scanning to document store.
 Uses tempfile for test fixtures and mocks external services.
 """
+
 from __future__ import annotations
 
 import shutil
@@ -324,9 +325,7 @@ class TestE2EIndexingWithJapaneseContent(unittest.TestCase):
         """Clean up."""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    def _create_file(
-        self, filename: str, title: str, content: str, tags: list[str]
-    ) -> None:
+    def _create_file(self, filename: str, title: str, content: str, tags: list[str]) -> None:
         tags_yaml = "\n".join(f"  - {tag}" for tag in tags)
         file_content = f"""---
 title: {title}

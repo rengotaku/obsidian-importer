@@ -11,7 +11,7 @@ COMMA := ,
 # Kedro logging configuration (enables [file_id] prefix in logs)
 export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
 
-.PHONY: help setup setup-dev test coverage check lint ruff pylint clean
+.PHONY: help setup setup-dev test coverage check lint ruff pylint format format-check clean
 .PHONY: rag-index rag-search rag-ask rag-status
 .PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
 .PHONY: run kedro-run kedro-test kedro-viz
@@ -47,9 +47,11 @@ help:
 	@echo "  test           全テスト実行"
 	@echo "  coverage       テストカバレッジ計測 (≥80%)"
 	@echo "  check          Python構文チェック"
-	@echo "  lint           コード品質チェック (ruff + pylint)"
+	@echo "  lint           コード品質チェック (ruff + pylint + format-check)"
 	@echo "  ruff           ruff リンター実行"
 	@echo "  pylint         pylint リンター実行"
+	@echo "  format-check   ruff フォーマットチェック"
+	@echo "  format         ruff フォーマット適用"
 	@echo ""
 	@echo "File Organization:"
 	@echo "  organize-preview"
@@ -299,8 +301,20 @@ pylint:
 	@$(VENV_DIR)/bin/pylint src/obsidian_etl/
 	@echo "✅ pylint passed"
 
-# コード品質チェック (ruff + pylint, fail-fast)
-lint: ruff pylint
+# フォーマットチェック (ruff format --check)
+format-check:
+	@echo "Running ruff format check..."
+	@$(VENV_DIR)/bin/ruff format --check src/ tests/
+	@echo "✅ ruff format check passed"
+
+# フォーマット適用 (ruff format)
+format:
+	@echo "Running ruff format..."
+	@$(VENV_DIR)/bin/ruff format src/ tests/
+	@echo "✅ ruff format applied"
+
+# コード品質チェック (ruff + pylint + format-check, fail-fast)
+lint: ruff pylint format-check
 	@echo "✅ All linters passed"
 
 # E2Eテスト用データディレクトリ削除

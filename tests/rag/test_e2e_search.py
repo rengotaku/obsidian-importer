@@ -3,6 +3,7 @@ E2E Tests for Search Pipeline
 
 Tests semantic search functionality with mocked Ollama and Qdrant services.
 """
+
 from __future__ import annotations
 
 import unittest
@@ -123,9 +124,7 @@ class TestE2ESearch(unittest.TestCase):
             ),
         ]
 
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": mock_docs}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": mock_docs}}
 
         response = search(self.mock_pipeline, "container orchestration")
 
@@ -146,9 +145,7 @@ class TestE2ESearch(unittest.TestCase):
             position=0,
         )
 
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": [mock_doc]}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": [mock_doc]}}
 
         response = search(self.mock_pipeline, "test query")
 
@@ -163,9 +160,7 @@ class TestE2ESearch(unittest.TestCase):
 
     def test_search_with_top_k(self):
         """Search passes top_k to retriever."""
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": []}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": []}}
 
         search(self.mock_pipeline, "test", top_k=10)
 
@@ -195,9 +190,7 @@ class TestE2ESearch(unittest.TestCase):
 
     def test_search_no_results(self):
         """Search with no results returns empty response."""
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": []}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": []}}
 
         response = search(self.mock_pipeline, "nonexistent topic")
 
@@ -211,9 +204,7 @@ class TestSearchFilters(unittest.TestCase):
     def setUp(self):
         """Set up mock pipeline."""
         self.mock_pipeline = MagicMock()
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": []}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": []}}
 
     def test_build_single_vault_filter(self):
         """Single vault filter is built correctly."""
@@ -315,9 +306,7 @@ class TestSearchWithJapaneseQuery(unittest.TestCase):
             "position": 0,
         }
 
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": [mock_doc]}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": [mock_doc]}}
 
         response = search(self.mock_pipeline, "コンテナオーケストレーション")
 
@@ -326,9 +315,7 @@ class TestSearchWithJapaneseQuery(unittest.TestCase):
 
     def test_mixed_language_query(self):
         """Mixed ja/en query is handled correctly."""
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": []}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": []}}
 
         # Should not raise error
         response = search(self.mock_pipeline, "Kubernetes デプロイメント戦略")
@@ -359,9 +346,7 @@ class TestSearchResultOrdering(unittest.TestCase):
             }
             mock_docs.append(doc)
 
-        self.mock_pipeline.run.return_value = {
-            "retriever": {"documents": mock_docs}
-        }
+        self.mock_pipeline.run.return_value = {"retriever": {"documents": mock_docs}}
 
         response = search(self.mock_pipeline, "test")
 

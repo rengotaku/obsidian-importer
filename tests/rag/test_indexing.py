@@ -1,6 +1,7 @@
 """
 Tests for Indexing Pipeline - scan_vault, chunk_document, create_indexing_pipeline, index_vault
 """
+
 from __future__ import annotations
 
 import tempfile
@@ -469,7 +470,9 @@ class TestCreateIndexingPipeline(unittest.TestCase):
     @patch("src.rag.pipelines.indexing.Pipeline")
     @patch("src.rag.pipelines.indexing.OllamaDocumentEmbedder")
     @patch("src.rag.pipelines.indexing.DocumentWriter")
-    def test_pipeline_uses_default_config(self, mock_writer_cls, mock_embedder_cls, mock_pipeline_cls):
+    def test_pipeline_uses_default_config(
+        self, mock_writer_cls, mock_embedder_cls, mock_pipeline_cls
+    ):
         """Pipeline uses default config when not provided"""
         mock_store = MagicMock()
 
@@ -483,7 +486,9 @@ class TestCreateIndexingPipeline(unittest.TestCase):
     @patch("src.rag.pipelines.indexing.Pipeline")
     @patch("src.rag.pipelines.indexing.OllamaDocumentEmbedder")
     @patch("src.rag.pipelines.indexing.DocumentWriter")
-    def test_pipeline_connects_components(self, mock_writer_cls, mock_embedder_cls, mock_pipeline_cls):
+    def test_pipeline_connects_components(
+        self, mock_writer_cls, mock_embedder_cls, mock_pipeline_cls
+    ):
         """Pipeline connects embedder to writer"""
         mock_store = MagicMock()
         mock_pipeline = MagicMock()
@@ -564,9 +569,7 @@ Content here.
         )
 
         mock_pipeline = MagicMock()
-        result = index_vault(
-            mock_pipeline, self.vault_path, "test-vault", dry_run=True
-        )
+        result = index_vault(mock_pipeline, self.vault_path, "test-vault", dry_run=True)
 
         self.assertEqual(result.total_docs, 1)
         self.assertEqual(result.indexed_docs, 1)
@@ -587,9 +590,7 @@ Content to be indexed.
         )
 
         mock_pipeline = MagicMock()
-        result = index_vault(
-            mock_pipeline, self.vault_path, "test-vault", dry_run=False
-        )
+        result = index_vault(mock_pipeline, self.vault_path, "test-vault", dry_run=False)
 
         mock_pipeline.run.assert_called_once()
         call_args = mock_pipeline.run.call_args[0][0]
@@ -645,9 +646,7 @@ Skip this.
         )
 
         mock_pipeline = MagicMock()
-        result = index_vault(
-            mock_pipeline, self.vault_path, "test-vault", dry_run=True
-        )
+        result = index_vault(mock_pipeline, self.vault_path, "test-vault", dry_run=True)
 
         self.assertEqual(result.total_docs, 1)
 
@@ -663,9 +662,7 @@ class TestIndexingResult(unittest.TestCase):
     def test_errors_preserved(self):
         """Errors list is preserved"""
         errors = ["Error 1", "Error 2"]
-        result = IndexingResult(
-            total_docs=5, indexed_docs=3, total_chunks=6, errors=errors
-        )
+        result = IndexingResult(total_docs=5, indexed_docs=3, total_chunks=6, errors=errors)
         self.assertEqual(result.errors, errors)
 
 
