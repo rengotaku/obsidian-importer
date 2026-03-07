@@ -7,7 +7,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any
 
 import yaml
 from haystack import Document as HaystackDocument
@@ -19,9 +19,6 @@ from haystack_integrations.document_stores.qdrant import QdrantDocumentStore
 
 from src.rag.config import VAULTS_DIR, OllamaConfig, RAGConfig, ollama_config, rag_config
 from src.rag.exceptions import IndexingError
-
-if TYPE_CHECKING:
-    pass
 
 
 # =============================================================================
@@ -67,7 +64,7 @@ class IndexingResult:
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 
 
-def parse_frontmatter(content: str) -> tuple[dict, str]:
+def parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
     """
     Parse YAML frontmatter from markdown content.
 
@@ -91,7 +88,7 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
         return {}, content
 
 
-def extract_metadata(frontmatter: dict) -> DocumentMeta:
+def extract_metadata(frontmatter: dict[str, Any]) -> DocumentMeta:
     """
     Extract DocumentMeta from frontmatter dict.
 
@@ -219,7 +216,7 @@ def chunk_document(
     )
 
     result = splitter.run(documents=[haystack_doc])
-    chunks = result["documents"]
+    chunks: list[HaystackDocument] = result["documents"]
 
     # Add position metadata to each chunk
     for i, chunk in enumerate(chunks):

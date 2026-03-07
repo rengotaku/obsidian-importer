@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import zipfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
@@ -19,9 +20,9 @@ MIN_MESSAGES = 3  # Minimum messages required for a valid conversation
 
 @timed_node
 def parse_chatgpt_zip(
-    partitioned_input: dict[str, callable],
+    partitioned_input: dict[str, Callable],
     params: dict | None = None,
-    existing_output: dict[str, callable] | None = None,
+    existing_output: dict[str, Callable] | None = None,
 ) -> dict[str, dict]:
     """Parse ChatGPT export ZIP to ParsedItem format.
 
@@ -222,7 +223,7 @@ def _traverse_messages(mapping: dict[str, dict], current_node: str) -> list[dict
         List of normalized messages {role, content} in chronological order.
     """
     raw_messages = []
-    node_id = current_node
+    node_id: str | None = current_node
 
     # Traverse parent chain to collect messages
     while node_id:
@@ -343,7 +344,7 @@ def _fallback_conversation_name(messages: list[dict]) -> str:
     """
     for msg in messages:
         if msg["role"] == "human":
-            first_message = msg["content"].strip()
+            first_message = str(msg["content"]).strip()
             if first_message:
                 # Truncate to 50 chars for readability
                 return first_message[:50]

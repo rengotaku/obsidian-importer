@@ -654,7 +654,7 @@ def log_genre_distribution(
         return classified_items
 
     # Count genres
-    genre_counts = {}
+    genre_counts: dict[str, int] = {}
     for _item_id, item in classified_items.items():
         genre = item.get("genre", "other")
         genre_counts[genre] = genre_counts.get(genre, 0) + 1

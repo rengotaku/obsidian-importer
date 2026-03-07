@@ -37,6 +37,21 @@ jobs:
       - run: make setup-dev
       - run: make pylint
 
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Cache venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+      - run: make setup-dev
+      - run: make mypy
+
   format-check:
     runs-on: ubuntu-latest
     steps:

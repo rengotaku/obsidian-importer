@@ -32,7 +32,7 @@ def register_pipelines() -> dict[str, Pipeline]:
     # Load provider from parameters.yml
     params_path = Path(__file__).parent.parent.parent / "conf" / "base" / "parameters.yml"
     config = OmegaConf.load(params_path)
-    provider = config["import"]["provider"]
+    provider = config["import"]["provider"]  # type: ignore[index]
 
     # Validate provider
     if provider not in VALID_PROVIDERS:

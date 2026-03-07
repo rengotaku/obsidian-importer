@@ -214,7 +214,7 @@ def log_preview_summary(
     total_conflicts = len(conflicts)
 
     # Calculate vault distribution
-    vault_distribution = {}
+    vault_distribution: dict[str, int] = {}
     for dest in destinations.values():
         vault_name = dest["vault_name"]
         vault_distribution[vault_name] = vault_distribution.get(vault_name, 0) + 1
