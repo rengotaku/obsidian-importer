@@ -12,6 +12,8 @@ format_markdown to review_notes without further processing.
 
 from __future__ import annotations
 
+from typing import Any
+
 from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import (
@@ -23,7 +25,7 @@ from .nodes import (
 )
 
 
-def create_pipeline(**kwargs) -> Pipeline:
+def create_pipeline(**kwargs: Any) -> Pipeline:
     """Create the organize pipeline.
 
     Args:

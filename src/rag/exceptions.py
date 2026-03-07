@@ -4,6 +4,8 @@ RAG Exceptions - カスタム例外クラス階層
 
 from __future__ import annotations
 
+from typing import Any
+
 
 class RAGError(Exception):
     """RAG システムの基底例外クラス"""
@@ -22,7 +24,7 @@ class RAGError(Exception):
 class ConnectionError(RAGError):
     """サーバー接続エラー (Ollama, Qdrant)"""
 
-    def __init__(self, message: str, server: str | None = None, **kwargs):
+    def __init__(self, message: str, server: str | None = None, **kwargs: Any) -> None:
         details = kwargs.get("details", {})
         if server:
             details["server"] = server
@@ -38,8 +40,8 @@ class IndexingError(RAGError):
         message: str,
         file_path: str | None = None,
         stage: str | None = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         details = kwargs.get("details", {})
         if file_path:
             details["file_path"] = file_path
@@ -58,8 +60,8 @@ class QueryError(RAGError):
         message: str,
         query: str | None = None,
         stage: str | None = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         details = kwargs.get("details", {})
         if query:
             details["query"] = query[:100]  # Truncate long queries
@@ -79,8 +81,8 @@ class ConfigurationError(RAGError):
         config_key: str | None = None,
         expected: str | None = None,
         actual: str | None = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         details = kwargs.get("details", {})
         if config_key:
             details["config_key"] = config_key

@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from kedro.pipeline import Pipeline, node
 
 from .nodes import clone_github_repo, convert_frontmatter, parse_jekyll
 
 
-def create_pipeline(**kwargs) -> Pipeline:
+def create_pipeline(**kwargs: Any) -> Pipeline:
     """Create GitHub Jekyll Extract pipeline.
 
     This pipeline transforms GitHub Jekyll blog posts into ParsedItem format.

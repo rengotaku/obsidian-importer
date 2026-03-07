@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from kedro.pipeline import Pipeline, node
 
 from .nodes import parse_claude_zip
 
 
-def create_pipeline(**kwargs) -> Pipeline:
+def create_pipeline(**kwargs: Any) -> Pipeline:
     """Create Claude Extract pipeline.
 
     This pipeline transforms raw Claude conversations (ZIP format) into

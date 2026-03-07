@@ -13,12 +13,14 @@ Pipeline Outputs:
 - review_notes: PartitionedDataset of Markdown files (with review_reason for manual review)
 """
 
+from typing import Any
+
 from kedro.pipeline import Pipeline, node, pipeline
 
 from .nodes import extract_knowledge, format_markdown, generate_metadata
 
 
-def create_pipeline(**kwargs) -> Pipeline:
+def create_pipeline(**kwargs: Any) -> Pipeline:
     """Create the Transform pipeline.
 
     Args:
