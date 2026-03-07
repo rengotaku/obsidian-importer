@@ -160,7 +160,7 @@ def call_ollama(
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read().decode("utf-8"))
-            content = result.get("message", {}).get("content", "")
+            content: str = result.get("message", {}).get("content", "")
             # Raise exception for empty response (caller logs it)
             if not content.strip():
                 raise OllamaEmptyResponseError("Empty response from LLM", context_len=context_len)

@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import copy
 import logging
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
+from typing import Any
 
 from kedro.logging import RichHandler
 
@@ -128,8 +129,8 @@ def file_id_context(file_id: str) -> Generator[None, None, None]:
 
 
 def iter_with_file_id(
-    partitioned_input: dict[str, callable] | list[tuple[str, callable]],
-) -> Generator[tuple[str, any], None, None]:
+    partitioned_input: dict[str, Callable[[], Any]] | list[tuple[str, Callable[[], Any]]],
+) -> Generator[tuple[str, Any], None, None]:
     """Iterate partitions with file_id context automatically set.
 
     This utility ensures consistent file_id logging across all partition
@@ -143,7 +144,7 @@ def iter_with_file_id(
             - Pre-filtered list of (partition_key, load_func) tuples
 
     Yields:
-        tuple[str, any]: (partition_key, loaded_item) with file_id context active
+        tuple[str, Any]: (partition_key, loaded_item) with file_id context active
 
     Example:
         >>> for key, item in iter_with_file_id(partitioned_input):
@@ -160,7 +161,7 @@ def iter_with_file_id(
     items = partitioned_input.items() if isinstance(partitioned_input, dict) else partitioned_input
 
     for key, load_func in items:
-        item = load_func()
+        item: Any = load_func()
 
         # Extract file_id from item, fallback to key
         file_id = key

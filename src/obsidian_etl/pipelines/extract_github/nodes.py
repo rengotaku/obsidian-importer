@@ -7,6 +7,7 @@ import logging
 import re
 import subprocess
 import tempfile
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -36,7 +37,7 @@ FRONTMATTER_PATTERN = re.compile(r"^---\n(.+?)\n---\n", re.DOTALL)
 
 
 @timed_node
-def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, callable]:
+def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, Callable]:
     """Clone GitHub repository and return Markdown files as PartitionedDataset.
 
     Args:
@@ -110,7 +111,7 @@ def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, callable]:
         key = str(rel_path)
 
         # Create loader callable
-        def make_loader(file_path: Path) -> callable:
+        def make_loader(file_path: Path) -> Callable:
             def loader() -> str:
                 return file_path.read_text(encoding="utf-8")
 
@@ -123,7 +124,7 @@ def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, callable]:
 
 @timed_node
 def parse_jekyll(
-    partitioned_input: dict[str, callable], existing_output: dict | None = None
+    partitioned_input: dict[str, Callable], existing_output: dict | None = None
 ) -> dict[str, dict]:
     """Parse Jekyll Markdown files to ParsedItem dicts.
 
@@ -183,7 +184,7 @@ def parse_jekyll(
 
 
 @timed_node
-def convert_frontmatter(partitioned_input: dict[str, callable]) -> dict[str, dict]:
+def convert_frontmatter(partitioned_input: dict[str, Callable]) -> dict[str, dict]:
     """Convert Jekyll frontmatter to Obsidian format.
 
     Args:

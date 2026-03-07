@@ -64,7 +64,7 @@ def _is_empty_content(content: str | None) -> bool:
 def extract_knowledge(
     partitioned_input: dict[str, Callable],
     params: dict,
-    existing_output: dict[str, callable] | None = None,
+    existing_output: dict[str, Callable] | None = None,
 ) -> dict[str, dict]:
     """Extract knowledge from ParsedItems using LLM.
 
@@ -125,6 +125,7 @@ def extract_knowledge(
     )
 
     for partition_id, item in iter_with_file_id(to_process):
+        assert isinstance(item, dict)
         processed += 1
         start_time = time.time()
 

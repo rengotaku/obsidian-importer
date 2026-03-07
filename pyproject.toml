@@ -16,6 +16,9 @@ dev = [
     "coverage>=7.0",
     "ruff==0.8.6",
     "pylint==3.3.3",
+    "mypy>=1.10",
+    "types-PyYAML>=6.0",
+    "types-requests>=2.28",
     "kedro-viz>=10.0",
 ]
 
@@ -135,6 +138,27 @@ disable = [
 
 [tool.pylint.format]
 max-line-length = 100  # match ruff
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+allow_untyped_defs = true
+namespace_packages = true
+explicit_package_bases = true
+exclude = [
+    "build/",
+    "dist/",
+    "\\.venv/",
+    "\\.staging/",
+    "\\.specify/",
+    "\\.claude/",
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
 
 [tool.kedro_telemetry]
 project_id = "d43e272a453344c2b75e16ef0c43ff3d"

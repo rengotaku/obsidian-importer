@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import zipfile
+from collections.abc import Callable
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
 from obsidian_etl.utils.file_id import generate_file_id
@@ -19,7 +20,7 @@ MIN_CONTENT_LENGTH = 10  # Minimum content length after processing
 
 @timed_node
 def parse_claude_json(
-    conversations: list[dict], existing_output: dict[str, callable] | None = None
+    conversations: list[dict], existing_output: dict[str, Callable] | None = None
 ) -> dict[str, dict]:
     """Parse Claude export JSON conversations to ParsedItem format.
 
@@ -195,7 +196,7 @@ def _fallback_conversation_name(messages: list[dict]) -> str:
     """
     for msg in messages:
         if msg["role"] == "human":
-            first_message = msg["content"].strip()
+            first_message = str(msg["content"]).strip()
             if first_message:
                 # Truncate to 50 chars for readability
                 return first_message[:50]
@@ -205,8 +206,8 @@ def _fallback_conversation_name(messages: list[dict]) -> str:
 
 @timed_node
 def parse_claude_zip(
-    partitioned_input: dict[str, callable],
-    existing_output: dict[str, callable] | None = None,
+    partitioned_input: dict[str, Callable],
+    existing_output: dict[str, Callable] | None = None,
 ) -> dict[str, dict]:
     """Parse Claude export ZIP to ParsedItem format.
 
