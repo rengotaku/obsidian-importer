@@ -1,6 +1,7 @@
 """
 RAG Pipelines - Indexing & Query Pipelines
 """
+
 from src.rag.pipelines.indexing import (
     Document,
     DocumentMeta,

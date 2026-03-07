@@ -1,6 +1,7 @@
 """
 RAG Stores - Qdrant Document Store
 """
+
 from src.rag.stores.qdrant import (
     COLLECTION_NAME,
     get_collection_stats,

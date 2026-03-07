@@ -1,6 +1,7 @@
 """
 Query Pipeline - Semantic search and Q&A functionality
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -114,42 +115,52 @@ def build_qdrant_filters(filters: QueryFilters | None) -> dict[str, Any] | None:
     # Vault filter
     if filters.vaults:
         if len(filters.vaults) == 1:
-            conditions.append({
-                "field": "meta.vault",
-                "operator": "==",
-                "value": filters.vaults[0],
-            })
+            conditions.append(
+                {
+                    "field": "meta.vault",
+                    "operator": "==",
+                    "value": filters.vaults[0],
+                }
+            )
         else:
-            conditions.append({
-                "field": "meta.vault",
-                "operator": "in",
-                "value": filters.vaults,
-            })
+            conditions.append(
+                {
+                    "field": "meta.vault",
+                    "operator": "in",
+                    "value": filters.vaults,
+                }
+            )
 
     # Tags filter (AND - all tags must match)
     if filters.tags:
         for tag in filters.tags:
-            conditions.append({
-                "field": "meta.tags",
-                "operator": "contains",
-                "value": tag,
-            })
+            conditions.append(
+                {
+                    "field": "meta.tags",
+                    "operator": "contains",
+                    "value": tag,
+                }
+            )
 
     # Date from filter
     if filters.date_from:
-        conditions.append({
-            "field": "meta.created",
-            "operator": ">=",
-            "value": filters.date_from.isoformat(),
-        })
+        conditions.append(
+            {
+                "field": "meta.created",
+                "operator": ">=",
+                "value": filters.date_from.isoformat(),
+            }
+        )
 
     # Date to filter
     if filters.date_to:
-        conditions.append({
-            "field": "meta.created",
-            "operator": "<=",
-            "value": filters.date_to.isoformat(),
-        })
+        conditions.append(
+            {
+                "field": "meta.created",
+                "operator": "<=",
+                "value": filters.date_to.isoformat(),
+            }
+        )
 
     if not conditions:
         return None
@@ -254,10 +265,12 @@ def search(
         qdrant_filters = build_qdrant_filters(filters)
 
         # Run pipeline
-        result = pipeline.run({
-            "embedder": {"text": query},
-            "retriever": {"top_k": top_k, "filters": qdrant_filters},
-        })
+        result = pipeline.run(
+            {
+                "embedder": {"text": query},
+                "retriever": {"top_k": top_k, "filters": qdrant_filters},
+            }
+        )
 
         # Extract documents from result
         documents = result.get("retriever", {}).get("documents", [])
@@ -289,9 +302,7 @@ def search(
 # =============================================================================
 
 
-def create_qa_pipeline(
-    store: QdrantDocumentStore, config: OllamaConfig | None = None
-) -> Pipeline:
+def create_qa_pipeline(store: QdrantDocumentStore, config: OllamaConfig | None = None) -> Pipeline:
     """
     Create Haystack Q&A pipeline with LLM generation.
 
@@ -382,11 +393,13 @@ def ask(
         qdrant_filters = build_qdrant_filters(filters)
 
         # Run pipeline
-        result = pipeline.run({
-            "embedder": {"text": question},
-            "retriever": {"top_k": top_k, "filters": qdrant_filters},
-            "prompt_builder": {"query": question},
-        })
+        result = pipeline.run(
+            {
+                "embedder": {"text": question},
+                "retriever": {"top_k": top_k, "filters": qdrant_filters},
+                "prompt_builder": {"query": question},
+            }
+        )
 
         # Extract answer
         replies = result.get("generator", {}).get("replies", [])

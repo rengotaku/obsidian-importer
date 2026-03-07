@@ -1,6 +1,7 @@
 """
 Tests for Query Pipeline - search, Q&A functionality
 """
+
 from __future__ import annotations
 
 import unittest
@@ -216,9 +217,7 @@ class TestCreateSearchPipeline(unittest.TestCase):
     @patch("src.rag.pipelines.query.Pipeline")
     @patch("src.rag.pipelines.query.OllamaTextEmbedder")
     @patch("src.rag.pipelines.query.QdrantEmbeddingRetriever")
-    def test_pipeline_uses_config(
-        self, mock_retriever_cls, mock_embedder_cls, mock_pipeline_cls
-    ):
+    def test_pipeline_uses_config(self, mock_retriever_cls, mock_embedder_cls, mock_pipeline_cls):
         """Pipeline uses provided config"""
         mock_store = MagicMock()
         config = OllamaConfig(
@@ -272,9 +271,7 @@ class TestCreateSearchPipeline(unittest.TestCase):
     @patch("src.rag.pipelines.query.Pipeline")
     @patch("src.rag.pipelines.query.OllamaTextEmbedder")
     @patch("src.rag.pipelines.query.QdrantEmbeddingRetriever")
-    def test_retriever_uses_store(
-        self, mock_retriever_cls, mock_embedder_cls, mock_pipeline_cls
-    ):
+    def test_retriever_uses_store(self, mock_retriever_cls, mock_embedder_cls, mock_pipeline_cls):
         """Retriever is created with document store"""
         mock_store = MagicMock()
 

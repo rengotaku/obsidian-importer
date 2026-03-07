@@ -10,6 +10,7 @@ Edge Cases:
 - Mixed ja/en document search
 - Search during indexing
 """
+
 from __future__ import annotations
 
 import os

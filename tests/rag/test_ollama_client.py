@@ -3,6 +3,7 @@ Tests for Ollama Client module
 
 All HTTP calls are mocked - no running Ollama server required.
 """
+
 import json
 import unittest
 from unittest.mock import MagicMock, patch
@@ -25,9 +26,7 @@ class TestCheckConnection(unittest.TestCase):
 
         self.assertTrue(success)
         self.assertIsNone(error)
-        mock_get.assert_called_once_with(
-            "http://localhost:11434/api/tags", timeout=5
-        )
+        mock_get.assert_called_once_with("http://localhost:11434/api/tags", timeout=5)
 
     @patch("src.rag.clients.ollama.requests.get")
     def test_custom_timeout(self, mock_get):
@@ -40,9 +39,7 @@ class TestCheckConnection(unittest.TestCase):
 
         check_connection("http://localhost:11434", timeout=10)
 
-        mock_get.assert_called_once_with(
-            "http://localhost:11434/api/tags", timeout=10
-        )
+        mock_get.assert_called_once_with("http://localhost:11434/api/tags", timeout=10)
 
     @patch("src.rag.clients.ollama.requests.get")
     def test_timeout_error(self, mock_get):
@@ -103,9 +100,7 @@ class TestGetEmbedding(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {
-            "embeddings": [[0.1, 0.2, 0.3, 0.4, 0.5]]
-        }
+        mock_response.json.return_value = {"embeddings": [[0.1, 0.2, 0.3, 0.4, 0.5]]}
         mock_post.return_value = mock_response
 
         embedding, error = get_embedding("test text")

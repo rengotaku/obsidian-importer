@@ -168,7 +168,9 @@ def _make_claude_zip_bytes(conversations: list[dict]) -> bytes:
     return buf.getvalue()
 
 
-@unittest.skip("E2E test disabled - actual Ollama calls are slow. See Issue #55 for re-enabling plan.")
+@unittest.skip(
+    "E2E test disabled - actual Ollama calls are slow. See Issue #55 for re-enabling plan."
+)
 class TestE2EClaudeImport(unittest.TestCase):
     """E2E test: SequentialRunner with Claude import pipeline (mocked Ollama)."""
 
@@ -244,11 +246,13 @@ class TestE2EClaudeImport(unittest.TestCase):
                 "organized_notes": PartitionedMemoryDataset(),  # Phase 2: renamed from organized_items
                 "organized_items": PartitionedMemoryDataset(),  # Legacy compatibility
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
-                "parameters": MemoryDataset({
-                    "import": import_params,
-                    "organize": organize_params,
-                    "ollama": ollama_params,
-                }),
+                "parameters": MemoryDataset(
+                    {
+                        "import": import_params,
+                        "organize": organize_params,
+                        "ollama": ollama_params,
+                    }
+                ),
                 "params:import": MemoryDataset(import_params),
                 "params:organize": MemoryDataset(organize_params),
             }
@@ -426,11 +430,13 @@ class TestResumeAfterFailure(unittest.TestCase):
                 "organized_notes": PartitionedMemoryDataset(),
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
                 "topic_extracted_items": PartitionedMemoryDataset(),
-                "parameters": MemoryDataset({
-                    "import": import_params,
-                    "organize": organize_params,
-                    "ollama": ollama_params,
-                }),
+                "parameters": MemoryDataset(
+                    {
+                        "import": import_params,
+                        "organize": organize_params,
+                        "ollama": ollama_params,
+                    }
+                ),
                 "params:import": MemoryDataset(import_params),
                 "params:organize": MemoryDataset(organize_params),
             }
@@ -697,11 +703,13 @@ class TestPartialRunFromTo(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
-                "parameters": MemoryDataset({
-                    "import": import_params,
-                    "organize": organize_params,
-                    "ollama": ollama_params,
-                }),
+                "parameters": MemoryDataset(
+                    {
+                        "import": import_params,
+                        "organize": organize_params,
+                        "ollama": ollama_params,
+                    }
+                ),
                 "params:import": MemoryDataset(import_params),
                 "params:organize": MemoryDataset(organize_params),
             }
@@ -878,7 +886,9 @@ class OpenAIZipMemoryDataset(AbstractDataset):
         return {"type": "OpenAIZipMemoryDataset"}
 
 
-@unittest.skip("E2E test disabled - actual Ollama calls are slow. See Issue #55 for re-enabling plan.")
+@unittest.skip(
+    "E2E test disabled - actual Ollama calls are slow. See Issue #55 for re-enabling plan."
+)
 class TestE2EOpenAIImport(unittest.TestCase):
     """E2E test: SequentialRunner with OpenAI import pipeline (mocked Ollama).
 
@@ -955,11 +965,13 @@ class TestE2EOpenAIImport(unittest.TestCase):
                 "cleaned_items": PartitionedMemoryDataset(),
                 "organized_notes": PartitionedMemoryDataset(),
                 "review_notes": PartitionedMemoryDataset(),  # Review folder output (final)
-                "parameters": MemoryDataset({
-                    "import": import_params,
-                    "organize": organize_params,
-                    "ollama": ollama_params,
-                }),
+                "parameters": MemoryDataset(
+                    {
+                        "import": import_params,
+                        "organize": organize_params,
+                        "ollama": ollama_params,
+                    }
+                ),
                 "params:import": MemoryDataset(import_params),
                 "params:organize": MemoryDataset(organize_params),
             }

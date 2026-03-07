@@ -9,6 +9,7 @@ Subcommands:
 - ask: Q&A with LLM
 - status: Show index status
 """
+
 from __future__ import annotations
 
 import argparse
@@ -344,7 +345,9 @@ def _output_index_results(
         print("\nBy Vault:")
         for vault_name, result in results.items():
             status = "OK" if not result.errors else "ERROR"
-            print(f"  {vault_name}: {result.indexed_docs} docs, {result.total_chunks} chunks [{status}]")
+            print(
+                f"  {vault_name}: {result.indexed_docs} docs, {result.total_chunks} chunks [{status}]"
+            )
             for error in result.errors:
                 print(f"    - {error}")
 
@@ -381,10 +384,14 @@ def cmd_search(args: argparse.Namespace) -> int:
         pipeline = create_search_pipeline(store)
 
         # Build filters
-        filters = QueryFilters(
-            vaults=vaults,
-            tags=tags,
-        ) if vaults or tags else None
+        filters = (
+            QueryFilters(
+                vaults=vaults,
+                tags=tags,
+            )
+            if vaults or tags
+            else None
+        )
 
         # Execute search
         start_time = time.time()
@@ -435,7 +442,9 @@ def _output_search_json(response: SearchResponse, elapsed_ms: int) -> None:
                 "title": result.title,
                 "file_path": result.file_path,
                 "vault": result.vault,
-                "snippet": result.content[:200] + "..." if len(result.content) > 200 else result.content,
+                "snippet": result.content[:200] + "..."
+                if len(result.content) > 200
+                else result.content,
             }
             for result in response.results
         ],
@@ -478,10 +487,14 @@ def cmd_ask(args: argparse.Namespace) -> int:
         pipeline = create_qa_pipeline(store)
 
         # Build filters
-        filters = QueryFilters(
-            vaults=vaults,
-            tags=tags,
-        ) if vaults or tags else None
+        filters = (
+            QueryFilters(
+                vaults=vaults,
+                tags=tags,
+            )
+            if vaults or tags
+            else None
+        )
 
         # Execute Q&A
         start_time = time.time()

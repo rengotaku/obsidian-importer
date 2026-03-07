@@ -3,6 +3,7 @@ Ollama Client - Ollama API クライアント
 
 リモート Embedding サーバー (bge-m3) とローカル LLM (gpt-oss:20b) への接続機能を提供
 """
+
 from __future__ import annotations
 
 import json

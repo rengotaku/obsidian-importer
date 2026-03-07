@@ -3,6 +3,7 @@ E2E Tests for Q&A Pipeline
 
 Tests question-answering functionality with mocked Ollama and Qdrant services.
 """
+
 from __future__ import annotations
 
 import unittest
@@ -151,9 +152,7 @@ class TestE2EQA(unittest.TestCase):
 
         self.mock_pipeline.run.return_value = {
             "retriever": {"documents": mock_docs},
-            "generator": {
-                "replies": ["OAuth2は認可フレームワーク、JWTはトークン形式です。"]
-            },
+            "generator": {"replies": ["OAuth2は認可フレームワーク、JWTはトークン形式です。"]},
         }
 
         answer = ask(self.mock_pipeline, "OAuth2とJWTの違いは？")

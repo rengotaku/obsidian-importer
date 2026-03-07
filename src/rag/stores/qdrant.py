@@ -1,6 +1,7 @@
 """
 Qdrant Document Store - ベクトルストアのファクトリと管理機能
 """
+
 from __future__ import annotations
 
 from haystack_integrations.document_stores.qdrant import QdrantDocumentStore

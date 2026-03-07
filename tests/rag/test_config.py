@@ -1,6 +1,7 @@
 """
 Tests for RAG Configuration module
 """
+
 import unittest
 from pathlib import Path
 

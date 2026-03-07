@@ -1,6 +1,7 @@
 """
 RAG Exceptions - カスタム例外クラス階層
 """
+
 from __future__ import annotations
 
 

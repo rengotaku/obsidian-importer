@@ -1,6 +1,7 @@
 """
 Indexing Pipeline - Vault ドキュメントのスキャン・チャンキング・インデックス作成
 """
+
 from __future__ import annotations
 
 import re
