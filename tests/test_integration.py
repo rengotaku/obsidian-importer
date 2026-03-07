@@ -171,6 +171,10 @@ def _make_claude_zip_bytes(conversations: list[dict]) -> bytes:
 @unittest.skip(
     "E2E test disabled - actual Ollama calls are slow. See Issue #55 for re-enabling plan."
 )
+@patch(
+    "obsidian_etl.pipelines.organize.nodes.call_ollama",
+    return_value='{"topic": "テスト", "genre": "engineer"}',
+)
 class TestE2EClaudeImport(unittest.TestCase):
     """E2E test: SequentialRunner with Claude import pipeline (mocked Ollama)."""
 
@@ -259,7 +263,7 @@ class TestE2EClaudeImport(unittest.TestCase):
         )
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_claude_import_produces_organized_notes(self, mock_extract):
+    def test_e2e_claude_import_produces_organized_notes(self, mock_extract, _mock_ollama):
         """raw_claude_conversations から organized_notes まで一気通貫で処理されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
@@ -274,7 +278,7 @@ class TestE2EClaudeImport(unittest.TestCase):
         self.assertGreater(len(organized_callables), 0, "organized_notes should not be empty")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_claude_import_all_conversations_processed(self, mock_extract):
+    def test_e2e_claude_import_all_conversations_processed(self, mock_extract, _mock_ollama):
         """全会話が最終出力に含まれること。"""
         # Return different titles for each conversation to avoid filename collision
         mock_extract.side_effect = [
@@ -292,7 +296,7 @@ class TestE2EClaudeImport(unittest.TestCase):
         self.assertEqual(len(organized_callables), 2)
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_claude_import_intermediate_datasets(self, mock_extract):
+    def test_e2e_claude_import_intermediate_datasets(self, mock_extract, _mock_ollama):
         """中間データセット（parsed_items, markdown_notes）が生成されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
@@ -311,7 +315,7 @@ class TestE2EClaudeImport(unittest.TestCase):
         self.assertGreater(len(markdown_callables), 0, "markdown_notes should not be empty")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_organized_note_has_required_frontmatter(self, mock_extract):
+    def test_e2e_organized_note_has_required_frontmatter(self, mock_extract, _mock_ollama):
         """organized_notes の各ノートが必須 frontmatter フィールドを持つこと。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
@@ -338,7 +342,7 @@ class TestE2EClaudeImport(unittest.TestCase):
             self.assertIn("topic:", frontmatter, f"Missing topic in {partition_id}")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_ollama_mock_called(self, mock_extract):
+    def test_e2e_ollama_mock_called(self, mock_extract, _mock_ollama):
         """Ollama LLM が各アイテムに対して呼び出されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
@@ -442,8 +446,12 @@ class TestResumeAfterFailure(unittest.TestCase):
             }
         )
 
+    @patch(
+        "obsidian_etl.pipelines.organize.nodes.call_ollama",
+        return_value='{"topic": "テスト", "genre": "engineer"}',
+    )
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_resume_after_failure(self, mock_extract):
+    def test_resume_after_failure(self, mock_extract, _mock_ollama):
         """1回目で一部失敗、2回目は全てスキップ（失敗分はreviewに出力済み）。"""
         call_count = [0]
 
@@ -744,8 +752,12 @@ class TestPartialRunFromTo(unittest.TestCase):
             "organized_notes should be empty when running Transform only",
         )
 
+    @patch(
+        "obsidian_etl.pipelines.organize.nodes.call_ollama",
+        return_value='{"topic": "テスト", "genre": "engineer"}',
+    )
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_partial_run_organize_only(self, mock_extract):
+    def test_partial_run_organize_only(self, mock_extract, _mock_ollama):
         """from_nodes=extract_topic_and_genre で Organize のみ実行されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
@@ -889,6 +901,10 @@ class OpenAIZipMemoryDataset(AbstractDataset):
 @unittest.skip(
     "E2E test disabled - actual Ollama calls are slow. See Issue #55 for re-enabling plan."
 )
+@patch(
+    "obsidian_etl.pipelines.organize.nodes.call_ollama",
+    return_value='{"topic": "テスト", "genre": "engineer"}',
+)
 class TestE2EOpenAIImport(unittest.TestCase):
     """E2E test: SequentialRunner with OpenAI import pipeline (mocked Ollama).
 
@@ -978,7 +994,7 @@ class TestE2EOpenAIImport(unittest.TestCase):
         )
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_openai_import_produces_organized_notes(self, mock_extract):
+    def test_e2e_openai_import_produces_organized_notes(self, mock_extract, _mock_ollama):
         """OpenAI パイプラインが ZIP 入力から organized_notes まで一気通貫で処理されること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
@@ -992,7 +1008,7 @@ class TestE2EOpenAIImport(unittest.TestCase):
         self.assertGreater(len(organized_callables), 0, "organized_notes should not be empty")
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_openai_import_all_conversations_processed(self, mock_extract):
+    def test_e2e_openai_import_all_conversations_processed(self, mock_extract, _mock_ollama):
         """OpenAI の全会話が最終出力に含まれること。"""
         mock_extract.side_effect = [
             (_make_mock_ollama_response(title="asyncio 解説"), None),
@@ -1010,7 +1026,7 @@ class TestE2EOpenAIImport(unittest.TestCase):
         )
 
     @patch("obsidian_etl.utils.knowledge_extractor.extract_knowledge")
-    def test_e2e_openai_parsed_items_have_openai_provider(self, mock_extract):
+    def test_e2e_openai_parsed_items_have_openai_provider(self, mock_extract, _mock_ollama):
         """OpenAI パースアイテムの source_provider が 'openai' であること。"""
         mock_extract.return_value = (_make_mock_ollama_response(), None)
 
