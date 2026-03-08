@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import wraps
 from typing import Any
@@ -40,7 +40,7 @@ def timed_node(func: Callable) -> Callable:
 
 
 @contextmanager
-def timed_item(item_id: str, index: int, total: int):
+def timed_item(item_id: str, index: int, total: int) -> Generator[None, None, None]:
     """Context manager to measure and log item processing time.
 
     Usage:
@@ -96,7 +96,7 @@ class ItemTimer:
         self.skipped += 1
 
     @contextmanager
-    def track(self, item_id: str):
+    def track(self, item_id: str) -> Generator[None, None, None]:
         """Track item processing time."""
         self.processed += 1
         self._current_success = False

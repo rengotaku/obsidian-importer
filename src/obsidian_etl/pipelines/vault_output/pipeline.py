@@ -5,6 +5,8 @@ This pipeline provides organized file preview and copying to Obsidian Vaults.
 
 from __future__ import annotations
 
+from typing import Any
+
 from kedro.pipeline import Pipeline, node
 
 from .nodes import (
@@ -16,7 +18,7 @@ from .nodes import (
 )
 
 
-def create_preview_pipeline(**kwargs) -> Pipeline:
+def create_preview_pipeline(**kwargs: Any) -> Pipeline:
     """Create preview pipeline for organized files.
 
     Shows destination paths and conflicts without copying files.
@@ -49,7 +51,7 @@ def create_preview_pipeline(**kwargs) -> Pipeline:
     )
 
 
-def create_vault_pipeline(**kwargs) -> Pipeline:
+def create_vault_pipeline(**kwargs: Any) -> Pipeline:
     """Create vault copy pipeline for organized files.
 
     Copies files to Vault with conflict handling (default: skip).
