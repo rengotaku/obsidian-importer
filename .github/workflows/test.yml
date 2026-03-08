@@ -31,6 +31,9 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Run integration tests (mock mode, no Ollama)
+        run: make test-integration
+
       - name: Run tests with coverage
         run: |
           source .venv/bin/activate
