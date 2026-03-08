@@ -1,0 +1,12 @@
+# Integration test parameters
+# Enables mock mode for testing without Ollama server
+
+ollama:
+  mock: true
+  defaults:
+    model: "mock-model"
+    base_url: "http://localhost:11434"
+    timeout: 10
+    warmup_timeout: 10
+    temperature: 0.2
+    num_predict: -1

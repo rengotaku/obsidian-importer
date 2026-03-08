@@ -13,6 +13,7 @@ github_clone_dir: ""  # Target directory for git clone (empty = use system temp)
 # ============================================================
 
 ollama:
+  mock: false  # Set to true for integration testing without Ollama
   # Default settings applied to all functions
   defaults:
     model: "gpt-oss-swallow:20b"

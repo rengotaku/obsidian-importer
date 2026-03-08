@@ -636,5 +636,33 @@ class TestTemperatureValidation(unittest.TestCase):
         self.assertAlmostEqual(config_max.temperature, 2.0, places=2)
 
 
+class TestOllamaConfigMock(unittest.TestCase):
+    """Test OllamaConfig mock field."""
+
+    def test_mock_default_false(self) -> None:
+        """Mock should default to False."""
+        from obsidian_etl.utils.ollama_config import get_ollama_config
+
+        params = {"ollama": {"defaults": {"model": "test"}}}
+        config = get_ollama_config(params, "extract_knowledge")
+        self.assertFalse(config.mock)
+
+    def test_mock_true_from_params(self) -> None:
+        """Mock should be True when set in params."""
+        from obsidian_etl.utils.ollama_config import get_ollama_config
+
+        params = {"ollama": {"mock": True, "defaults": {"model": "test"}}}
+        config = get_ollama_config(params, "extract_knowledge")
+        self.assertTrue(config.mock)
+
+    def test_mock_false_from_params(self) -> None:
+        """Mock should be False when explicitly set to False."""
+        from obsidian_etl.utils.ollama_config import get_ollama_config
+
+        params = {"ollama": {"mock": False, "defaults": {"model": "test"}}}
+        config = get_ollama_config(params, "extract_knowledge")
+        self.assertFalse(config.mock)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -8,6 +8,7 @@ LoggingHook: Logs node execution timing.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -42,19 +43,61 @@ class PreRunValidationHook:
         # Ensure placeholder files exist for PartitionedDataset inputs
         self._ensure_placeholder_files()
 
-        # Check Ollama is running
-        self._check_ollama()
+        # Check if mock mode is enabled
+        mock_mode = self._is_mock_mode(run_params, catalog)
+
+        # Check Ollama is running (skip in mock mode)
+        if not mock_mode:
+            self._check_ollama()
 
         # Check input files exist
         self._check_input_files(pipeline_name, run_params)
+
+    def _is_mock_mode(self, run_params: dict[str, Any], catalog: object) -> bool:
+        """Check if Ollama mock mode is enabled.
+
+        Checks both the catalog parameters and extra_params from CLI.
+
+        Args:
+            run_params: Run parameters from Kedro.
+            catalog: DataCatalog instance.
+
+        Returns:
+            True if mock mode is enabled.
+        """
+        # Check extra_params from CLI (--params '{"ollama": {"mock": true}}')
+        extra_params = run_params.get("extra_params", {})
+        if extra_params.get("ollama", {}).get("mock", False):
+            return True
+
+        # Check parameters from catalog (conf/base/parameters.yml)
+        try:
+            if hasattr(catalog, "load") and hasattr(catalog, "list"):
+                dataset_list = catalog.list()
+                if "parameters" in dataset_list:
+                    params = catalog.load("parameters")
+                    return bool(params.get("ollama", {}).get("mock", False))
+        except Exception:
+            pass
+
+        return False
 
     def _ensure_placeholder_files(self) -> None:
         """Create placeholder files in directories used by PartitionedDataset inputs."""
         import json
 
         project_root = Path.cwd()
+        env = os.environ.get("KEDRO_ENV", "base")
+
         for dir_path in self.PLACEHOLDER_DIRS:
-            full_path = project_root / dir_path
+            if env == "test":
+                adjusted_path = dir_path.replace("data/", "data/test/", 1)
+            elif env == "integration":
+                adjusted_path = dir_path.replace("data/", "test-data/", 1)
+            else:
+                adjusted_path = dir_path
+
+            full_path = project_root / adjusted_path
             full_path.mkdir(parents=True, exist_ok=True)
             placeholder = full_path / ".placeholder.json"
             if not placeholder.exists():
@@ -83,9 +126,15 @@ class PreRunValidationHook:
 
     def _check_input_files(self, pipeline_name: str, run_params: dict[str, Any]) -> None:
         """Verify input files exist for the specified pipeline."""
-        # Get project root from catalog or use cwd
         project_root = Path.cwd()
-        data_dir = project_root / "data" / "01_raw"
+        env = os.environ.get("KEDRO_ENV", "base")
+
+        if env == "test":
+            data_dir = project_root / "data" / "test" / "01_raw"
+        elif env == "integration":
+            data_dir = project_root / "test-data" / "01_raw"
+        else:
+            data_dir = project_root / "data" / "01_raw"
 
         if pipeline_name == "import_claude" or pipeline_name == "__default__":
             input_dir = data_dir / "claude"

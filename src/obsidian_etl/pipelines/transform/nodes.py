@@ -51,7 +51,7 @@ EMOJI_PATTERN = re.compile(
 # Streaming output directory (relative to project root)
 # Respects KEDRO_ENV=test for test environment
 _env = os.getenv("KEDRO_ENV", "base")
-_data_prefix = "data/test" if _env == "test" else "data"
+_data_prefix = "test-data" if _env == "integration" else ("data/test" if _env == "test" else "data")
 STREAMING_OUTPUT_DIR = Path(f"{_data_prefix}/03_primary/transformed_knowledge")
 
 
@@ -147,6 +147,9 @@ def extract_knowledge(
             # Mark for review with error details
             item["review_reason"] = f"LLM extraction failed: {error}"
             item["review_node"] = "extract_knowledge"
+            # Mark as mock-generated if in mock mode
+            if params.get("ollama", {}).get("mock", False):
+                item["mock"] = True
             item["generated_metadata"] = {
                 "title": item.get("conversation_name", partition_id),
                 "summary": "",
@@ -181,13 +184,17 @@ def extract_knowledge(
                 "summary_content": "",
                 "tags": knowledge.get("tags", []),
             }
+            # Mark as mock-generated if in mock mode
+            if params.get("ollama", {}).get("mock", False):
+                item["mock"] = True
             # Save to streaming output (prevents re-processing)
             streaming_file = output_dir / f"{partition_id}.json"
             streaming_file.write_text(json.dumps(item, ensure_ascii=False, indent=2))
             output[partition_id] = item
             continue
 
-        # Check content compression ratio using compression_validator
+        # Check content compression ratio (skip in mock mode)
+        is_mock = params.get("ollama", {}).get("mock", False)
         compression_result = validate_compression(
             original_content=item["content"],
             output_content=summary_content,
@@ -195,7 +202,7 @@ def extract_knowledge(
             node_name="extract_knowledge",
         )
 
-        if not compression_result.is_valid:
+        if not is_mock and not compression_result.is_valid:
             # Add review_reason and review_node to item (don't exclude)
             review_reason = (
                 f"{compression_result.node_name}: "
@@ -233,6 +240,10 @@ def extract_knowledge(
             "summary_content": knowledge.get("summary_content", ""),
             "tags": knowledge.get("tags", []),
         }
+
+        # Mark as mock-generated if in mock mode
+        if params.get("ollama", {}).get("mock", False):
+            item["mock"] = True
 
         # STREAMING: Save immediately to disk
         streaming_file = output_dir / f"{partition_id}.json"
@@ -410,6 +421,10 @@ def format_markdown(
                 frontmatter_parts.append(f"chunk_index: {chunk_index}")
             if total_chunks is not None:
                 frontmatter_parts.append(f"total_chunks: {total_chunks}")
+
+        # Add mock flag to frontmatter if present
+        if item.get("mock"):
+            frontmatter_parts.append("mock: true")
 
         frontmatter_yaml = "\n".join(frontmatter_parts) + "\n"
 

@@ -295,5 +295,48 @@ class TestCallOllamaSuccessReturnsStr(unittest.TestCase):
         self.assertEqual(result, content)
 
 
+class TestCallOllamaMock(unittest.TestCase):
+    """Test call_ollama mock mode."""
+
+    def test_mock_mode_returns_response(self) -> None:
+        """Mock mode should return response without network call."""
+        from obsidian_etl.utils.ollama import call_ollama
+
+        response = call_ollama(
+            "test prompt",
+            "test message",
+            model="test-model",
+            mock=True,
+        )
+        self.assertIsInstance(response, str)
+        self.assertTrue(len(response) > 0)
+
+    def test_mock_mode_no_warmup(self) -> None:
+        """Mock mode should skip warmup."""
+        from obsidian_etl.utils.ollama import call_ollama
+
+        # This should not raise even with unreachable server
+        response = call_ollama(
+            "test prompt",
+            "test message",
+            model="nonexistent-model",
+            base_url="http://unreachable:99999",
+            mock=True,
+        )
+        self.assertIsInstance(response, str)
+
+
+class TestCheckOllamaConnectionMock(unittest.TestCase):
+    """Test check_ollama_connection mock mode."""
+
+    def test_mock_mode_returns_true(self) -> None:
+        """Mock mode should always return connected."""
+        from obsidian_etl.utils.ollama import check_ollama_connection
+
+        connected, error = check_ollama_connection(mock=True)
+        self.assertTrue(connected)
+        self.assertIsNone(error)
+
+
 if __name__ == "__main__":
     unittest.main()
