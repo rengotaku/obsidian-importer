@@ -185,7 +185,9 @@ def parse_jekyll(
 
 
 @timed_node
-def convert_frontmatter(partitioned_input: dict[str, Callable[..., Any]]) -> dict[str, dict[str, Any]]:
+def convert_frontmatter(
+    partitioned_input: dict[str, Callable[..., Any]],
+) -> dict[str, dict[str, Any]]:
     """Convert Jekyll frontmatter to Obsidian format.
 
     Args:

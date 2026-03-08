@@ -355,7 +355,9 @@ def _extract_topic_via_llm(content: str, params: dict[str, Any]) -> str | None:
 
 
 @timed_node
-def normalize_frontmatter(partitioned_input: dict[str, Callable[[], Any]], params: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def normalize_frontmatter(
+    partitioned_input: dict[str, Callable[[], Any]], params: dict[str, Any]
+) -> dict[str, dict[str, Any]]:
     """Normalize frontmatter by removing unnecessary fields and ensuring normalized=True.
 
     Args:
@@ -673,7 +675,9 @@ def log_genre_distribution(
     return classified_items
 
 
-def _suggest_new_genres_via_llm(other_items: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+def _suggest_new_genres_via_llm(
+    other_items: list[dict[str, Any]], params: dict[str, Any]
+) -> list[dict[str, Any]]:
     """Suggest new genres for other-classified items via LLM.
 
     Args:

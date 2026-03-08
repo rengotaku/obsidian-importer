@@ -21,7 +21,8 @@ MIN_CONTENT_LENGTH = 10  # Minimum content length after processing
 
 @timed_node
 def parse_claude_json(
-    conversations: list[dict[str, Any]], existing_output: dict[str, Callable[..., Any]] | None = None
+    conversations: list[dict[str, Any]],
+    existing_output: dict[str, Callable[..., Any]] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Parse Claude export JSON conversations to ParsedItem format.
 

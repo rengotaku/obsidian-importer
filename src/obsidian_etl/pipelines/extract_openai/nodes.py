@@ -207,7 +207,9 @@ def _validate_conversation_structure(conv: dict[str, Any]) -> bool:
     return "id" in conv and "mapping" in conv
 
 
-def _traverse_messages(mapping: dict[str, dict[str, Any]], current_node: str) -> list[dict[str, Any]]:
+def _traverse_messages(
+    mapping: dict[str, dict[str, Any]], current_node: str
+) -> list[dict[str, Any]]:
     """Traverse ChatGPT mapping tree from current_node to root.
 
     ChatGPT conversations are stored as a tree structure where each node

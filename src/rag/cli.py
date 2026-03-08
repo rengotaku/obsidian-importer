@@ -601,7 +601,9 @@ def cmd_status(args: argparse.Namespace) -> int:
         return EXIT_ERROR
 
 
-def _output_status_text(stats: dict[str, object], connection_status: dict[str, str], verbose: bool) -> None:
+def _output_status_text(
+    stats: dict[str, object], connection_status: dict[str, str], verbose: bool
+) -> None:
     """Output status in text format."""
     print("\nRAG Index Status")
     print("=" * 50)
@@ -620,7 +622,9 @@ def _output_status_text(stats: dict[str, object], connection_status: dict[str, s
     print()
 
 
-def _output_status_json(stats: dict[str, object], connection_status: dict[str, str], verbose: bool) -> None:
+def _output_status_json(
+    stats: dict[str, object], connection_status: dict[str, str], verbose: bool
+) -> None:
     """Output status in JSON format."""
     output = {
         "collection_name": stats["collection_name"],
