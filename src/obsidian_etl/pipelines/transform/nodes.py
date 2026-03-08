@@ -23,6 +23,7 @@ import time
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from obsidian_etl.utils import knowledge_extractor
 from obsidian_etl.utils.compression_validator import validate_compression
@@ -62,10 +63,10 @@ def _is_empty_content(content: str | None) -> bool:
 
 
 def extract_knowledge(
-    partitioned_input: dict[str, Callable],
-    params: dict,
-    existing_output: dict[str, Callable] | None = None,
-) -> dict[str, dict]:
+    partitioned_input: dict[str, Callable[[], dict[str, Any]]],
+    params: dict[str, Any],
+    existing_output: dict[str, Callable[[], dict[str, Any]]] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Extract knowledge from ParsedItems using LLM.
 
     Calls Ollama LLM for each item to extract:
@@ -254,9 +255,9 @@ def extract_knowledge(
 
 @timed_node
 def generate_metadata(
-    partitioned_input: dict[str, Callable],
-    params: dict,
-) -> dict[str, dict]:
+    partitioned_input: dict[str, Callable[[], dict[str, Any]]],
+    params: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
     """Generate metadata dict from generated_metadata.
 
     Creates the final metadata structure for Obsidian frontmatter:
@@ -321,7 +322,7 @@ def generate_metadata(
 
 @timed_node
 def format_markdown(
-    partitioned_input: dict[str, Callable],
+    partitioned_input: dict[str, Callable[[], dict[str, Any]]],
 ) -> tuple[dict[str, str], dict[str, str]]:
     """Format items as Markdown with YAML frontmatter.
 

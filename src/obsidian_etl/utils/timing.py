@@ -15,7 +15,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def timed_node(func: Callable) -> Callable:
+def timed_node(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to measure and log node execution time.
 
     Usage:

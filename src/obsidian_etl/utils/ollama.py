@@ -11,6 +11,7 @@ import logging
 import re
 import urllib.error
 import urllib.request
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +230,7 @@ def _strip_fence_language(text: str) -> str:
     return "\n".join(lines)
 
 
-def parse_markdown_response(response: str) -> tuple[dict, str | None]:
+def parse_markdown_response(response: str) -> tuple[dict[str, Any], str | None]:
     """Parse markdown response into structured dict.
 
     Extracts title (H1), summary (## 要約), tags (## タグ), and content (## 内容) sections.

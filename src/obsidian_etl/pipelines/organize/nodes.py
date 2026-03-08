@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from typing import Any
 
 import yaml
 
@@ -22,7 +23,7 @@ from obsidian_etl.utils.timing import timed_node
 logger = logging.getLogger(__name__)
 
 
-def _parse_genre_config(genre_vault_mapping: dict) -> tuple[dict, set]:
+def _parse_genre_config(genre_vault_mapping: dict[str, Any]) -> tuple[dict[str, str], set[str]]:
     """Parse genre config to extract definitions and valid genres.
 
     Args:
@@ -72,7 +73,7 @@ def _parse_genre_config(genre_vault_mapping: dict) -> tuple[dict, set]:
     return genre_definitions, valid_genres
 
 
-def _build_genre_prompt(genre_definitions: dict) -> str:
+def _build_genre_prompt(genre_definitions: dict[str, str]) -> str:
     """Build LLM prompt string from genre definitions.
 
     Args:
@@ -125,9 +126,9 @@ def _yaml_quote(value: str) -> str:
 
 @timed_node
 def extract_topic_and_genre(
-    partitioned_input: dict[str, Callable],
-    params: dict,
-) -> dict[str, dict]:
+    partitioned_input: dict[str, Callable[[], Any]],
+    params: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
     """Extract topic and classify genre using LLM.
 
     Args:
@@ -202,7 +203,7 @@ def extract_topic_and_genre(
     return result
 
 
-def _extract_topic_and_genre_via_llm(content: str, params: dict) -> tuple[str, str]:
+def _extract_topic_and_genre_via_llm(content: str, params: dict[str, Any]) -> tuple[str, str]:
     """Helper to extract topic and genre via LLM.
 
     Args:
@@ -295,7 +296,7 @@ JSON形式で回答してください:
         return "", "other"
 
 
-def _extract_topic_via_llm(content: str, params: dict) -> str | None:
+def _extract_topic_via_llm(content: str, params: dict[str, Any]) -> str | None:
     """Helper to extract topic via LLM.
 
     Args:
@@ -354,7 +355,7 @@ def _extract_topic_via_llm(content: str, params: dict) -> str | None:
 
 
 @timed_node
-def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) -> dict[str, dict]:
+def normalize_frontmatter(partitioned_input: dict[str, Callable[[], Any]], params: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """Normalize frontmatter by removing unnecessary fields and ensuring normalized=True.
 
     Args:
@@ -426,7 +427,7 @@ def normalize_frontmatter(partitioned_input: dict[str, Callable], params: dict) 
 
 
 @timed_node
-def clean_content(partitioned_input: dict[str, Callable]) -> dict[str, dict]:
+def clean_content(partitioned_input: dict[str, Callable[[], Any]]) -> dict[str, dict[str, Any]]:
     """Clean content by removing excess blank lines and trailing whitespace.
 
     Args:
@@ -502,8 +503,8 @@ def _clean_text(text: str) -> str:
 
 @timed_node
 def embed_frontmatter_fields(
-    partitioned_input: dict[str, Callable],
-    params: dict,
+    partitioned_input: dict[str, Callable[[], Any]],
+    params: dict[str, Any],
 ) -> dict[str, str]:
     """Embed genre, topic, summary, review_reason into frontmatter content.
 
@@ -624,9 +625,9 @@ def _embed_fields_in_frontmatter(
 
 @timed_node
 def log_genre_distribution(
-    partitioned_input: dict[str, Callable],
-    params: dict,
-) -> dict[str, dict]:
+    partitioned_input: dict[str, Callable[[], Any]],
+    params: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
     """Log genre distribution statistics.
 
     Args:
@@ -672,7 +673,7 @@ def log_genre_distribution(
     return classified_items
 
 
-def _suggest_new_genres_via_llm(other_items: list[dict], params: dict) -> list[dict]:
+def _suggest_new_genres_via_llm(other_items: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
     """Suggest new genres for other-classified items via LLM.
 
     Args:
@@ -764,7 +765,7 @@ JSON配列形式で回答してください:
         return []
 
 
-def _generate_suggestions_markdown(suggestions: list[dict], other_count: int) -> str:
+def _generate_suggestions_markdown(suggestions: list[dict[str, Any]], other_count: int) -> str:
     """Generate markdown report from genre suggestions.
 
     Args:
@@ -838,8 +839,8 @@ def _generate_suggestions_markdown(suggestions: list[dict], other_count: int) ->
 
 @timed_node
 def analyze_other_genres(
-    partitioned_input: dict[str, Callable],
-    params: dict,
+    partitioned_input: dict[str, Callable[[], Any]],
+    params: dict[str, Any],
 ) -> str:
     """Analyze other-classified items and suggest new genres if needed.
 

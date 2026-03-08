@@ -10,6 +10,7 @@ import tempfile
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -37,7 +38,7 @@ FRONTMATTER_PATTERN = re.compile(r"^---\n(.+?)\n---\n", re.DOTALL)
 
 
 @timed_node
-def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, Callable]:
+def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, Callable[..., Any]]:
     """Clone GitHub repository and return Markdown files as PartitionedDataset.
 
     Args:
@@ -111,7 +112,7 @@ def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, Callable]:
         key = str(rel_path)
 
         # Create loader callable
-        def make_loader(file_path: Path) -> Callable:
+        def make_loader(file_path: Path) -> Callable[..., Any]:
             def loader() -> str:
                 return file_path.read_text(encoding="utf-8")
 
@@ -124,8 +125,8 @@ def clone_github_repo(url: str, github_clone_dir: str) -> dict[str, Callable]:
 
 @timed_node
 def parse_jekyll(
-    partitioned_input: dict[str, Callable], existing_output: dict | None = None
-) -> dict[str, dict]:
+    partitioned_input: dict[str, Callable[..., Any]], existing_output: dict[str, Any] | None = None
+) -> dict[str, dict[str, Any]]:
     """Parse Jekyll Markdown files to ParsedItem dicts.
 
     Args:
@@ -184,7 +185,7 @@ def parse_jekyll(
 
 
 @timed_node
-def convert_frontmatter(partitioned_input: dict[str, Callable]) -> dict[str, dict]:
+def convert_frontmatter(partitioned_input: dict[str, Callable[..., Any]]) -> dict[str, dict[str, Any]]:
     """Convert Jekyll frontmatter to Obsidian format.
 
     Args:
@@ -256,7 +257,7 @@ def convert_frontmatter(partitioned_input: dict[str, Callable]) -> dict[str, dic
 # --- Helper functions ---
 
 
-def _parse_frontmatter(content: str) -> tuple[dict, str]:
+def _parse_frontmatter(content: str) -> tuple[dict[str, Any], str]:
     """Parse Jekyll frontmatter from Markdown content.
 
     Args:
@@ -302,7 +303,7 @@ def _title_from_filename(filename: str) -> str:
     return title.title()
 
 
-def _extract_date(frontmatter: dict, filename: str, title: str, body: str) -> str:
+def _extract_date(frontmatter: dict[str, Any], filename: str, title: str, body: str) -> str:
     """Extract date from multiple sources with priority fallback.
 
     Priority:
@@ -362,7 +363,7 @@ def _extract_date_from_text(text: str) -> str | None:
     return None
 
 
-def _extract_tags(frontmatter: dict, body: str) -> list[str]:
+def _extract_tags(frontmatter: dict[str, Any], body: str) -> list[str]:
     """Extract tags from multiple sources.
 
     Sources (priority order):

@@ -8,6 +8,7 @@ import logging
 import zipfile
 from collections.abc import Callable
 from datetime import UTC, datetime
+from typing import Any
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
 from obsidian_etl.utils.file_id import generate_file_id
@@ -20,10 +21,10 @@ MIN_MESSAGES = 3  # Minimum messages required for a valid conversation
 
 @timed_node
 def parse_chatgpt_zip(
-    partitioned_input: dict[str, Callable],
-    params: dict | None = None,
-    existing_output: dict[str, Callable] | None = None,
-) -> dict[str, dict]:
+    partitioned_input: dict[str, Callable[..., Any]],
+    params: dict[str, Any] | None = None,
+    existing_output: dict[str, Callable[..., Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Parse ChatGPT export ZIP to ParsedItem format.
 
     Extracts conversations.json from ZIP, traverses ChatGPT mapping tree,
@@ -168,7 +169,7 @@ def parse_chatgpt_zip(
     return result
 
 
-def _extract_conversations_from_zip(zip_bytes: bytes) -> list[dict]:
+def _extract_conversations_from_zip(zip_bytes: bytes) -> list[dict[str, Any]]:
     """Extract conversations.json from ChatGPT export ZIP.
 
     Args:
@@ -194,7 +195,7 @@ def _extract_conversations_from_zip(zip_bytes: bytes) -> list[dict]:
         return conversations
 
 
-def _validate_conversation_structure(conv: dict) -> bool:
+def _validate_conversation_structure(conv: dict[str, Any]) -> bool:
     """Validate conversation has required fields.
 
     Args:
@@ -206,7 +207,7 @@ def _validate_conversation_structure(conv: dict) -> bool:
     return "id" in conv and "mapping" in conv
 
 
-def _traverse_messages(mapping: dict[str, dict], current_node: str) -> list[dict]:
+def _traverse_messages(mapping: dict[str, dict[str, Any]], current_node: str) -> list[dict[str, Any]]:
     """Traverse ChatGPT mapping tree from current_node to root.
 
     ChatGPT conversations are stored as a tree structure where each node
@@ -275,7 +276,7 @@ def _convert_role(role: str) -> str | None:
     return role_mapping.get(role)
 
 
-def _extract_text_from_parts(parts: list[str | dict]) -> str:
+def _extract_text_from_parts(parts: list[str | dict[str, Any]]) -> str:
     """Extract text content from ChatGPT content.parts array.
 
     ChatGPT messages can be multimodal (text + images + audio). This function
@@ -312,7 +313,7 @@ def _extract_text_from_parts(parts: list[str | dict]) -> str:
     return "\n".join(text_parts)
 
 
-def _format_conversation_content(messages: list[dict]) -> str:
+def _format_conversation_content(messages: list[dict[str, Any]]) -> str:
     """Format messages into conversation text.
 
     Args:
@@ -333,7 +334,7 @@ def _format_conversation_content(messages: list[dict]) -> str:
     return "\n\n".join(lines)
 
 
-def _fallback_conversation_name(messages: list[dict]) -> str:
+def _fallback_conversation_name(messages: list[dict[str, Any]]) -> str:
     """Generate fallback conversation name from first user message.
 
     Args:
