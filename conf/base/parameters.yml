@@ -15,7 +15,7 @@ github_clone_dir: ""  # Target directory for git clone (empty = use system temp)
 ollama:
   # Default settings applied to all functions
   defaults:
-    model: "gpt-oss:20b"
+    model: "gpt-oss-swallow:20b"
     base_url: "http://localhost:11434"
     timeout: 120
     warmup_timeout: 300  # Model warmup timeout (seconds) - 20B model needs ~4 min to load
@@ -35,7 +35,7 @@ ollama:
 
     # Topic extraction: very short output (1-3 words)
     extract_topic:
-      model: "gpt-oss:20b"
+      model: "gpt-oss-swallow:20b"
       num_predict: 64
       timeout: 30
 
