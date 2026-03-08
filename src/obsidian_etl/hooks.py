@@ -65,12 +65,16 @@ class PreRunValidationHook:
         Returns:
             True if mock mode is enabled.
         """
+        # Check KEDRO_ENV=integration (mock mode implied)
+        if os.environ.get("KEDRO_ENV") == "integration":
+            return True
+
         # Check extra_params from CLI (--params '{"ollama": {"mock": true}}')
         extra_params = run_params.get("extra_params", {})
         if extra_params.get("ollama", {}).get("mock", False):
             return True
 
-        # Check parameters from catalog (conf/base/parameters.yml)
+        # Check parameters from catalog (conf/*/parameters.yml)
         try:
             if hasattr(catalog, "load") and hasattr(catalog, "list"):
                 dataset_list = catalog.list()
