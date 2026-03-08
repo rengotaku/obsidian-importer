@@ -13,7 +13,7 @@ export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
 
 .PHONY: help setup setup-dev test coverage check lint ruff pylint mypy format format-check clean
 .PHONY: rag-index rag-search rag-ask rag-status
-.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean test-integration
+.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean test-integration test-fixtures
 .PHONY: run kedro-run kedro-test kedro-viz
 .PHONY: organize-preview organize vault-preview vault-copy
 
@@ -159,10 +159,21 @@ kedro-test:
 kedro-viz:
 	@cd $(BASE_DIR) && $(PYTHON) -m kedro viz
 
+# テストフィクスチャZIP生成（JSONからZIPを組み立て）
+CLAUDE_TEST_JSON := tests/fixtures/claude_test_conversations.json
+CLAUDE_TEST_ZIP := tests/fixtures/claude_test.zip
+
+test-fixtures: $(CLAUDE_TEST_ZIP)
+
+$(CLAUDE_TEST_ZIP): $(CLAUDE_TEST_JSON)
+	@echo "Building test fixture ZIP..."
+	@cd tests/fixtures && $(PYTHON) -c "import zipfile, pathlib; z=zipfile.ZipFile('claude_test.zip','w',zipfile.ZIP_DEFLATED); z.write('claude_test_conversations.json','conversations.json'); z.close()"
+	@echo "  OK $(CLAUDE_TEST_ZIP)"
+
 # Kedro E2Eテスト（テスト用フィクスチャで LLM 処理まで実行）
 # 前提: Ollama が起動していること
 TEST_DATA_DIR := data/test
-test-e2e: test-clean
+test-e2e: test-fixtures test-clean
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Kedro E2E Test (golden file comparison)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -208,7 +219,7 @@ test-e2e: test-clean
 	@echo "═══════════════════════════════════════════════════════════"
 
 # ゴールデンファイル生成・更新
-test-e2e-update-golden:
+test-e2e-update-golden: test-fixtures
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Update Golden Files (E2E test reference)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -267,7 +278,7 @@ test-e2e-golden:
 
 INTEGRATION_DATA_DIR := test-data
 
-test-integration:
+test-integration: test-fixtures
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Integration Test (Mock Mode - No Ollama Required)"
 	@echo "═══════════════════════════════════════════════════════════"
