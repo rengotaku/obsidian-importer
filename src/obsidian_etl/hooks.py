@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import Any
 
 from kedro.framework.hooks import hook_impl
 
@@ -31,7 +32,7 @@ class PreRunValidationHook:
     @hook_impl
     def before_pipeline_run(
         self,
-        run_params: dict,
+        run_params: dict[str, Any],
         pipeline: object,
         catalog: object,
     ) -> None:
@@ -80,7 +81,7 @@ class PreRunValidationHook:
             logger.error("")
             sys.exit(1)
 
-    def _check_input_files(self, pipeline_name: str, run_params: dict) -> None:
+    def _check_input_files(self, pipeline_name: str, run_params: dict[str, Any]) -> None:
         """Verify input files exist for the specified pipeline."""
         # Get project root from catalog or use cwd
         project_root = Path.cwd()
@@ -146,7 +147,7 @@ class ErrorHandlerHook:
         error: Exception,
         node: object,
         catalog: object,
-        inputs: dict,
+        inputs: dict[str, Any],
         is_async: bool,
     ) -> None:
         """Log error details when a node fails."""
@@ -183,7 +184,7 @@ class LoggingHook:
         self._start_times: dict[str, float] = {}
 
     @hook_impl
-    def before_node_run(self, node: object, catalog: object, inputs: dict) -> None:
+    def before_node_run(self, node: object, catalog: object, inputs: dict[str, Any]) -> None:
         """Record start time before node execution."""
         import time
 
@@ -194,8 +195,8 @@ class LoggingHook:
         self,
         node: object,
         catalog: object,
-        inputs: dict,
-        outputs: dict,
+        inputs: dict[str, Any],
+        outputs: dict[str, Any],
         is_async: bool,
     ) -> None:
         """Log elapsed time after node execution."""

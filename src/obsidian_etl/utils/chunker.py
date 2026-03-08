@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +19,13 @@ class ChunkInfo:
     """Information about a conversation chunk."""
 
     index: int
-    messages: list[dict]
+    messages: list[dict[str, Any]]
     char_count: int
     has_overlap: bool
     overlap_count: int
 
 
-def should_chunk(messages: list[dict], chunk_size: int = 25000) -> bool:
+def should_chunk(messages: list[dict[str, Any]], chunk_size: int = 25000) -> bool:
     """Check if conversation needs chunking.
 
     Args:
@@ -39,7 +40,7 @@ def should_chunk(messages: list[dict], chunk_size: int = 25000) -> bool:
 
 
 def split_messages(
-    messages: list[dict],
+    messages: list[dict[str, Any]],
     chunk_size: int = 25000,
     overlap_messages: int = 2,
 ) -> list[ChunkInfo]:
@@ -60,7 +61,7 @@ def split_messages(
         raise ValueError("Messages list is empty")
 
     chunks: list[ChunkInfo] = []
-    current_messages: list[dict] = []
+    current_messages: list[dict[str, Any]] = []
     current_chars = 0
 
     for message in messages:

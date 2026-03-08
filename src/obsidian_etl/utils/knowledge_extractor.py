@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 from obsidian_etl.utils.ollama import OllamaError, call_ollama, parse_markdown_response
 from obsidian_etl.utils.ollama_config import get_ollama_config
@@ -65,7 +66,7 @@ def is_english_summary(text: str | None) -> bool:
     return total_chars > 0 and ascii_chars / total_chars > 0.7
 
 
-def translate_summary(summary: str, params: dict) -> tuple[str | None, str | None]:
+def translate_summary(summary: str, params: dict[str, Any]) -> tuple[str | None, str | None]:
     """Translate English summary to Japanese.
 
     Args:
@@ -105,8 +106,8 @@ def extract_knowledge(
     conversation_name: str | None,
     created_at: str | None,
     source_provider: str,
-    params: dict,
-) -> tuple[dict | None, str | None]:
+    params: dict[str, Any],
+) -> tuple[dict[str, Any] | None, str | None]:
     """Extract knowledge from conversation content using LLM.
 
     Args:

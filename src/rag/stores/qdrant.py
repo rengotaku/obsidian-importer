@@ -61,7 +61,7 @@ def get_document_store(config: RAGConfig | None = None) -> QdrantDocumentStore:
 # =============================================================================
 
 
-def get_collection_stats(store: QdrantDocumentStore) -> dict:
+def get_collection_stats(store: QdrantDocumentStore) -> dict[str, object]:
     """
     Get collection statistics from Qdrant store.
 

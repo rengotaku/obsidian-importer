@@ -142,10 +142,8 @@ max-line-length = 100  # match ruff
 
 [tool.mypy]
 python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
+strict = true
 ignore_missing_imports = true
-allow_untyped_defs = false
 namespace_packages = true
 explicit_package_bases = true
 exclude = [

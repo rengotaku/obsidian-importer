@@ -7,6 +7,7 @@ import json
 import logging
 import zipfile
 from collections.abc import Callable
+from typing import Any
 
 from obsidian_etl.utils.chunker import should_chunk, split_messages
 from obsidian_etl.utils.file_id import generate_file_id
@@ -20,8 +21,9 @@ MIN_CONTENT_LENGTH = 10  # Minimum content length after processing
 
 @timed_node
 def parse_claude_json(
-    conversations: list[dict], existing_output: dict[str, Callable] | None = None
-) -> dict[str, dict]:
+    conversations: list[dict[str, Any]],
+    existing_output: dict[str, Callable[..., Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Parse Claude export JSON conversations to ParsedItem format.
 
     Args:
@@ -152,7 +154,7 @@ def parse_claude_json(
     return result
 
 
-def _validate_structure(conv: dict) -> bool:
+def _validate_structure(conv: dict[str, Any]) -> bool:
     """Validate conversation has required fields.
 
     Args:
@@ -164,7 +166,7 @@ def _validate_structure(conv: dict) -> bool:
     return "uuid" in conv and "chat_messages" in conv
 
 
-def _format_conversation_content(messages: list[dict]) -> str:
+def _format_conversation_content(messages: list[dict[str, Any]]) -> str:
     """Format messages into conversation text.
 
     Args:
@@ -185,7 +187,7 @@ def _format_conversation_content(messages: list[dict]) -> str:
     return "\n\n".join(lines)
 
 
-def _fallback_conversation_name(messages: list[dict]) -> str:
+def _fallback_conversation_name(messages: list[dict[str, Any]]) -> str:
     """Generate fallback conversation name from first user message.
 
     Args:
@@ -206,9 +208,9 @@ def _fallback_conversation_name(messages: list[dict]) -> str:
 
 @timed_node
 def parse_claude_zip(
-    partitioned_input: dict[str, Callable],
-    existing_output: dict[str, Callable] | None = None,
-) -> dict[str, dict]:
+    partitioned_input: dict[str, Callable[..., Any]],
+    existing_output: dict[str, Callable[..., Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Parse Claude export ZIP to ParsedItem format.
 
     Extracts conversations.json from ZIP, parses Claude conversations,
@@ -271,7 +273,7 @@ def parse_claude_zip(
     return result
 
 
-def _extract_conversations_from_zip(zip_bytes: bytes) -> list[dict]:
+def _extract_conversations_from_zip(zip_bytes: bytes) -> list[dict[str, Any]]:
     """Extract conversations.json from Claude export ZIP.
 
     Args:

@@ -7,6 +7,7 @@ for managing Ollama parameters with function-specific overrides.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -39,7 +40,7 @@ VALID_FUNCTION_NAMES = {
 }
 
 
-def _validate_config(config: dict) -> dict:
+def _validate_config(config: dict[str, Any]) -> dict[str, Any]:
     """Validate and sanitize config values.
 
     Args:
@@ -69,7 +70,7 @@ def _validate_config(config: dict) -> dict:
     return config
 
 
-def get_ollama_config(params: dict, function_name: str) -> OllamaConfig:
+def get_ollama_config(params: dict[str, Any], function_name: str) -> OllamaConfig:
     """Get Ollama configuration for a specific function with hierarchical merging.
 
     This function retrieves and merges Ollama configuration parameters from multiple

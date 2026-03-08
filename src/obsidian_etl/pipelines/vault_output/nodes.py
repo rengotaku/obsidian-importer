@@ -13,6 +13,7 @@ import logging
 import os
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -58,9 +59,9 @@ def find_incremented_path(dst: Path) -> Path:
 
 
 def resolve_vault_destination(
-    organized_files: dict[str, Callable] | dict[str, str],
-    params: dict,
-) -> dict[str, dict]:
+    organized_files: dict[str, Callable[[], str]] | dict[str, str],
+    params: dict[str, Any],
+) -> dict[str, dict[str, str]]:
     """Resolve Vault destination paths for organized files.
 
     This function maps genre metadata to Vault directories and constructs
@@ -141,7 +142,7 @@ def resolve_vault_destination(
     return destinations
 
 
-def check_conflicts(destinations: dict[str, dict]) -> list[dict]:
+def check_conflicts(destinations: dict[str, dict[str, str]]) -> list[dict[str, Any]]:
     """Check for conflicts at destination paths.
 
     Detects existing files at destination paths that would be
@@ -185,9 +186,9 @@ def check_conflicts(destinations: dict[str, dict]) -> list[dict]:
 
 
 def log_preview_summary(
-    destinations: dict[str, dict],
-    conflicts: list[dict],
-) -> dict:
+    destinations: dict[str, dict[str, str]],
+    conflicts: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Generate and log preview summary.
 
     Logs destination distribution and conflicts to logger.info.
@@ -250,10 +251,10 @@ def log_preview_summary(
 
 
 def copy_to_vault(
-    organized_files: dict[str, Callable] | dict[str, str],
-    destinations: dict[str, dict],
-    params: dict,
-) -> list[dict]:
+    organized_files: dict[str, Callable[[], str]] | dict[str, str],
+    destinations: dict[str, dict[str, str]],
+    params: dict[str, Any],
+) -> list[dict[str, Any]]:
     """Copy organized files to Vault destinations.
 
     Handles file copying with conflict resolution strategies:
@@ -383,7 +384,7 @@ def copy_to_vault(
     return results
 
 
-def log_copy_summary(copy_results: list[dict]) -> dict:
+def log_copy_summary(copy_results: list[dict[str, Any]]) -> dict[str, int]:
     """Generate and log copy summary.
 
     Aggregates copy operation results and logs summary statistics.
