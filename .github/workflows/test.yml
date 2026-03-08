@@ -28,6 +28,9 @@ jobs:
 
       - run: make setup-dev
 
+      - name: Build test fixtures
+        run: make test-fixtures
+
       - name: Run tests
         run: make test
 
