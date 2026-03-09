@@ -1,0 +1,3 @@
+```json
+{"topic": "鼻の健康", "genre": "health"}
+```

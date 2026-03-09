@@ -1,0 +1,3 @@
+```json
+{"topic": "クラウド開発", "genre": "devops"}
+```
