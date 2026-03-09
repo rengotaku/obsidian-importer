@@ -1,0 +1,130 @@
+# Claude Code CLIとCloudflare環境構築
+
+## 要約
+Claude Code CLIの活用方法と、Cloudflare環境における開発、ステージング、本番環境の分離について解説。ローカル開発環境（SQLite, Redis）とCloudflare環境（D1, KV）の使い分け、wrangler.tomlの設定例、データベースアダプター層の導入など、具体的な構成とワークフローを提示。
+
+## タグ
+Claude Code, Cloudflare, D1, KV, Wrangler, SQLite, Redis, データベースアダプター
+
+## 内容
+
+### Claude Codeプレビュー機能の活用
+
+Claude Codeのプレビュー機能は、WebアプリケーションやAPIをリアルタイムで確認できる機能。
+
+- 開発・テスト環境での活用: Webアプリケーションの動作確認、フロントエンドの変更のプレビュー、APIエンドポイントの動作テスト
+- リモート開発での利便性: 複数デバイスからのアクセス、ポート転送不要、成果物共有・レビューの容易化
+
+### Cloudflare環境の分離戦略
+
+#### 基本的な環境分離戦略
+
+| 環境        | 説明                               |
+| ----------- | ---------------------------------- |
+| Development | ローカル開発、Claude Codeプレビュー機能 |
+| Production  | Cloudflare Pages/独自ドメインでデプロイ |
+
+#### D1/KVの環境分離
+
+D1とKVは、環境ごとに分離することを推奨。
+
+```bash
+# Development
+npx wrangler d1 create my-app-dev
+npx wrangler kv:namespace create "MY_KV_DEV"
+
+# Production
+npx wrangler d1 create my-app-prod
+npx wrangler kv:namespace create "MY_KV_PROD"
+```
+
+#### wrangler.toml設定例
+
+```toml
+[env.development]
+name = "my-app-dev"
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "my-app-dev"
+database_id = "your-dev-db-id"
+
+[[env.development.kv_namespaces]]
+binding = "MY_KV"
+id = "your-dev-kv-id"
+
+[env.production]
+name = "my-app-prod"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "my-app-prod"
+database_id = "your-prod-db-id"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "production-kv-id"
+```
+
+### 環境構成の整理
+
+| 環境        | データベース | キャッシュ |
+| ----------- | ----------- | ----------- |
+| Local Development | SQLite      | Redis      |
+| Staging環境   | D1          | KV Namespace |
+| Production環境 | D1          | KV Namespace |
+
+#### wrangler.toml設定例 (Local, Staging, Production)
+
+```toml
+name = "my-app-local"
+
+[env.staging]
+name = "my-app-staging"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "my-app-staging"
+database_id = "staging-db-id"
+
+[[env.staging.kv_namespaces]]
+binding = "CACHE"
+id = "staging-kv-id"
+
+[env.production]
+name = "my-app-production"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "my-app-production"
+database_id = "production-db-id"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "production-kv-id"
+```
+
+#### 開発ワークフロー
+
+```bash
+# ローカル開発
+npm run dev  # SQLite + Redis
+
+# Staging確認
+npx wrangler deploy --env staging
+
+# Production展開
+npx wrangler deploy --env production
+```
+
+### データベースアダプター層
+
+ローカル（SQLite/Redis）とCloudflare（D1/KV）の差異を吸収する抽象化層を導入することで、環境間の移行をスムーズに。
+
+```typescript
+interface DatabaseAdapter {
+  query(sql: string, params?: any[]): Promise<any>;
+  cache: {
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string): Promise<void>;
+  };
+}
+```
+
+Claude Codeでこの抽象化コードを生成させることが可能。

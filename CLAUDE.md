@@ -101,7 +101,7 @@ data/01_raw/*.zip → data/02_intermediate/parsed/*.json
 ## 開発・テスト
 
 ```bash
-make test            # 全テスト実行
+make test            # 全テスト実行（unit test）
 make coverage        # カバレッジ計測（≥80%）
 make lint            # コード品質チェック (ruff + pylint)
 make ruff            # ruff のみ実行
@@ -109,11 +109,25 @@ make pylint          # pylint のみ実行
 make kedro-viz       # DAG 可視化
 make test-e2e        # E2E テスト（ゴールデンファイル比較）
 make test-e2e-golden # ゴールデンファイル品質テスト
+make test-integration       # 統合テスト（モックモード、Ollama 不要）
+make test-golden-responses  # ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]
 ```
 
-**CI**: GitHub Actions で PR 作成時および main push 時に `make ruff` と `make pylint` を自動実行
+**CI**: GitHub Actions で PR 作成時および main push 時に `make test` + `make test-integration` + `make lint` を自動実行
 
-### ゴールデンファイル
+### テスト方針
+
+| テスト種別 | コマンド | 検証内容 | Ollama |
+|-----------|---------|---------|:------:|
+| Unit test | `make test` | 異常系（LLM失敗、圧縮率不足、空レスポンス、review振り分け等）| 不要 |
+| 統合テスト | `make test-integration` | 正常系 E2E（パイプライン全体がゴールデンレスポンスで動作）| 不要 |
+| E2E テスト | `make test-e2e` | 実LLMでの品質検証（ゴールデンファイル比較）| **必要** |
+
+- **正常系**: `test-integration` でゴールデンレスポンス（実LLM出力）を使い、パイプライン全体の結合を検証
+- **異常系**: `make test` の unit test で mock/patch ベースで網羅（圧縮率、LLMエラー、review振り分け等）
+- 統合テストは正常系のみ。異常系を統合テストに含める必要はない
+
+### ゴールデンファイル（E2E テスト用）
 
 **場所**: `tests/fixtures/golden/`
 
@@ -133,6 +147,20 @@ make test-e2e-golden # ゴールデンファイル品質テスト
 - 表形式データが Markdown テーブルで保持
 - コードブロックが保持
 - review フォルダに振り分けられない品質
+
+### ゴールデンレスポンス（統合テスト用）
+
+**場所**: `tests/fixtures/golden_responses/`
+
+**目的**: 統合テストで実LLM出力に基づくモックレスポンスを使用
+
+**仕組み**:
+1. `make test-golden-responses` で実際の Ollama を使いレスポンスをキャプチャ
+2. `{file_id}_{function_name}.txt` + `_index.json`（user_message ハッシュ → ファイル）として保存
+3. `ollama_mock.py` が `_index.json` でゴールデンファイルを検索、なければ固定レスポンスにフォールバック
+4. CI の統合テストでフォールバックタイトル不在を検証（ゴールデンが実際に使われていることを保証）
+
+**再生成が必要なタイミング**: LLM モデル変更、プロンプト変更、テストフィクスチャ変更時
 
 ### 終了コード
 

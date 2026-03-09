@@ -1,0 +1,3 @@
+```json
+{"topic": "ビジネスモデル", "genre": "business"}
+```

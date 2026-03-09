@@ -13,7 +13,7 @@ export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
 
 .PHONY: help setup setup-dev test coverage check lint ruff pylint mypy format format-check clean
 .PHONY: rag-index rag-search rag-ask rag-status
-.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean test-integration test-fixtures
+.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean test-integration test-fixtures test-golden-responses
 .PHONY: run kedro-run kedro-test kedro-viz
 .PHONY: organize-preview organize vault-preview vault-copy
 
@@ -41,6 +41,9 @@ help:
 	@echo "                 ゴールデンファイル品質テスト（圧縮率、構造保持）"
 	@echo "  test-e2e-update-golden"
 	@echo "                 ゴールデンファイル生成・更新（LLMモデル/プロンプト変更時）"
+	@echo "  test-golden-responses"
+	@echo "                 モック用ゴールデンLLMレスポンス生成（要Ollama）"
+	@echo "                 [MODEL=gemma3:12b]"
 	@echo "  test-clean     E2Eテスト用データ削除"
 	@echo ""
 	@echo "Testing:"
@@ -273,6 +276,28 @@ test-e2e-golden:
 	@echo "✅ Golden file tests passed"
 
 # ═══════════════════════════════════════════════════════════
+# Golden Response Generation (Requires Ollama)
+# ═══════════════════════════════════════════════════════════
+
+test-golden-responses:
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  Generate Golden LLM Responses for Mock Mode"
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "[1/2] Checking Ollama..."
+	@curl -sf http://localhost:11434/api/tags > /dev/null || (echo "❌ Ollama is not running. Start it first."; exit 1)
+	@echo "  ✅ Ollama is running"
+	@echo ""
+	@echo "[2/2] Generating golden responses..."
+	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) scripts/generate_golden_responses.py \
+		$(if $(MODEL),--model $(MODEL),)
+	@echo ""
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  ✅ Golden responses generated in tests/fixtures/golden_responses/"
+	@echo "  Remember to commit the generated files!"
+	@echo "═══════════════════════════════════════════════════════════"
+
+# ═══════════════════════════════════════════════════════════
 # Integration Test (Mock Mode - No Ollama Required)
 # ═══════════════════════════════════════════════════════════
 
@@ -313,6 +338,10 @@ test-integration: test-fixtures
 		|| grep -rl "mock: true" $(INTEGRATION_DATA_DIR)/07_model_output/notes/*.md > /dev/null 2>&1 \
 		|| (echo "FAIL Output files missing mock: true frontmatter"; exit 1)
 	@echo "  OK All output files contain mock: true frontmatter"
+	@if grep -rl "モックナレッジタイトル" $(INTEGRATION_DATA_DIR)/07_model_output/organized/ > /dev/null 2>&1; then \
+		echo "FAIL Golden responses not used (fallback title found)"; exit 1; \
+	fi
+	@echo "  OK Golden responses verified (no fallback titles)"
 	@echo ""
 	@echo "[4/4] Cleaning up..."
 	@rm -rf $(INTEGRATION_DATA_DIR)/01_raw $(INTEGRATION_DATA_DIR)/02_intermediate \
