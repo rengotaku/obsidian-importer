@@ -269,6 +269,7 @@ JSON形式で回答してください:
             warmup_timeout=config.warmup_timeout,
             temperature=config.temperature,
             num_predict=config.num_predict,
+            mock=config.mock,
         )
     except OllamaError as e:
         logger.warning(f"Failed to extract topic/genre (context_len={e.context_len}): {e.message}")
@@ -345,6 +346,7 @@ def _extract_topic_via_llm(content: str, params: dict[str, Any]) -> str | None:
             warmup_timeout=config.warmup_timeout,
             temperature=config.temperature,
             num_predict=config.num_predict,
+            mock=config.mock,
         )
     except OllamaError as e:
         logger.warning(f"Failed to extract topic (context_len={e.context_len}): {e.message}")
@@ -748,6 +750,7 @@ JSON配列形式で回答してください:
             warmup_timeout=config.warmup_timeout,
             temperature=config.temperature,
             num_predict=config.num_predict,
+            mock=config.mock,
         )
     except OllamaError as e:
         logger.warning(f"Failed to suggest genres (context_len={e.context_len}): {e.message}")

@@ -89,6 +89,7 @@ def translate_summary(summary: str, params: dict[str, Any]) -> tuple[str | None,
             timeout=config.timeout,
             warmup_timeout=config.warmup_timeout,
             temperature=config.temperature,
+            mock=config.mock,
         )
     except OllamaError as e:
         logger.warning(f"Failed to translate summary: {e}")
@@ -137,6 +138,7 @@ def extract_knowledge(
             timeout=config.timeout,
             warmup_timeout=config.warmup_timeout,
             temperature=config.temperature,
+            mock=config.mock,
         )
     except OllamaError as e:
         logger.warning(f"Failed to extract knowledge: {e}")

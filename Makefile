@@ -13,7 +13,7 @@ export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
 
 .PHONY: help setup setup-dev test coverage check lint ruff pylint mypy format format-check clean
 .PHONY: rag-index rag-search rag-ask rag-status
-.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean
+.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean test-integration test-fixtures
 .PHONY: run kedro-run kedro-test kedro-viz
 .PHONY: organize-preview organize vault-preview vault-copy
 
@@ -159,10 +159,21 @@ kedro-test:
 kedro-viz:
 	@cd $(BASE_DIR) && $(PYTHON) -m kedro viz
 
+# テストフィクスチャZIP生成（JSONからZIPを組み立て）
+CLAUDE_TEST_JSON := tests/fixtures/claude_test_conversations.json
+CLAUDE_TEST_ZIP := tests/fixtures/claude_test.zip
+
+test-fixtures: $(CLAUDE_TEST_ZIP)
+
+$(CLAUDE_TEST_ZIP): $(CLAUDE_TEST_JSON)
+	@echo "Building test fixture ZIP..."
+	@cd tests/fixtures && $(PYTHON) -c "import zipfile, pathlib; z=zipfile.ZipFile('claude_test.zip','w',zipfile.ZIP_DEFLATED); z.write('claude_test_conversations.json','conversations.json'); z.close()"
+	@echo "  OK $(CLAUDE_TEST_ZIP)"
+
 # Kedro E2Eテスト（テスト用フィクスチャで LLM 処理まで実行）
 # 前提: Ollama が起動していること
 TEST_DATA_DIR := data/test
-test-e2e: test-clean
+test-e2e: test-fixtures test-clean
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Kedro E2E Test (golden file comparison)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -208,7 +219,7 @@ test-e2e: test-clean
 	@echo "═══════════════════════════════════════════════════════════"
 
 # ゴールデンファイル生成・更新
-test-e2e-update-golden:
+test-e2e-update-golden: test-fixtures
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Update Golden Files (E2E test reference)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -260,6 +271,57 @@ test-e2e-golden:
 	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m unittest tests.test_e2e_golden -v
 	@echo ""
 	@echo "✅ Golden file tests passed"
+
+# ═══════════════════════════════════════════════════════════
+# Integration Test (Mock Mode - No Ollama Required)
+# ═══════════════════════════════════════════════════════════
+
+INTEGRATION_DATA_DIR := test-data
+
+test-integration: test-fixtures
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  Integration Test (Mock Mode - No Ollama Required)"
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "[1/4] Preparing test data..."
+	@rm -rf $(INTEGRATION_DATA_DIR)/01_raw $(INTEGRATION_DATA_DIR)/02_intermediate \
+		$(INTEGRATION_DATA_DIR)/03_primary $(INTEGRATION_DATA_DIR)/07_model_output
+	@mkdir -p $(INTEGRATION_DATA_DIR)/01_raw/claude
+	@mkdir -p $(INTEGRATION_DATA_DIR)/02_intermediate/parsed
+	@mkdir -p $(INTEGRATION_DATA_DIR)/03_primary/transformed_knowledge
+	@mkdir -p $(INTEGRATION_DATA_DIR)/03_primary/transformed_metadata
+	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/classified
+	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/topic_extracted
+	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/normalized
+	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/cleaned
+	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/notes
+	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/organized
+	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/review
+	@echo '{}' > $(INTEGRATION_DATA_DIR)/03_primary/transformed_knowledge/.placeholder.json
+	@echo '{}' > $(INTEGRATION_DATA_DIR)/07_model_output/classified/.placeholder.json
+	@cp tests/fixtures/claude_test.zip $(INTEGRATION_DATA_DIR)/01_raw/claude/
+	@echo "  OK Test data ready"
+	@echo ""
+	@echo "[2/4] Running pipeline in mock mode..."
+	@cd $(BASE_DIR) && KEDRO_ENV=integration $(PYTHON) -m kedro run --env=integration
+	@echo ""
+	@echo "[3/4] Validating output..."
+	@test $$(find $(INTEGRATION_DATA_DIR)/07_model_output/organized -name "*.md" 2>/dev/null | wc -l) -gt 0 \
+		|| (echo "FAIL No output files generated"; exit 1)
+	@echo "  OK Output files generated: $$(find $(INTEGRATION_DATA_DIR)/07_model_output/organized -name "*.md" | wc -l) files"
+	@grep -l "mock: true" $(INTEGRATION_DATA_DIR)/07_model_output/organized/*.md > /dev/null 2>&1 \
+		|| grep -rl "mock: true" $(INTEGRATION_DATA_DIR)/07_model_output/notes/*.md > /dev/null 2>&1 \
+		|| (echo "FAIL Output files missing mock: true frontmatter"; exit 1)
+	@echo "  OK All output files contain mock: true frontmatter"
+	@echo ""
+	@echo "[4/4] Cleaning up..."
+	@rm -rf $(INTEGRATION_DATA_DIR)/01_raw $(INTEGRATION_DATA_DIR)/02_intermediate \
+		$(INTEGRATION_DATA_DIR)/03_primary $(INTEGRATION_DATA_DIR)/07_model_output
+	@echo "  OK Test data cleaned"
+	@echo ""
+	@echo "═══════════════════════════════════════════════════════════"
+	@echo "  OK Integration test passed (mock mode, no Ollama)"
+	@echo "═══════════════════════════════════════════════════════════"
 
 # ═══════════════════════════════════════════════════════════
 # Testing

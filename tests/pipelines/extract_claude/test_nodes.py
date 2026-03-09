@@ -996,9 +996,9 @@ class TestParseClaudeZipFixture(unittest.TestCase):
         self.partitioned_input = _make_claude_partitioned_input({"claude_test.zip": self.zip_bytes})
 
     def test_parse_claude_zip_output_count(self):
-        """claude_test.zip から 3 件の parsed_items が生成されること。"""
+        """claude_test.zip から 4 件の parsed_items が生成されること。"""
         result = self.parse_claude_zip(self.partitioned_input)
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), 4)
 
     def test_parse_claude_zip_all_have_required_fields(self):
         """全 parsed_items に必須フィールドが存在すること。"""
@@ -1025,12 +1025,12 @@ class TestParseClaudeZipFixture(unittest.TestCase):
         for item in result.values():
             self.assertEqual(item["source_provider"], "claude")
 
-    def test_parse_claude_zip_all_have_4_messages(self):
-        """各会話が 4 メッセージを持つこと（テストフィクスチャの仕様）。"""
+    def test_parse_claude_zip_all_have_messages(self):
+        """各会話がメッセージを持つこと（最低2メッセージ）。"""
         result = self.parse_claude_zip(self.partitioned_input)
 
         for item in result.values():
-            self.assertEqual(len(item["messages"]), 4)
+            self.assertGreaterEqual(len(item["messages"]), 2)
 
     def test_parse_claude_zip_content_not_empty(self):
         """全アイテムの content が空でないこと。"""

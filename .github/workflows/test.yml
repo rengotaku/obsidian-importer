@@ -28,8 +28,14 @@ jobs:
 
       - run: make setup-dev
 
+      - name: Build test fixtures
+        run: make test-fixtures
+
       - name: Run tests
         run: make test
+
+      - name: Run integration tests (mock mode, no Ollama)
+        run: make test-integration
 
       - name: Run tests with coverage
         run: |

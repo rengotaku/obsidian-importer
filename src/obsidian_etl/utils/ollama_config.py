@@ -20,6 +20,7 @@ class OllamaConfig:
     warmup_timeout: int = 30  # Model warmup timeout
     temperature: float = 0.2
     num_predict: int = -1  # -1 = unlimited
+    mock: bool = False
 
 
 # Hardcoded defaults - lowest priority in merge hierarchy
@@ -37,6 +38,8 @@ VALID_FUNCTION_NAMES = {
     "extract_knowledge",
     "translate_summary",
     "extract_topic",
+    "extract_topic_and_genre",
+    "suggest_genres",
 }
 
 
@@ -167,4 +170,7 @@ def get_ollama_config(params: dict[str, Any], function_name: str) -> OllamaConfi
     # Validate configuration
     validated = _validate_config(merged)
 
-    return OllamaConfig(**validated)
+    # Read mock flag separately (not part of the merged config dict)
+    mock = params.get("ollama", {}).get("mock", False)
+
+    return OllamaConfig(**validated, mock=mock)

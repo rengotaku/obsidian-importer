@@ -226,6 +226,13 @@ data/
 data*/
 logs/
 
+# Integration test data (keep structure, ignore runtime files)
+!test-data/
+test-data/**/*.json
+test-data/**/*.md
+test-data/**/*.zip
+!test-data/**/.gitkeep
+
 # Kedro local config
 conf/local/
 
@@ -241,6 +248,9 @@ node_modules/
 
 # Backup files
 *.py.backup**
+
+# Generated test fixture ZIP (built from JSON by make test-fixtures)
+tests/fixtures/claude_test.zip
 
 # Obsidian workspace (changes frequently)
 **/.obsidian/workspace.json

@@ -13,6 +13,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from obsidian_etl.utils.ollama_mock import mock_call_ollama, mock_check_ollama_connection
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,17 +62,22 @@ class OllamaWarmupError(Exception):
 _warmed_models: set[str] = set()
 
 
-def _do_warmup(model: str, base_url: str, timeout: int = 30) -> None:
+def _do_warmup(model: str, base_url: str, timeout: int = 30, mock: bool = False) -> None:
     """Simple ping to load model into memory.
 
     Args:
         model: Model name to warm up.
         base_url: Ollama server base URL.
         timeout: Warmup timeout in seconds.
+        mock: If True, skip warmup entirely.
 
     Raises:
         OllamaWarmupError: If warmup fails for any reason.
     """
+    if mock:
+        logger.info(f"[MOCK] Skipping model warmup: {model}")
+        return
+
     import time
 
     start_time = time.time()
@@ -109,6 +116,7 @@ def call_ollama(
     temperature: float = 0.2,
     timeout: int = 120,
     warmup_timeout: int = 30,
+    mock: bool = False,
 ) -> str:
     """Call Ollama API.
 
@@ -122,6 +130,7 @@ def call_ollama(
         temperature: Sampling temperature.
         timeout: Request timeout in seconds.
         warmup_timeout: Model warmup timeout in seconds.
+        mock: If True, return mock response without any network calls.
 
     Returns:
         Response content string.
@@ -132,6 +141,10 @@ def call_ollama(
         OllamaConnectionError: Failed to connect to Ollama server.
         OllamaWarmupError: Model warmup failed.
     """
+    # Mock mode - return mock response without any network calls
+    if mock:
+        return mock_call_ollama(system_prompt, user_message)
+
     # Warmup model on first use
     if model not in _warmed_models:
         _do_warmup(model, base_url, warmup_timeout)  # Raises OllamaWarmupError on failure
@@ -180,15 +193,21 @@ def call_ollama(
         raise OllamaConnectionError(f"API error: {e}", context_len=context_len) from e
 
 
-def check_ollama_connection(base_url: str = "http://localhost:11434") -> tuple[bool, str | None]:
+def check_ollama_connection(
+    base_url: str = "http://localhost:11434", mock: bool = False
+) -> tuple[bool, str | None]:
     """Check connection to Ollama server.
 
     Args:
         base_url: Ollama server base URL.
+        mock: If True, return mock connection result without network calls.
 
     Returns:
         Tuple of (connected, error_message).
     """
+    if mock:
+        return mock_check_ollama_connection()
+
     try:
         req = urllib.request.Request(f"{base_url}/api/tags", method="GET")
         with urllib.request.urlopen(req, timeout=5) as resp:
