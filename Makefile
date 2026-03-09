@@ -338,6 +338,10 @@ test-integration: test-fixtures
 		|| grep -rl "mock: true" $(INTEGRATION_DATA_DIR)/07_model_output/notes/*.md > /dev/null 2>&1 \
 		|| (echo "FAIL Output files missing mock: true frontmatter"; exit 1)
 	@echo "  OK All output files contain mock: true frontmatter"
+	@if grep -rl "モックナレッジタイトル" $(INTEGRATION_DATA_DIR)/07_model_output/organized/ > /dev/null 2>&1; then \
+		echo "FAIL Golden responses not used (fallback title found)"; exit 1; \
+	fi
+	@echo "  OK Golden responses verified (no fallback titles)"
 	@echo ""
 	@echo "[4/4] Cleaning up..."
 	@rm -rf $(INTEGRATION_DATA_DIR)/01_raw $(INTEGRATION_DATA_DIR)/02_intermediate \
