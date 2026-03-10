@@ -85,6 +85,21 @@ help:
 	@echo "  make test                                               # 全テスト実行"
 	@echo "═══════════════════════════════════════════════════════════"
 
+# CLAUDE.md 用コマンドリファレンス出力
+help-claude:
+	@echo '```bash'
+	@echo 'make setup               # Python venv作成 + 依存関係インストール'
+	@echo 'make test                # 全テスト実行（unit test）'
+	@echo 'make coverage            # カバレッジ計測（≥80%）'
+	@echo 'make lint                # コード品質チェック (ruff + pylint + mypy + format-check)'
+	@echo 'make test-integration    # 統合テスト（モックモード、Ollama 不要）'
+	@echo 'make test-e2e            # E2E テスト（ゴールデンファイル比較、要 Ollama）'
+	@echo 'make test-e2e-golden     # ゴールデンファイル品質テスト'
+	@echo 'make test-golden-responses  # ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]'
+	@echo 'make run                 # パイプライン実行 [PIPELINE=import_claude|import_openai|import_github] [LIMIT=N]'
+	@echo 'make kedro-viz           # DAG 可視化'
+	@echo '```'
+
 # ═══════════════════════════════════════════════════════════
 # Setup
 # ═══════════════════════════════════════════════════════════
