@@ -34,6 +34,7 @@ obsidian-importer/
 ├── src/rag/                   # RAG 機能
 ├── conf/                      # Kedro 設定
 ├── tests/                     # テスト
+├── specs/                     # 設計・仕様ドキュメント
 └── Makefile                   # ビルド・テスト
 ```
 
@@ -181,10 +182,10 @@ make test-golden-responses  # ゴールデンレスポンス再生成（要 Olla
 |---------|------|
 | 言語 | Python 3.11+（標準ライブラリ中心） |
 | パイプライン | Kedro 1.1.1 + kedro-datasets |
-| LLM | Ollama API（ローカル） |
+| LLM | Ollama API（ローカル）、デフォルトモデル: `gpt-oss-swallow:20b` |
 | データ形式 | Markdown, JSON, JSONL |
 | テスト | unittest（標準ライブラリ） |
-| Lint | ruff |
+| Lint | ruff + pylint |
 
 ---
 
@@ -250,27 +251,24 @@ file_id: abc123
 
 ## Claude 作業時のルール
 
+### 基本ルール
+
 - 各 Vault の CLAUDE.md があればそちらを優先
 - ファイル移動前に既存構造を確認
 - 日本語ファイル名可
 - 大量ファイル処理時は確認を求める
-- **Python 実行は venv 使用**: `.venv/bin/python` または `make`
 
-## Active Technologies
-- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+ (052-improve-summary-quality)
-- ファイルシステム (Markdown, JSON, JSONL)、Kedro PartitionedDataset (052-improve-summary-quality)
-- Python 3.11+ (既存プロジェクト準拠) + PyYAML (既存依存関係) (057-frontmatter-file-organizer)
-- ファイルシステム（Markdown ファイル） (057-frontmatter-file-organizer)
-- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+ (058-refine-genre-classification)
-- ファイルシステム (PartitionedDataset) (058-refine-genre-classification)
-- ファイルシステム (PartitionedDataset for input, 直接ファイルコピー for output) (059-organize-vault-output)
-- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, requests (Ollama API) (060-dynamic-genre-config)
-- ファイルシステム (YAML, Markdown, JSON) (060-dynamic-genre-config)
-- Python 3.11+ + ruff (既存), pylint (新規追加) (061-github-actions-lint)
-- Python 3.11+（Python 3.13 compatible） + Kedro 1.1.1, kedro-datasets, requests (urllib) (062-warmup-fail-stop)
-- Python 3.11+ (pyproject.toml で `requires-python = ">=3.11"`) + Kedro 1.1.1, kedro-datasets>=9.0, PyYAML>=6.0, requests>=2.28 (063-ollama-exception-refactor)
-- ファイルシステム (Markdown, JSON, JSONL) - Kedro PartitionedDataset (063-ollama-exception-refactor)
-- ファイルシステム (Kedro PartitionedDataset) (064-data-layer-separation)
+### コマンド実行
 
-## Recent Changes
-- 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+
+- **`make` ターゲットを使う**: テスト・lint・パイプライン実行は直接コマンド（`pytest`, `ruff`, `kedro run`）ではなく `make` 経由で実行する（環境変数・venv が自動設定される）
+- Python を直接実行する場合は `.venv/bin/python` を使用
+
+### LLM モデル・設定
+
+- **モデル名の正**: `conf/base/parameters.yml` の `ollama.defaults.model` が唯一の正。コード内やドキュメントからモデル名を推測しない
+- **LLM 設定は用途別に分離**: 新しい `call_ollama` 呼び出しを追加する場合、`parameters.yml` に専用の設定キーを追加する。既存キーを別用途で流用しない（`num_predict` 不足による出力切断の原因になる）
+
+### 変更時の影響範囲
+
+- **パイプライン横断チェック**: パイプラインや設定を変更したら、同じパターンが他パイプライン（`src/**/pipeline.py`）にないか検索する
+- **ゴールデンレスポンス再生成**: プロンプト変更・テストフィクスチャ変更・モデル変更時は `make test-golden-responses` で再生成が必要
