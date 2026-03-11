@@ -11,6 +11,7 @@ mkdir -p data/07_model_output/notes data/07_model_output/organized
 mkdir -p logs
 
 echo "Setting up local config..."
+mkdir -p conf/local
 if [ ! -f conf/local/parameters_organize.yml ]; then
     cp conf/base/parameters_organize.local.yml.example conf/local/parameters_organize.yml
     echo "  Created conf/local/parameters_organize.yml"
