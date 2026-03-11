@@ -34,6 +34,7 @@ obsidian-importer/
 ├── src/rag/                   # RAG 機能
 ├── conf/                      # Kedro 設定
 ├── tests/                     # テスト
+├── specs/                     # 設計・仕様ドキュメント
 └── Makefile                   # ビルド・テスト
 ```
 
@@ -78,16 +79,6 @@ data/01_raw/*.zip → data/02_intermediate/parsed/*.json
                   → data/07_model_output/organized/*.md
 ```
 
-### 主要機能
-
-| 機能 | 説明 |
-|------|------|
-| Ollama 知識抽出 | LLM でタイトル、要約、タグを自動抽出 |
-| 冪等 Resume | 再実行で完了済みスキップ（PartitionedDataset） |
-| file_id 追跡 | SHA256 ハッシュで重複検出 |
-| チャンク分割 | 25000文字超を複数ファイルに分割 |
-| 圧縮率検証 | 過度な圧縮を検出し `review/` に出力 |
-
 ### プロバイダー別処理
 
 **Claude**: ZIP → `conversations.json` 抽出 → UUID で会話識別
@@ -101,17 +92,19 @@ data/01_raw/*.zip → data/02_intermediate/parsed/*.json
 ## 開発・テスト
 
 ```bash
-make test            # 全テスト実行（unit test）
-make coverage        # カバレッジ計測（≥80%）
-make lint            # コード品質チェック (ruff + pylint)
-make ruff            # ruff のみ実行
-make pylint          # pylint のみ実行
-make kedro-viz       # DAG 可視化
-make test-e2e        # E2E テスト（ゴールデンファイル比較）
-make test-e2e-golden # ゴールデンファイル品質テスト
-make test-integration       # 統合テスト（モックモード、Ollama 不要）
+make setup               # Python venv作成 + 依存関係インストール
+make test                # 全テスト実行（unit test）
+make coverage            # カバレッジ計測（≥80%）
+make lint                # コード品質チェック (ruff + pylint + mypy + format-check)
+make test-integration    # 統合テスト（モックモード、Ollama 不要）
+make test-e2e            # E2E テスト（ゴールデンファイル比較、要 Ollama）
+make test-e2e-golden     # ゴールデンファイル品質テスト
 make test-golden-responses  # ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]
+make run                 # パイプライン実行 [PIPELINE=import_claude|import_openai|import_github] [LIMIT=N]
+make kedro-viz           # DAG 可視化
 ```
+
+> 最新のコマンド一覧は `make help-claude` で Markdown 形式出力可能
 
 **CI**: GitHub Actions で PR 作成時および main push 時に `make test` + `make test-integration` + `make lint` を自動実行
 
@@ -127,40 +120,10 @@ make test-golden-responses  # ゴールデンレスポンス再生成（要 Olla
 - **異常系**: `make test` の unit test で mock/patch ベースで網羅（圧縮率、LLMエラー、review振り分け等）
 - 統合テストは正常系のみ。異常系を統合テストに含める必要はない
 
-### ゴールデンファイル（E2E テスト用）
+### テストフィクスチャ
 
-**場所**: `tests/fixtures/golden/`
-
-**目的**: LLM まとめ品質の継続的検証
-
-**ファイル数**: 10 件（カテゴリ別選定）
-
-**カテゴリ**:
-- 技術系（小・中・大）
-- ビジネス系（小・中）
-- 日常系（小）
-- 表形式データ（中・大）
-- コード含む（小・中）
-
-**品質基準**:
-- 圧縮率しきい値を満たす（10-20%、サイズ依存）
-- 表形式データが Markdown テーブルで保持
-- コードブロックが保持
-- review フォルダに振り分けられない品質
-
-### ゴールデンレスポンス（統合テスト用）
-
-**場所**: `tests/fixtures/golden_responses/`
-
-**目的**: 統合テストで実LLM出力に基づくモックレスポンスを使用
-
-**仕組み**:
-1. `make test-golden-responses` で実際の Ollama を使いレスポンスをキャプチャ
-2. `{file_id}_{function_name}.txt` + `_index.json`（user_message ハッシュ → ファイル）として保存
-3. `ollama_mock.py` が `_index.json` でゴールデンファイルを検索、なければ固定レスポンスにフォールバック
-4. CI の統合テストでフォールバックタイトル不在を検証（ゴールデンが実際に使われていることを保証）
-
-**再生成が必要なタイミング**: LLM モデル変更、プロンプト変更、テストフィクスチャ変更時
+- **ゴールデンファイル**（E2E用）: `tests/fixtures/golden/` — LLM まとめ品質の検証
+- **ゴールデンレスポンス**（統合テスト用）: `tests/fixtures/golden_responses/` — 実 LLM 出力のモックレスポンス
 
 ### 終了コード
 
@@ -181,10 +144,10 @@ make test-golden-responses  # ゴールデンレスポンス再生成（要 Olla
 |---------|------|
 | 言語 | Python 3.11+（標準ライブラリ中心） |
 | パイプライン | Kedro 1.1.1 + kedro-datasets |
-| LLM | Ollama API（ローカル） |
+| LLM | Ollama API（ローカル）、デフォルトモデル: `gpt-oss-swallow:20b` |
 | データ形式 | Markdown, JSON, JSONL |
 | テスト | unittest（標準ライブラリ） |
-| Lint | ruff |
+| Lint | ruff + pylint |
 
 ---
 
@@ -220,19 +183,7 @@ file_id: abc123
 
 ## ジャンル別振り分け
 
-| ジャンル | 内容 |
-|---------|------|
-| AI | AI/ML、生成AI、機械学習、Claude、ChatGPT |
-| DevOps | インフラ、クラウド、CI/CD、Docker、Kubernetes |
-| エンジニア | プログラミング、アーキテクチャ、API、データベース |
-| 経済 | 経済ニュース、投資、金融、市場 |
-| ビジネス | ビジネス、マネジメント、リーダーシップ、マーケティング |
-| 健康 | 健康、医療、フィットネス、運動 |
-| 子育て | 子育て、育児、教育、キッザニア |
-| 旅行 | 旅行、観光、ホテル |
-| ライフスタイル | 家電、DIY、住居、生活用品 |
-| 日常 | 日記、趣味、雑記 |
-| その他 | 上記に該当しないコンテンツ |
+ジャンル定義は `conf/base/genre_mapping.yml` を参照。
 
 ---
 
@@ -250,27 +201,17 @@ file_id: abc123
 
 ## Claude 作業時のルール
 
-- 各 Vault の CLAUDE.md があればそちらを優先
-- ファイル移動前に既存構造を確認
-- 日本語ファイル名可
-- 大量ファイル処理時は確認を求める
-- **Python 実行は venv 使用**: `.venv/bin/python` または `make`
+### コマンド実行
 
-## Active Technologies
-- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+ (052-improve-summary-quality)
-- ファイルシステム (Markdown, JSON, JSONL)、Kedro PartitionedDataset (052-improve-summary-quality)
-- Python 3.11+ (既存プロジェクト準拠) + PyYAML (既存依存関係) (057-frontmatter-file-organizer)
-- ファイルシステム（Markdown ファイル） (057-frontmatter-file-organizer)
-- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+ (058-refine-genre-classification)
-- ファイルシステム (PartitionedDataset) (058-refine-genre-classification)
-- ファイルシステム (PartitionedDataset for input, 直接ファイルコピー for output) (059-organize-vault-output)
-- Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, PyYAML 6.0+, requests (Ollama API) (060-dynamic-genre-config)
-- ファイルシステム (YAML, Markdown, JSON) (060-dynamic-genre-config)
-- Python 3.11+ + ruff (既存), pylint (新規追加) (061-github-actions-lint)
-- Python 3.11+（Python 3.13 compatible） + Kedro 1.1.1, kedro-datasets, requests (urllib) (062-warmup-fail-stop)
-- Python 3.11+ (pyproject.toml で `requires-python = ">=3.11"`) + Kedro 1.1.1, kedro-datasets>=9.0, PyYAML>=6.0, requests>=2.28 (063-ollama-exception-refactor)
-- ファイルシステム (Markdown, JSON, JSONL) - Kedro PartitionedDataset (063-ollama-exception-refactor)
-- ファイルシステム (Kedro PartitionedDataset) (064-data-layer-separation)
+- **`make` ターゲットを使う**: テスト・lint・パイプライン実行は直接コマンド（`pytest`, `ruff`, `kedro run`）ではなく `make` 経由で実行する（環境変数・venv が自動設定される）
+- Python を直接実行する場合は `.venv/bin/python` を使用
 
-## Recent Changes
-- 052-improve-summary-quality: Added Python 3.11+ (Python 3.13 compatible) + Kedro 1.1.1, kedro-datasets, requests (Ollama API), PyYAML 6.0+
+### LLM モデル・設定
+
+- **モデル名の正**: `conf/base/parameters.yml` の `ollama.defaults.model` が唯一の正。コード内やドキュメントからモデル名を推測しない
+- **LLM 設定は用途別に分離**: 新しい `call_ollama` 呼び出しを追加する場合、`parameters.yml` に専用の設定キーを追加する。既存キーを別用途で流用しない（`num_predict` 不足による出力切断の原因になる）
+
+### 変更時の影響範囲
+
+- **パイプライン横断チェック**: パイプラインや設定を変更したら、同じパターンが他パイプライン（`src/**/pipeline.py`）にないか検索する
+- **ゴールデンレスポンス再生成**: プロンプト変更・テストフィクスチャ変更・モデル変更時は `make test-golden-responses` で再生成が必要
