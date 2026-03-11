@@ -91,7 +91,20 @@ data/01_raw/*.zip → data/02_intermediate/parsed/*.json
 
 ## 開発・テスト
 
-コマンド一覧は `make help-claude` で確認（CLAUDE.md 貼り付け用 Markdown 形式で出力）。
+```bash
+make setup               # Python venv作成 + 依存関係インストール
+make test                # 全テスト実行（unit test）
+make coverage            # カバレッジ計測（≥80%）
+make lint                # コード品質チェック (ruff + pylint + mypy + format-check)
+make test-integration    # 統合テスト（モックモード、Ollama 不要）
+make test-e2e            # E2E テスト（ゴールデンファイル比較、要 Ollama）
+make test-e2e-golden     # ゴールデンファイル品質テスト
+make test-golden-responses  # ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]
+make run                 # パイプライン実行 [PIPELINE=import_claude|import_openai|import_github] [LIMIT=N]
+make kedro-viz           # DAG 可視化
+```
+
+> 最新のコマンド一覧は `make help-claude` で Markdown 形式出力可能
 
 **CI**: GitHub Actions で PR 作成時および main push 時に `make test` + `make test-integration` + `make lint` を自動実行
 

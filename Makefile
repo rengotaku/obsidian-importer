@@ -85,27 +85,17 @@ help:
 	@echo "  make test                                               # 全テスト実行"
 	@echo "═══════════════════════════════════════════════════════════"
 
-# CLAUDE.md 用コマンドリファレンス出力
+# CLAUDE.md 用コマンドリファレンス出力（##@ コメントから自動生成）
 help-claude:
 	@echo '```bash'
-	@echo 'make setup               # Python venv作成 + 依存関係インストール'
-	@echo 'make test                # 全テスト実行（unit test）'
-	@echo 'make coverage            # カバレッジ計測（≥80%）'
-	@echo 'make lint                # コード品質チェック (ruff + pylint + mypy + format-check)'
-	@echo 'make test-integration    # 統合テスト（モックモード、Ollama 不要）'
-	@echo 'make test-e2e            # E2E テスト（ゴールデンファイル比較、要 Ollama）'
-	@echo 'make test-e2e-golden     # ゴールデンファイル品質テスト'
-	@echo 'make test-golden-responses  # ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]'
-	@echo 'make run                 # パイプライン実行 [PIPELINE=import_claude|import_openai|import_github] [LIMIT=N]'
-	@echo 'make kedro-viz           # DAG 可視化'
+	@grep -E '^[a-zA-Z0-9_-]+:.*##@' $(MAKEFILE_LIST) | sed 's/\(^[a-zA-Z0-9_-]*\):.*##@ \(.*\)/\1\t\2/' | awk -F'\t' '{printf "make %-24s# %s\n", $$1, $$2}'
 	@echo '```'
 
 # ═══════════════════════════════════════════════════════════
 # Setup
 # ═══════════════════════════════════════════════════════════
 
-# Python venv作成 + 依存関係インストール
-setup: $(VENV_DIR)/bin/activate
+setup: $(VENV_DIR)/bin/activate ##@ Python venv作成 + 依存関係インストール
 	@echo "Creating Kedro data directories..."
 	@mkdir -p data/01_raw/claude data/01_raw/openai data/01_raw/github
 	@mkdir -p data/02_intermediate/parsed
@@ -153,7 +143,7 @@ setup-dev: setup
 #   make run LIMIT=10                     # 処理件数制限
 #
 # 前提条件チェック（Ollama起動、入力ファイル存在）は Python hooks で実行
-run: kedro-run
+run: kedro-run ##@ パイプライン実行 [PIPELINE=import_claude|import_openai|import_github] [LIMIT=N]
 
 kedro-run:
 	@cd $(BASE_DIR) && $(PYTHON) -m kedro run \
@@ -173,8 +163,7 @@ kedro-test:
 	@echo ""
 	@echo "✅ Kedro tests passed"
 
-# Kedro DAG 可視化
-kedro-viz:
+kedro-viz: ##@ DAG 可視化
 	@cd $(BASE_DIR) && $(PYTHON) -m kedro viz
 
 # テストフィクスチャZIP生成（JSONからZIPを組み立て）
@@ -191,7 +180,7 @@ $(CLAUDE_TEST_ZIP): $(CLAUDE_TEST_JSON)
 # Kedro E2Eテスト（テスト用フィクスチャで LLM 処理まで実行）
 # 前提: Ollama が起動していること
 TEST_DATA_DIR := data/test
-test-e2e: test-fixtures test-clean
+test-e2e: test-fixtures test-clean ##@ E2E テスト（ゴールデンファイル比較、要 Ollama）
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Kedro E2E Test (golden file comparison)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -281,8 +270,7 @@ test-e2e-update-golden: test-fixtures
 	@echo "  Remember to commit the updated golden files!"
 	@echo "═══════════════════════════════════════════════════════════"
 
-# ゴールデンファイル品質テスト
-test-e2e-golden:
+test-e2e-golden: ##@ ゴールデンファイル品質テスト
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Golden File Quality Tests"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -294,7 +282,7 @@ test-e2e-golden:
 # Golden Response Generation (Requires Ollama)
 # ═══════════════════════════════════════════════════════════
 
-test-golden-responses:
+test-golden-responses: ##@ ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Generate Golden LLM Responses for Mock Mode"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -318,7 +306,7 @@ test-golden-responses:
 
 INTEGRATION_DATA_DIR := test-data
 
-test-integration: test-fixtures
+test-integration: test-fixtures ##@ 統合テスト（モックモード、Ollama 不要）
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Integration Test (Mock Mode - No Ollama Required)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -371,8 +359,7 @@ test-integration: test-fixtures
 # Testing
 # ═══════════════════════════════════════════════════════════
 
-# 全テスト実行（Kedro パイプライン）
-test:
+test: ##@ 全テスト実行（unit test）
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Kedro Pipeline Tests"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -380,8 +367,7 @@ test:
 	@echo ""
 	@echo "✅ All tests passed"
 
-# テストカバレッジ計測
-coverage:
+coverage: ##@ カバレッジ計測（≥80%）
 	@echo "═══════════════════════════════════════════════════════════"
 	@echo "  Test Coverage (Target: ≥80%)"
 	@echo "═══════════════════════════════════════════════════════════"
@@ -426,8 +412,7 @@ format:
 	@$(VENV_DIR)/bin/ruff format src/ tests/
 	@echo "✅ ruff format applied"
 
-# コード品質チェック (ruff + pylint + mypy + format-check, fail-fast)
-lint: ruff pylint mypy format-check
+lint: ruff pylint mypy format-check ##@ コード品質チェック (ruff + pylint + mypy + format-check)
 	@echo "✅ All linters passed"
 
 # E2Eテスト用データディレクトリ削除
