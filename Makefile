@@ -1,5 +1,11 @@
 # Obsidian Knowledge Base - ETL Pipeline Makefile
 # ═══════════════════════════════════════════════════════════
+#
+# ⚠️  新しいターゲットを追加したら必ず ##@ コメントを付けること！
+#     例: my-target: deps ##@ ターゲットの説明
+#     `make help-claude` で CLAUDE.md 用コマンド一覧が自動生成される。
+#     ##@ がないターゲットは一覧に含まれない。
+#
 
 BASE_DIR := $(shell pwd)
 VENV_DIR := $(BASE_DIR)/.venv
