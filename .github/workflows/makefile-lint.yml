@@ -1,0 +1,70 @@
+name: Makefile Lint
+
+on:
+  schedule:
+    # 毎週月曜 09:00 JST (00:00 UTC)
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  checkmake:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Install checkmake
+        run: go install github.com/checkmake/checkmake/cmd/checkmake@latest
+
+      - name: Run checkmake
+        id: checkmake
+        run: |
+          OUTPUT=$(checkmake Makefile 2>&1) && echo "passed=true" >> "$GITHUB_OUTPUT" || {
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+            {
+              echo 'report<<EOF'
+              echo "$OUTPUT"
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
+      - name: Create issue on failure
+        if: steps.checkmake.outputs.passed == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create checkmake --description "Makefile lint violations" --color "D93F0B" 2>/dev/null || true
+          EXISTING=$(gh issue list --label "checkmake" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "Issue #$EXISTING already open, skipping."
+            exit 0
+          fi
+          gh issue create \
+            --title "fix: checkmake violations detected in Makefile" \
+            --label "checkmake" \
+            --body "$(cat <<'BODY'
+          ## checkmake violations
+
+          定期チェック (GitHub Actions) で Makefile の lint 違反が検出されました。
+
+          ```
+          ${{ steps.checkmake.outputs.report }}
+          ```
+
+          ### 対応
+
+          1. `checkmake Makefile` でローカル確認
+          2. 違反を修正
+          3. `checkmake Makefile` が 0 violations になることを確認
+
+          ---
+          *This issue was automatically created by the [Makefile Lint](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow.*
+          BODY
+          )"
