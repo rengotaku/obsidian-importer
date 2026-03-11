@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BASE_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 PYTHON="${BASE_DIR}/.venv/bin/python"
 TEST_DATA_DIR="${BASE_DIR}/data/test"
 FIXTURE_ZIP="${BASE_DIR}/tests/fixtures/claude_test.zip"
 GOLDEN_DIR="${BASE_DIR}/tests/fixtures/golden"
 
 echo "Preparing test data..."
-"${BASE_DIR}/scripts/prepare-test-dirs.sh" "$TEST_DATA_DIR" "$FIXTURE_ZIP"
+"${BASE_DIR}/scripts/makefile/prepare-test-dirs.sh" "$TEST_DATA_DIR" "$FIXTURE_ZIP"
 
 echo "Running full pipeline..."
 cd "$BASE_DIR" && KEDRO_ENV=test "$PYTHON" -m kedro run --env=test

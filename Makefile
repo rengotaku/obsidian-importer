@@ -31,10 +31,10 @@ help-claude: ##@ CLAUDE.md 用コマンドリファレンス出力
 # ── Setup ──────────────────────────────────────────────────
 
 setup: $(VENV_DIR)/bin/activate ##@ Python venv作成 + 依存関係インストール
-	@bash scripts/setup-project.sh $(VENV_DIR)
+	@bash scripts/makefile/setup-project.sh $(VENV_DIR)
 
 $(VENV_DIR)/bin/activate:
-	@bash scripts/setup-venv.sh $(VENV_DIR)
+	@bash scripts/makefile/setup-venv.sh $(VENV_DIR)
 
 setup-dev: setup ##@ 開発用依存関係インストール
 	$(VENV_DIR)/bin/pip install -e ".[dev]"
@@ -68,10 +68,10 @@ _check-ollama:
 TEST_DATA_DIR := data/test
 
 test-e2e: test-fixtures test-clean _check-ollama ##@ E2E テスト（ゴールデンファイル比較、要 Ollama）
-	@bash scripts/test-e2e.sh
+	@bash scripts/makefile/test-e2e.sh
 
 test-e2e-update-golden: test-fixtures _check-ollama ##@ ゴールデンファイル生成・更新（要 Ollama）
-	@bash scripts/test-e2e-update-golden.sh
+	@bash scripts/makefile/test-e2e-update-golden.sh
 
 test-e2e-golden: ##@ ゴールデンファイル品質テスト
 	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m unittest tests.test_e2e_golden -v
@@ -82,7 +82,7 @@ test-golden-responses: _check-ollama ##@ ゴールデンレスポンス再生成
 INTEGRATION_DATA_DIR := test-data
 
 test-integration: test-fixtures ##@ 統合テスト（モックモード、Ollama 不要）
-	@bash scripts/test-integration.sh
+	@bash scripts/makefile/test-integration.sh
 
 # ── Unit Test / Coverage ──────────────────────────────────
 
