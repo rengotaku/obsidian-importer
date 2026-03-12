@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 import urllib.error
 import urllib.request
 from typing import Any
@@ -77,8 +78,6 @@ def _do_warmup(model: str, base_url: str, timeout: int = 30, mock: bool = False)
     if mock:
         logger.info(f"[MOCK] Skipping model warmup: {model}")
         return
-
-    import time
 
     start_time = time.time()
     try:
@@ -166,6 +165,7 @@ def call_ollama(
 
     try:
         data = json.dumps(payload).encode("utf-8")
+        req_bytes = len(data)
         req = urllib.request.Request(
             url,
             data=data,
@@ -173,11 +173,39 @@ def call_ollama(
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
+            resp_data = resp.read()
+            res_bytes = len(resp_data)
+            result = json.loads(resp_data.decode("utf-8"))
             content: str = result.get("message", {}).get("content", "")
             # Raise exception for empty response (caller logs it)
             if not content.strip():
                 raise OllamaEmptyResponseError("Empty response from LLM", context_len=context_len)
+
+            # Extract stats from Ollama response
+            prompt_tokens = result.get("prompt_eval_count", 0)
+            output_tokens = result.get("eval_count", 0)
+            done_reason = result.get("done_reason", "")
+            total_ns = result.get("total_duration", 0)
+            load_ns = result.get("load_duration", 0)
+            total_sec = total_ns / 1e9
+            load_sec = load_ns / 1e9
+
+            # Build log message
+            log_parts = [
+                f"prompt_tokens={prompt_tokens}",
+                f"output_tokens={output_tokens}",
+                f"done={done_reason}",
+                f"req={req_bytes} bytes",
+                f"res={res_bytes} bytes",
+                f"model={model}",
+            ]
+            # Include load time if >10% of total
+            if total_ns > 0 and load_ns / total_ns > 0.1:
+                time_part = f"({total_sec:.1f}s, load={load_sec:.1f}s)"
+            else:
+                time_part = f"({total_sec:.1f}s)"
+
+            logger.info(f"LLM stats: {', '.join(log_parts)} {time_part}")
             return content
     except urllib.error.URLError as e:
         raise OllamaConnectionError(f"Connection error: {e.reason}", context_len=context_len) from e
