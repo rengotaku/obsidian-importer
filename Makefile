@@ -1,178 +1,56 @@
 # Obsidian Knowledge Base - ETL Pipeline Makefile
-# ═══════════════════════════════════════════════════════════
 #
-# ⚠️  新しいターゲットを追加したら必ず ##@ コメントを付けること！
-#     例: my-target: deps ##@ ターゲットの説明
-#     `make help-claude` で CLAUDE.md 用コマンド一覧が自動生成される。
-#     ##@ がないターゲットは一覧に含まれない。
-#
+# 新しいターゲットを追加したら必ず ##@ コメントを付けること！
+# 例: my-target: deps ##@ ターゲットの説明
+# `make help-claude` で CLAUDE.md 用コマンド一覧が自動生成される。
 
 BASE_DIR := $(shell pwd)
 VENV_DIR := $(BASE_DIR)/.venv
 PYTHON := $(VENV_DIR)/bin/python
-SESSION_DIR := $(BASE_DIR)/.staging/@session
-LLM_EXPORTS_DIR := $(BASE_DIR)/.staging/@llm_exports
-COMMA := ,
 
-# Kedro logging configuration (enables [file_id] prefix in logs)
 export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
 
-.PHONY: help setup setup-dev test coverage check lint ruff pylint mypy format format-check clean
-.PHONY: rag-index rag-search rag-ask rag-status
-.PHONY: test-e2e test-e2e-update-golden test-e2e-golden test-clean test-integration test-fixtures test-golden-responses
-.PHONY: run kedro-run kedro-test kedro-viz
-.PHONY: organize-preview organize vault-preview vault-copy
+.PHONY: all help help-claude setup setup-dev run kedro-run kedro-viz
+.PHONY: test test-fixtures test-e2e test-e2e-update-golden test-e2e-golden
+.PHONY: test-golden-responses test-integration test-clean
+.PHONY: coverage check lint ruff pylint mypy format format-check clean
+.PHONY: rag-index rag-search rag-ask rag-status vault-preview vault-copy
+.PHONY: _check-ollama
 
-# ═══════════════════════════════════════════════════════════
-# Help
-# ═══════════════════════════════════════════════════════════
+all: help
 
-help:
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Obsidian ETL Pipeline"
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "Setup:"
-	@echo "  setup          Python venv作成 + 依存関係インストール"
-	@echo "  setup-dev      開発用依存関係インストール (ruff, pylint, mypy, coverage)"
-	@echo ""
-	@echo "Kedro Pipeline:"
-	@echo "  run            パイプライン実行 (= kedro-run)"
-	@echo "                 [PIPELINE=import_claude|import_openai|import_github]"
-	@echo "                 [LIMIT=N] [FROM_NODES=...] [TO_NODES=...]"
-	@echo "  kedro-test     Kedro テスト実行"
-	@echo "  kedro-viz      DAG 可視化"
-	@echo "  test-e2e       E2Eテスト（ゴールデンファイル比較、閾値80%）"
-	@echo "  test-e2e-golden"
-	@echo "                 ゴールデンファイル品質テスト（圧縮率、構造保持）"
-	@echo "  test-e2e-update-golden"
-	@echo "                 ゴールデンファイル生成・更新（LLMモデル/プロンプト変更時）"
-	@echo "  test-golden-responses"
-	@echo "                 モック用ゴールデンLLMレスポンス生成（要Ollama）"
-	@echo "                 [MODEL=gemma3:12b]"
-	@echo "  test-clean     E2Eテスト用データ削除"
-	@echo ""
-	@echo "Testing:"
-	@echo "  test           全テスト実行"
-	@echo "  coverage       テストカバレッジ計測 (≥80%)"
-	@echo "  check          Python構文チェック"
-	@echo "  lint           コード品質チェック (ruff + pylint + mypy + format-check)"
-	@echo "  ruff           ruff リンター実行"
-	@echo "  pylint         pylint リンター実行"
-	@echo "  mypy           mypy 型チェック実行"
-	@echo "  format-check   ruff フォーマットチェック"
-	@echo "  format         ruff フォーマット適用"
-	@echo ""
-	@echo "File Organization:"
-	@echo "  organize-preview"
-	@echo "                 プレビュー: ファイル振り分け計画を表示"
-	@echo "                 [INPUT=/path/to/input] [OUTPUT=/path/to/output]"
-	@echo "  organize       ファイル振り分けを実行"
-	@echo "                 [INPUT=/path/to/input] [OUTPUT=/path/to/output]"
-	@echo ""
-	@echo "Vault Output (Kedro pipelines):"
-	@echo "  vault-preview  Vault出力先プレビュー（dry-run）"
-	@echo "  vault-copy     Vaultへファイルコピー [MODE=skip|overwrite|increment]"
-	@echo ""
-	@echo "RAG (Semantic Search):"
-	@echo "  rag-index      インデックス作成 [VAULT=xxx]"
-	@echo "  rag-search     セマンティック検索 QUERY=\"...\" [VAULT=xxx]"
-	@echo "  rag-ask        Q&A QUERY=\"...\" [VAULT=xxx]"
-	@echo "  rag-status     インデックス状態"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make setup                                              # 初回セットアップ"
-	@echo "  make run                                                # Claude インポート (デフォルト)"
-	@echo "  make run LIMIT=10                                       # 10件のみ処理"
-	@echo "  make run PIPELINE=import_openai                         # ChatGPT インポート"
-	@echo "  make run PIPELINE=import_github GITHUB_URL=\"...\"        # GitHub Jekyll インポート"
-	@echo "  make kedro-test                                         # Kedro テスト実行"
-	@echo "  make kedro-viz                                          # DAG 可視化"
-	@echo "  make test                                               # 全テスト実行"
-	@echo "═══════════════════════════════════════════════════════════"
+help: ##@ コマンド一覧を表示
+	@echo "Obsidian ETL Pipeline"
+	@grep -E '^[a-zA-Z0-9_-]+:.*##@' $(MAKEFILE_LIST) | sed 's/\(^[a-zA-Z0-9_-]*\):.*##@ \(.*\)/\1\t\2/' | awk -F'\t' '{printf "  %-24s %s\n", $$1, $$2}'
 
-# CLAUDE.md 用コマンドリファレンス出力（##@ コメントから自動生成）
-help-claude:
+help-claude: ##@ CLAUDE.md 用コマンドリファレンス出力
 	@echo '```bash'
 	@grep -E '^[a-zA-Z0-9_-]+:.*##@' $(MAKEFILE_LIST) | sed 's/\(^[a-zA-Z0-9_-]*\):.*##@ \(.*\)/\1\t\2/' | awk -F'\t' '{printf "make %-24s# %s\n", $$1, $$2}'
 	@echo '```'
 
-# ═══════════════════════════════════════════════════════════
-# Setup
-# ═══════════════════════════════════════════════════════════
+# ── Setup ──────────────────────────────────────────────────
 
 setup: $(VENV_DIR)/bin/activate ##@ Python venv作成 + 依存関係インストール
-	@echo "Creating Kedro data directories..."
-	@mkdir -p data/01_raw/claude data/01_raw/openai data/01_raw/github
-	@mkdir -p data/02_intermediate/parsed
-	@mkdir -p data/03_primary/transformed data/03_primary/transformed_knowledge
-	@mkdir -p data/07_model_output/notes data/07_model_output/organized
-	@mkdir -p logs
-	@echo ""
-	@echo "Setting up local config..."
-	@if [ ! -f conf/local/parameters_organize.yml ]; then \
-		cp conf/base/parameters_organize.local.yml.example conf/local/parameters_organize.yml; \
-		echo "  ✅ Created conf/local/parameters_organize.yml"; \
-		echo "  📝 Edit vault_base_path in this file to match your environment"; \
-	else \
-		echo "  ⏭️  conf/local/parameters_organize.yml already exists"; \
-	fi
-	@echo ""
-	@echo "✅ Setup complete. venv: $(VENV_DIR)"
+	@bash scripts/makefile/setup-project.sh $(VENV_DIR)
 
 $(VENV_DIR)/bin/activate:
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Setting up Python virtual environment"
-	@echo "═══════════════════════════════════════════════════════════"
-	python3 -m venv $(VENV_DIR)
-	$(VENV_DIR)/bin/pip install --upgrade pip
-	$(VENV_DIR)/bin/pip install "PyYAML>=6.0" "tenacity>=8.0" "requests>=2.28"
-	@echo ""
-	@echo "✅ venv created at $(VENV_DIR)"
-	@echo "   To activate manually: source $(VENV_DIR)/bin/activate"
+	@bash scripts/makefile/setup-venv.sh $(VENV_DIR)
 
-# 開発用依存関係インストール
-setup-dev: setup
-	@echo "Installing dev dependencies..."
+setup-dev: setup ##@ 開発用依存関係インストール
 	$(VENV_DIR)/bin/pip install -e ".[dev]"
-	@echo "✅ Dev dependencies installed"
 
-# ═══════════════════════════════════════════════════════════
-# Kedro Pipeline Commands
-# ═══════════════════════════════════════════════════════════
+# ── Kedro Pipeline ────────────────────────────────────────
 
-# Kedro パイプライン実行（エイリアス: make run）
-# Usage:
-#   make run                              # デフォルト (Claude インポート)
-#   make run PIPELINE=import_openai       # ChatGPT インポート
-#   make run PIPELINE=import_github GITHUB_URL="..."  # GitHub Jekyll インポート
-#   make run LIMIT=10                     # 処理件数制限
-#
-# 前提条件チェック（Ollama起動、入力ファイル存在）は Python hooks で実行
 run: kedro-run ##@ パイプライン実行 [PIPELINE=import_claude|import_openai|import_github] [LIMIT=N]
 
 kedro-run:
-	@cd $(BASE_DIR) && $(PYTHON) -m kedro run \
-		$(if $(PIPELINE),--pipeline $(PIPELINE),) \
-		$(if $(GITHUB_URL),--params github_url=$(GITHUB_URL),) \
-		$(if $(LIMIT),--params import.limit=$(LIMIT),) \
-		$(if $(PARAMS),--params $(PARAMS),) \
-		$(if $(FROM_NODES),--from-nodes $(FROM_NODES),) \
-		$(if $(TO_NODES),--to-nodes $(TO_NODES),)
-
-# Kedro テスト実行（新パッケージ）
-kedro-test:
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Kedro Pipeline Tests"
-	@echo "═══════════════════════════════════════════════════════════"
-	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m unittest discover -s tests -t . -v 2>&1
-	@echo ""
-	@echo "✅ Kedro tests passed"
+	@cd $(BASE_DIR) && $(PYTHON) -m kedro run $(if $(PIPELINE),--pipeline $(PIPELINE),) $(if $(GITHUB_URL),--params github_url=$(GITHUB_URL),) $(if $(LIMIT),--params import.limit=$(LIMIT),) $(if $(PARAMS),--params $(PARAMS),) $(if $(FROM_NODES),--from-nodes $(FROM_NODES),) $(if $(TO_NODES),--to-nodes $(TO_NODES),)
 
 kedro-viz: ##@ DAG 可視化
 	@cd $(BASE_DIR) && $(PYTHON) -m kedro viz
 
-# テストフィクスチャZIP生成（JSONからZIPを組み立て）
+# ── Test Fixtures ─────────────────────────────────────────
+
 CLAUDE_TEST_JSON := tests/fixtures/claude_test_conversations.json
 CLAUDE_TEST_ZIP := tests/fixtures/claude_test.zip
 
@@ -180,313 +58,92 @@ test-fixtures: $(CLAUDE_TEST_ZIP)
 
 $(CLAUDE_TEST_ZIP): $(CLAUDE_TEST_JSON)
 	@echo "Building test fixture ZIP..."
-	@cd tests/fixtures && $(PYTHON) -c "import zipfile, pathlib; z=zipfile.ZipFile('claude_test.zip','w',zipfile.ZIP_DEFLATED); z.write('claude_test_conversations.json','conversations.json'); z.close()"
-	@echo "  OK $(CLAUDE_TEST_ZIP)"
+	@cd tests/fixtures && $(PYTHON) -c "import zipfile; z=zipfile.ZipFile('claude_test.zip','w',zipfile.ZIP_DEFLATED); z.write('claude_test_conversations.json','conversations.json'); z.close()"
 
-# Kedro E2Eテスト（テスト用フィクスチャで LLM 処理まで実行）
-# 前提: Ollama が起動していること
+# ── E2E / Integration Tests ──────────────────────────────
+
+_check-ollama:
+	@curl -sf http://localhost:11434/api/tags > /dev/null || (echo "Ollama is not running. Start it first."; exit 1)
+
 TEST_DATA_DIR := data/test
-test-e2e: test-fixtures test-clean ##@ E2E テスト（ゴールデンファイル比較、要 Ollama）
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Kedro E2E Test (golden file comparison)"
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "[1/5] Checking Ollama..."
-	@curl -sf http://localhost:11434/api/tags > /dev/null || (echo "❌ Ollama is not running. Start it first."; exit 1)
-	@echo "  ✅ Ollama is running"
-	@echo ""
-	@echo "[2/5] Preparing test data..."
-	@rm -rf $(TEST_DATA_DIR)
-	@mkdir -p $(TEST_DATA_DIR)/01_raw/claude
-	@mkdir -p $(TEST_DATA_DIR)/02_intermediate/parsed
-	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_knowledge
-	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_metadata
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/classified
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/topic_extracted
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/normalized
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/cleaned
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/notes
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/organized
-	@echo '{}' > $(TEST_DATA_DIR)/03_primary/transformed_knowledge/.placeholder.json
-	@echo '{}' > $(TEST_DATA_DIR)/07_model_output/classified/.placeholder.json
-	@cp tests/fixtures/claude_test.zip $(TEST_DATA_DIR)/01_raw/claude/
-	@echo "  ✅ Test data ready"
-	@echo ""
-	@echo "[3/5] Running full pipeline..."
-	@cd $(BASE_DIR) && KEDRO_ENV=test $(PYTHON) -m kedro run --env=test
-	@echo ""
-	@echo "[4/5] Comparing with golden files..."
-	@test -d tests/fixtures/golden && test $$(ls -1 tests/fixtures/golden/*.md 2>/dev/null | wc -l) -gt 0 \
-		|| (echo "❌ Golden files not found. Run 'make test-e2e-update-golden' first."; rm -rf $(TEST_DATA_DIR); exit 1)
-	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m tests.e2e.golden_comparator \
-		--actual $(TEST_DATA_DIR)/07_model_output/organized \
-		--golden tests/fixtures/golden \
-		--threshold 0.8
-	@echo ""
-	@echo "[5/5] Cleaning up..."
-	@rm -rf $(TEST_DATA_DIR)
-	@echo "  ✅ Test data cleaned"
-	@echo ""
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  ✅ E2E test complete (golden file comparison passed)"
-	@echo "═══════════════════════════════════════════════════════════"
 
-# ゴールデンファイル生成・更新
-test-e2e-update-golden: test-fixtures
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Update Golden Files (E2E test reference)"
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "[1/5] Checking Ollama..."
-	@curl -sf http://localhost:11434/api/tags > /dev/null || (echo "❌ Ollama is not running. Start it first."; exit 1)
-	@echo "  ✅ Ollama is running"
-	@echo ""
-	@echo "[2/5] Preparing test data..."
-	@rm -rf $(TEST_DATA_DIR)
-	@mkdir -p $(TEST_DATA_DIR)/01_raw/claude
-	@mkdir -p $(TEST_DATA_DIR)/02_intermediate/parsed
-	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_knowledge
-	@mkdir -p $(TEST_DATA_DIR)/03_primary/transformed_metadata
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/classified
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/topic_extracted
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/normalized
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/cleaned
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/notes
-	@mkdir -p $(TEST_DATA_DIR)/07_model_output/organized
-	@echo '{}' > $(TEST_DATA_DIR)/03_primary/transformed_knowledge/.placeholder.json
-	@echo '{}' > $(TEST_DATA_DIR)/07_model_output/classified/.placeholder.json
-	@cp tests/fixtures/claude_test.zip $(TEST_DATA_DIR)/01_raw/claude/
-	@echo "  ✅ Test data ready"
-	@echo ""
-	@echo "[3/5] Running full pipeline (including Organize)..."
-	@cd $(BASE_DIR) && KEDRO_ENV=test $(PYTHON) -m kedro run --env=test
-	@echo ""
-	@echo "[4/5] Copying output to golden directory..."
-	@rm -rf tests/fixtures/golden
-	@mkdir -p tests/fixtures/golden
-	@cp $(TEST_DATA_DIR)/07_model_output/organized/*.md tests/fixtures/golden/
-	@echo "  ✅ Golden files updated: $$(ls -1 tests/fixtures/golden/*.md | wc -l) files"
-	@echo ""
-	@echo "[5/5] Cleaning up..."
-	@rm -rf $(TEST_DATA_DIR)
-	@echo "  ✅ Test data cleaned"
-	@echo ""
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  ✅ Golden files updated in tests/fixtures/golden/"
-	@echo "  Remember to commit the updated golden files!"
-	@echo "═══════════════════════════════════════════════════════════"
+test-e2e: test-fixtures test-clean _check-ollama ##@ E2E テスト（ゴールデンファイル比較、要 Ollama）
+	@bash scripts/makefile/test-e2e.sh
+
+test-e2e-update-golden: test-fixtures _check-ollama ##@ ゴールデンファイル生成・更新（要 Ollama）
+	@bash scripts/makefile/test-e2e-update-golden.sh
 
 test-e2e-golden: ##@ ゴールデンファイル品質テスト
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Golden File Quality Tests"
-	@echo "═══════════════════════════════════════════════════════════"
 	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m unittest tests.test_e2e_golden -v
-	@echo ""
-	@echo "✅ Golden file tests passed"
 
-# ═══════════════════════════════════════════════════════════
-# Golden Response Generation (Requires Ollama)
-# ═══════════════════════════════════════════════════════════
-
-test-golden-responses: ##@ ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Generate Golden LLM Responses for Mock Mode"
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "[1/2] Checking Ollama..."
-	@curl -sf http://localhost:11434/api/tags > /dev/null || (echo "❌ Ollama is not running. Start it first."; exit 1)
-	@echo "  ✅ Ollama is running"
-	@echo ""
-	@echo "[2/2] Generating golden responses..."
-	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) scripts/generate_golden_responses.py \
-		$(if $(MODEL),--model $(MODEL),)
-	@echo ""
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  ✅ Golden responses generated in tests/fixtures/golden_responses/"
-	@echo "  Remember to commit the generated files!"
-	@echo "═══════════════════════════════════════════════════════════"
-
-# ═══════════════════════════════════════════════════════════
-# Integration Test (Mock Mode - No Ollama Required)
-# ═══════════════════════════════════════════════════════════
+test-golden-responses: _check-ollama ##@ ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]
+	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) scripts/generate_golden_responses.py $(if $(MODEL),--model $(MODEL),)
 
 INTEGRATION_DATA_DIR := test-data
 
 test-integration: test-fixtures ##@ 統合テスト（モックモード、Ollama 不要）
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Integration Test (Mock Mode - No Ollama Required)"
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo ""
-	@echo "[1/4] Preparing test data..."
-	@rm -rf $(INTEGRATION_DATA_DIR)/01_raw $(INTEGRATION_DATA_DIR)/02_intermediate \
-		$(INTEGRATION_DATA_DIR)/03_primary $(INTEGRATION_DATA_DIR)/07_model_output
-	@mkdir -p $(INTEGRATION_DATA_DIR)/01_raw/claude
-	@mkdir -p $(INTEGRATION_DATA_DIR)/02_intermediate/parsed
-	@mkdir -p $(INTEGRATION_DATA_DIR)/03_primary/transformed_knowledge
-	@mkdir -p $(INTEGRATION_DATA_DIR)/03_primary/transformed_metadata
-	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/classified
-	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/topic_extracted
-	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/normalized
-	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/cleaned
-	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/notes
-	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/organized
-	@mkdir -p $(INTEGRATION_DATA_DIR)/07_model_output/review
-	@echo '{}' > $(INTEGRATION_DATA_DIR)/03_primary/transformed_knowledge/.placeholder.json
-	@echo '{}' > $(INTEGRATION_DATA_DIR)/07_model_output/classified/.placeholder.json
-	@cp tests/fixtures/claude_test.zip $(INTEGRATION_DATA_DIR)/01_raw/claude/
-	@echo "  OK Test data ready"
-	@echo ""
-	@echo "[2/4] Running pipeline in mock mode..."
-	@cd $(BASE_DIR) && KEDRO_ENV=integration $(PYTHON) -m kedro run --env=integration
-	@echo ""
-	@echo "[3/4] Validating output..."
-	@test $$(find $(INTEGRATION_DATA_DIR)/07_model_output/organized -name "*.md" 2>/dev/null | wc -l) -gt 0 \
-		|| (echo "FAIL No output files generated"; exit 1)
-	@echo "  OK Output files generated: $$(find $(INTEGRATION_DATA_DIR)/07_model_output/organized -name "*.md" | wc -l) files"
-	@grep -l "mock: true" $(INTEGRATION_DATA_DIR)/07_model_output/organized/*.md > /dev/null 2>&1 \
-		|| grep -rl "mock: true" $(INTEGRATION_DATA_DIR)/07_model_output/notes/*.md > /dev/null 2>&1 \
-		|| (echo "FAIL Output files missing mock: true frontmatter"; exit 1)
-	@echo "  OK All output files contain mock: true frontmatter"
-	@if grep -rl "モックナレッジタイトル" $(INTEGRATION_DATA_DIR)/07_model_output/organized/ > /dev/null 2>&1; then \
-		echo "FAIL Golden responses not used (fallback title found)"; exit 1; \
-	fi
-	@echo "  OK Golden responses verified (no fallback titles)"
-	@echo ""
-	@echo "[4/4] Cleaning up..."
-	@rm -rf $(INTEGRATION_DATA_DIR)/01_raw $(INTEGRATION_DATA_DIR)/02_intermediate \
-		$(INTEGRATION_DATA_DIR)/03_primary $(INTEGRATION_DATA_DIR)/07_model_output
-	@echo "  OK Test data cleaned"
-	@echo ""
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  OK Integration test passed (mock mode, no Ollama)"
-	@echo "═══════════════════════════════════════════════════════════"
+	@bash scripts/makefile/test-integration.sh
 
-# ═══════════════════════════════════════════════════════════
-# Testing
-# ═══════════════════════════════════════════════════════════
+# ── Unit Test / Coverage ──────────────────────────────────
 
 test: ##@ 全テスト実行（unit test）
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Kedro Pipeline Tests"
-	@echo "═══════════════════════════════════════════════════════════"
 	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m unittest discover -s tests -t . -v 2>&1
-	@echo ""
-	@echo "✅ All tests passed"
 
 coverage: ##@ カバレッジ計測（≥80%）
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Test Coverage (Target: ≥80%)"
-	@echo "═══════════════════════════════════════════════════════════"
 	@cd $(BASE_DIR) && PYTHONPATH=$(BASE_DIR)/src $(PYTHON) -m coverage run --source=src/obsidian_etl -m unittest discover -s tests -t . 2>&1
 	@cd $(BASE_DIR) && $(PYTHON) -m coverage report --fail-under=80
-	@echo ""
-	@echo "✅ Coverage ≥80% achieved"
 
-# Python構文チェック
-check:
-	@echo "Python構文チェック..."
+# ── Linting ───────────────────────────────────────────────
+
+check: ##@ Python 構文チェック
 	@find $(BASE_DIR)/src/obsidian_etl -name "*.py" -exec $(PYTHON) -m py_compile {} \;
-	@echo "✅ 構文エラーなし"
 
-# コード品質チェック (ruff only)
-ruff:
-	@echo "Running ruff..."
+ruff: ##@ ruff リンター実行
 	@$(VENV_DIR)/bin/ruff check src/obsidian_etl/
-	@echo "✅ ruff passed"
 
-# コード品質チェック (pylint only)
-pylint:
-	@echo "Running pylint..."
+pylint: ##@ pylint リンター実行
 	@$(VENV_DIR)/bin/pylint src/obsidian_etl/
-	@echo "✅ pylint passed"
 
-# 型チェック (mypy)
-mypy:
-	@echo "Running mypy..."
+mypy: ##@ mypy 型チェック実行
 	@cd $(BASE_DIR)/src && $(VENV_DIR)/bin/mypy obsidian_etl/ rag/
-	@echo "✅ mypy passed"
 
-# フォーマットチェック (ruff format --check)
-format-check:
-	@echo "Running ruff format check..."
+format-check: ##@ ruff フォーマットチェック
 	@$(VENV_DIR)/bin/ruff format --check src/ tests/
-	@echo "✅ ruff format check passed"
 
-# フォーマット適用 (ruff format)
-format:
-	@echo "Running ruff format..."
+format: ##@ ruff フォーマット適用
 	@$(VENV_DIR)/bin/ruff format src/ tests/
-	@echo "✅ ruff format applied"
 
 lint: ruff pylint mypy format-check ##@ コード品質チェック (ruff + pylint + mypy + format-check)
-	@echo "✅ All linters passed"
 
-# E2Eテスト用データディレクトリ削除
+# ── Cleanup ───────────────────────────────────────────────
+
 test-clean:
-	@echo "Cleaning test data directory..."
 	@rm -rf $(TEST_DATA_DIR)
-	@echo "✅ $(TEST_DATA_DIR) cleaned"
 
-# 一時ファイル削除
-clean:
-	@echo "一時ファイル削除..."
+clean: ##@ 一時ファイル削除
 	@find $(BASE_DIR)/src -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@rm -rf $(BASE_DIR)/.staging/@test
-	@echo "✅ 完了"
 
-# ═══════════════════════════════════════════════════════════
-# RAG (Semantic Search)
-# ═══════════════════════════════════════════════════════════
+# ── RAG ───────────────────────────────────────────────────
 
-rag-index:
-	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli index \
-		$(if $(ACTION),--dry-run,) \
-		$(if $(VAULT),--vault $(VAULT),)
+rag-index: ##@ RAG インデックス作成 [VAULT=xxx]
+	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli index $(if $(ACTION),--dry-run,) $(if $(VAULT),--vault $(VAULT),)
 
-rag-search:
-ifndef QUERY
-	@echo "Error: QUERY is required"
-	@echo "  Example: make rag-search QUERY=\"Kubernetes\""
-	@exit 1
-endif
-	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli search "$(QUERY)" \
-		$(if $(VAULT),--vault $(VAULT),) \
-		$(if $(TAG),--tag $(TAG),) \
-		$(if $(TOP_K),--top-k $(TOP_K),)
+rag-search: ##@ セマンティック検索 QUERY="..." [VAULT=xxx]
+	@test -n "$(QUERY)" || (echo "Error: QUERY is required. Example: make rag-search QUERY=\"Kubernetes\""; exit 1)
+	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli search "$(QUERY)" $(if $(VAULT),--vault $(VAULT),) $(if $(TAG),--tag $(TAG),) $(if $(TOP_K),--top-k $(TOP_K),)
 
-rag-ask:
-ifndef QUERY
-	@echo "Error: QUERY is required"
-	@echo "  Example: make rag-ask QUERY=\"Kubernetes Pod とは？\""
-	@exit 1
-endif
-	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli ask "$(QUERY)" \
-		$(if $(VAULT),--vault $(VAULT),) \
-		$(if $(TAG),--tag $(TAG),)
+rag-ask: ##@ Q&A QUERY="..." [VAULT=xxx]
+	@test -n "$(QUERY)" || (echo "Error: QUERY is required. Example: make rag-ask QUERY=\"Kubernetes Pod とは？\""; exit 1)
+	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli ask "$(QUERY)" $(if $(VAULT),--vault $(VAULT),) $(if $(TAG),--tag $(TAG),)
 
-rag-status:
-	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli status \
-		$(if $(FORMAT),--format $(FORMAT),)
+rag-status: ##@ RAG インデックス状態表示
+	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli status $(if $(FORMAT),--format $(FORMAT),)
 
-# ═══════════════════════════════════════════════════════════
-# Vault Output (Kedro pipelines)
-# ═══════════════════════════════════════════════════════════
+# ── Vault Output ──────────────────────────────────────────
 
-# Preview vault output destinations (dry-run, no file copy)
-# Usage: make vault-preview
-vault-preview:
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Vault Output Preview"
-	@echo "═══════════════════════════════════════════════════════════"
+vault-preview: ##@ Vault 出力先プレビュー（dry-run）
 	@cd $(BASE_DIR) && kedro run --pipeline=organize_preview
 
-# Copy organized files to Obsidian Vaults
-# Usage: make vault-copy
-#        make vault-copy MODE=overwrite  # 上書きモード
-#        make vault-copy MODE=increment  # 別名保存モード
-vault-copy:
-	@echo "═══════════════════════════════════════════════════════════"
-	@echo "  Vault Output Copy"
-	@echo "═══════════════════════════════════════════════════════════"
-	@cd $(BASE_DIR) && kedro run --pipeline=organize_to_vault \
-		$(if $(MODE),--params='{"organize.conflict_handling": "$(MODE)"}',)
+vault-copy: ##@ Vault へファイルコピー [MODE=skip|overwrite|increment]
+	@cd $(BASE_DIR) && kedro run --pipeline=organize_to_vault $(if $(MODE),--params='{"organize.conflict_handling": "$(MODE)"}',)
