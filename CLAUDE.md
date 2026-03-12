@@ -13,10 +13,13 @@ LLM 会話履歴を Obsidian ナレッジベースに変換するパイプライ
 
 ```
 obsidian-importer/
-├── data/                      # Kedro データレイヤー
+├── data/                      # Kedro データレイヤー（昇順フロー）
 │   ├── 01_raw/                # 入力（ZIP）
 │   ├── 02_intermediate/       # パース済み
 │   ├── 03_primary/            # LLM 処理済み
+│   ├── 04_feature/            # 中間 Markdown（分類前）
+│   │   ├── notes/             # 通常出力
+│   │   └── review/            # レビュー対象（圧縮率低）
 │   ├── 05_model_input/        # モデル入力（JSON）
 │   │   ├── classified/        # ジャンル分類済みデータ
 │   │   ├── cleaned/           # クリーンアップ済みデータ
@@ -25,10 +28,7 @@ obsidian-importer/
 │   │   ├── vault_determined/  # Vault 振り分け済みデータ
 │   │   └── organized/         # 整理済みデータ（JSON）
 │   └── 07_model_output/       # 最終 Markdown
-│       ├── notes/             # 通常出力
-│       ├── review/            # レビュー対象（圧縮率低）
-│       ├── organized/         # ジャンル分類済み
-│       └── organized_review/  # 分類済みレビュー対象
+│       └── organized/         # ジャンル分類済み
 │
 ├── src/obsidian_etl/          # Kedro パイプライン（現行）
 ├── src/rag/                   # RAG 機能
@@ -73,9 +73,9 @@ kedro run --to-nodes=format_markdown
 ```
 data/01_raw/*.zip → data/02_intermediate/parsed/*.json
                   → data/03_primary/transformed/*.json
+                  → data/04_feature/notes/*.md
                   → data/05_model_input/classified/*.json
                   → data/05_model_input/normalized/*.json
-                  → data/07_model_output/notes/*.md
                   → data/07_model_output/organized/*.md
 ```
 

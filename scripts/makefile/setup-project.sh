@@ -7,7 +7,9 @@ echo "Creating Kedro data directories..."
 mkdir -p data/01_raw/claude data/01_raw/openai data/01_raw/github
 mkdir -p data/02_intermediate/parsed
 mkdir -p data/03_primary/transformed data/03_primary/transformed_knowledge
-mkdir -p data/07_model_output/notes data/07_model_output/organized
+mkdir -p data/04_feature/notes data/04_feature/review
+mkdir -p data/05_model_input/classified
+mkdir -p data/07_model_output/organized
 mkdir -p logs
 
 echo "Setting up local config..."

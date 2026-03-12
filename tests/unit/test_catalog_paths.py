@@ -1,13 +1,11 @@
 """Tests for catalog.yml dataset path configuration.
 
-Phase 2 RED tests: Verify JSON datasets use 05_model_input/ and MD datasets use 07_model_output/.
-These tests validate FR-001, FR-002, FR-003 from spec.md.
+Verify data layer ascending flow (Issue #75):
+- JSON datasets (classify, normalize, etc.) use 05_model_input/
+- Intermediate Markdown (notes, review) use 04_feature/
+- Final Markdown (organized) use 07_model_output/
 
-Test Strategy:
-- Load catalog.yml with PyYAML
-- Assert each JSON dataset's `path` starts with `data/05_model_input/`
-- Assert each MD dataset's `path` starts with `data/07_model_output/`
-- Tests will FAIL (RED) because catalog.yml currently has JSON datasets under 07_model_output/
+Flow: 01 -> 02 -> 03 -> 04 -> 05 -> 07 (ascending order)
 """
 
 from __future__ import annotations
@@ -114,8 +112,54 @@ class TestJsonDatasetPaths(unittest.TestCase):
         self._assert_json_dataset_layer("organized_items")
 
 
-class TestMdDatasetPaths(unittest.TestCase):
-    """MD datasets must remain under data/07_model_output/."""
+class TestFeatureLayerPaths(unittest.TestCase):
+    """Intermediate Markdown datasets must be under data/04_feature/."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Load catalog once for all tests."""
+        cls.catalog = _load_catalog()
+
+    def _assert_feature_dataset_path(self, dataset_name: str, expected_subdir: str):
+        """Assert a dataset path points to 04_feature/{expected_subdir}."""
+        self.assertIn(dataset_name, self.catalog, f"{dataset_name} not found in catalog")
+        actual_path = self.catalog[dataset_name]["path"]
+        expected_path = f"data/04_feature/{expected_subdir}"
+        self.assertEqual(
+            actual_path,
+            expected_path,
+            f"{dataset_name}: expected path '{expected_path}', got '{actual_path}'",
+        )
+
+    def _assert_feature_dataset_layer(self, dataset_name: str):
+        """Assert a dataset has kedro-viz layer set to feature."""
+        self.assertIn(dataset_name, self.catalog, f"{dataset_name} not found in catalog")
+        layer = self.catalog[dataset_name]["metadata"]["kedro-viz"]["layer"]
+        self.assertEqual(
+            layer,
+            "feature",
+            f"{dataset_name}: expected layer 'feature', got '{layer}'",
+        )
+
+    def test_markdown_notes_path(self):
+        """markdown_notes が data/04_feature/notes に配置されること。"""
+        self._assert_feature_dataset_path("markdown_notes", "notes")
+
+    def test_markdown_notes_layer(self):
+        """markdown_notes の kedro-viz layer が feature であること。"""
+        self._assert_feature_dataset_layer("markdown_notes")
+
+    def test_review_notes_path(self):
+        """review_notes が data/04_feature/review に配置されること。"""
+        self._assert_feature_dataset_path("review_notes", "review")
+
+    def test_review_notes_layer(self):
+        """review_notes の kedro-viz layer が feature であること。"""
+        self._assert_feature_dataset_layer("review_notes")
+
+
+class TestModelOutputPaths(unittest.TestCase):
+    """Final Markdown datasets must be under data/07_model_output/."""
 
     @classmethod
     def setUpClass(cls):
@@ -142,22 +186,6 @@ class TestMdDatasetPaths(unittest.TestCase):
             "model_output",
             f"{dataset_name}: expected layer 'model_output', got '{layer}'",
         )
-
-    def test_markdown_notes_path(self):
-        """markdown_notes が data/07_model_output/notes に配置されること。"""
-        self._assert_md_dataset_path("markdown_notes", "notes")
-
-    def test_markdown_notes_layer(self):
-        """markdown_notes の kedro-viz layer が model_output であること。"""
-        self._assert_md_dataset_layer("markdown_notes")
-
-    def test_review_notes_path(self):
-        """review_notes が data/07_model_output/review に配置されること。"""
-        self._assert_md_dataset_path("review_notes", "review")
-
-    def test_review_notes_layer(self):
-        """review_notes の kedro-viz layer が model_output であること。"""
-        self._assert_md_dataset_layer("review_notes")
 
     def test_organized_notes_path(self):
         """organized_notes が data/07_model_output/organized に配置されること。"""
@@ -205,12 +233,12 @@ class TestCatalogDatasetTypes(unittest.TestCase):
                 )
 
     def test_md_datasets_use_text_type(self):
-        """MD datasets (07_model_output) が text.TextDataset を使用すること。"""
+        """MD datasets (04_feature, 07_model_output) が text.TextDataset を使用すること。"""
         md_datasets = [
-            "markdown_notes",
-            "review_notes",
-            "organized_notes",
-            "organized_files",
+            "markdown_notes",  # 04_feature
+            "review_notes",  # 04_feature
+            "organized_notes",  # 07_model_output
+            "organized_files",  # 07_model_output
         ]
         for name in md_datasets:
             with self.subTest(dataset=name):

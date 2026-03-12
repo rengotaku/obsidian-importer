@@ -94,30 +94,34 @@ transformed_items_with_metadata:
       layer: primary
 
 # ============================================================
-# Layer 07: Model Output (Final Markdown + Organized)
+# Layer 04: Feature (Intermediate Markdown before classify)
 # ============================================================
 
 markdown_notes:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/notes
+  path: data/04_feature/notes
   dataset:
     type: text.TextDataset
   filename_suffix: ".md"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: feature
 
 review_notes:
   type: partitions.PartitionedDataset
-  path: data/07_model_output/review
+  path: data/04_feature/review
   dataset:
     type: text.TextDataset
   filename_suffix: ".md"
   overwrite: false
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: feature
+
+# ============================================================
+# Layer 05: Model Input (Classified/Normalized JSON)
+# ============================================================
 
 classified_items:
   type: partitions.PartitionedDataset
@@ -195,6 +199,10 @@ organized_items:
   metadata:
     kedro-viz:
       layer: model_input
+
+# ============================================================
+# Layer 07: Model Output (Final organized Markdown)
+# ============================================================
 
 organized_notes:
   type: partitions.PartitionedDataset
