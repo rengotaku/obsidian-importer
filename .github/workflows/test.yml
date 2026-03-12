@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+          key: venv-${{ runner.os }}-py3.11-${{ hashFiles('pyproject.toml') }}
 
       - run: make setup-dev
 
