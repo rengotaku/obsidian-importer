@@ -27,7 +27,7 @@ class PreRunValidationHook:
     # (used as inputs for resume/incremental processing)
     PLACEHOLDER_DIRS = [
         "data/03_primary/transformed_knowledge",
-        "data/07_model_output/classified",
+        "data/05_model_input/classified",
     ]
 
     @hook_impl

@@ -21,7 +21,7 @@ fi
 echo "  OK Output files generated: $MD_COUNT files"
 
 if ! grep -l "mock: true" "$DATA_DIR/07_model_output/organized/"*.md > /dev/null 2>&1 \
-   && ! grep -rl "mock: true" "$DATA_DIR/07_model_output/notes/"*.md > /dev/null 2>&1; then
+   && ! grep -rl "mock: true" "$DATA_DIR/04_feature/notes/"*.md > /dev/null 2>&1; then
     echo "FAIL Output files missing mock: true frontmatter"
     exit 1
 fi
@@ -34,5 +34,5 @@ fi
 echo "  OK Golden responses verified (no fallback titles)"
 
 echo "Cleaning up..."
-rm -rf "$DATA_DIR/01_raw" "$DATA_DIR/02_intermediate" "$DATA_DIR/03_primary" "$DATA_DIR/07_model_output"
+rm -rf "$DATA_DIR/01_raw" "$DATA_DIR/02_intermediate" "$DATA_DIR/03_primary" "$DATA_DIR/04_feature" "$DATA_DIR/05_model_input" "$DATA_DIR/07_model_output"
 echo "Integration test passed (mock mode, no Ollama)"

@@ -65,86 +65,90 @@ transformed_items_with_metadata:
       layer: primary
 
 # ═══════════════════════════════════════════════════
-# Organize Layer (Classified Items)
-# ═══════════════════════════════════════════════════
-
-classified_items:
-  type: partitions.PartitionedDataset
-  path: test-data/07_model_output/classified
-  dataset:
-    type: json.JSONDataset
-  filename_suffix: ".json"
-  overwrite: false
-  metadata:
-    kedro-viz:
-      layer: model_output
-
-existing_classified_items:
-  type: partitions.PartitionedDataset
-  path: test-data/07_model_output/classified
-  dataset:
-    type: json.JSONDataset
-  filename_suffix: ".json"
-  metadata:
-    kedro-viz:
-      layer: model_output
-
-topic_extracted_items:
-  type: partitions.PartitionedDataset
-  path: test-data/07_model_output/topic_extracted
-  dataset:
-    type: json.JSONDataset
-  filename_suffix: ".json"
-  overwrite: false
-  metadata:
-    kedro-viz:
-      layer: model_output
-
-normalized_items:
-  type: partitions.PartitionedDataset
-  path: test-data/07_model_output/normalized
-  dataset:
-    type: json.JSONDataset
-  filename_suffix: ".json"
-  overwrite: false
-  metadata:
-    kedro-viz:
-      layer: model_output
-
-cleaned_items:
-  type: partitions.PartitionedDataset
-  path: test-data/07_model_output/cleaned
-  dataset:
-    type: json.JSONDataset
-  filename_suffix: ".json"
-  overwrite: false
-  metadata:
-    kedro-viz:
-      layer: model_output
-
-# ═══════════════════════════════════════════════════
-# Model Output Layer
+# Feature Layer (Intermediate Markdown)
 # ═══════════════════════════════════════════════════
 
 markdown_notes:
   type: partitions.PartitionedDataset
-  path: test-data/07_model_output/notes
+  path: test-data/04_feature/notes
   dataset:
     type: text.TextDataset
   filename_suffix: ".md"
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: feature
 
 review_notes:
   type: partitions.PartitionedDataset
-  path: test-data/07_model_output/review
+  path: test-data/04_feature/review
   dataset:
     type: text.TextDataset
   filename_suffix: ".md"
   metadata:
     kedro-viz:
-      layer: model_output
+      layer: feature
+
+# ═══════════════════════════════════════════════════
+# Model Input Layer (Classified/Normalized JSON)
+# ═══════════════════════════════════════════════════
+
+classified_items:
+  type: partitions.PartitionedDataset
+  path: test-data/05_model_input/classified
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+existing_classified_items:
+  type: partitions.PartitionedDataset
+  path: test-data/05_model_input/classified
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+topic_extracted_items:
+  type: partitions.PartitionedDataset
+  path: test-data/05_model_input/topic_extracted
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+normalized_items:
+  type: partitions.PartitionedDataset
+  path: test-data/05_model_input/normalized
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+cleaned_items:
+  type: partitions.PartitionedDataset
+  path: test-data/05_model_input/cleaned
+  dataset:
+    type: json.JSONDataset
+  filename_suffix: ".json"
+  overwrite: false
+  metadata:
+    kedro-viz:
+      layer: model_input
+
+# ═══════════════════════════════════════════════════
+# Model Output Layer (Final organized Markdown)
+# ═══════════════════════════════════════════════════
 
 organized_notes:
   type: partitions.PartitionedDataset
