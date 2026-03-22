@@ -59,8 +59,69 @@ class OllamaWarmupError(Exception):
         super().__init__(f"Model warmup failed: {model}: {reason}")
 
 
+class OllamaCPUFallbackError(Exception):
+    """Exception raised when model is running on CPU instead of GPU.
+
+    This is a critical error because CPU inference is ~100x slower than GPU,
+    causing pipeline timeouts and poor performance.
+
+    Attributes:
+        model: Model name running on CPU.
+        gpu_percent: Percentage of model loaded on GPU (0 = 100% CPU).
+    """
+
+    def __init__(self, model: str, gpu_percent: float):
+        self.model = model
+        self.gpu_percent = gpu_percent
+        super().__init__(
+            f"CRITICAL: Model '{model}' is running on CPU ({gpu_percent:.0f}% GPU). "
+            "GPU inference required. Check GPU memory with 'nvidia-smi' and "
+            "restart Ollama if needed."
+        )
+
+
 # Track which models have been warmed up
 _warmed_models: set[str] = set()
+
+
+def _check_model_device(model: str, base_url: str) -> tuple[str, float]:
+    """Check if model is loaded on GPU or CPU via /api/ps.
+
+    Args:
+        model: Model name to check.
+        base_url: Ollama server base URL.
+
+    Returns:
+        Tuple of (device_type, gpu_percent).
+        device_type: "GPU", "CPU", "GPU/CPU", or "NOT_LOADED".
+        gpu_percent: Percentage of model on GPU (0-100).
+    """
+    try:
+        url = f"{base_url}/api/ps"
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        for m in data.get("models", []):
+            if m.get("name") == model or m.get("model") == model:
+                size = m.get("size", 0)
+                size_vram = m.get("size_vram", 0)
+
+                if size == 0:
+                    return "UNKNOWN", 0.0
+
+                gpu_percent = (size_vram / size) * 100
+
+                if gpu_percent >= 99.9:
+                    return "GPU", 100.0
+                if gpu_percent <= 0.1:
+                    return "CPU", 0.0
+                return "GPU/CPU", gpu_percent
+
+        return "NOT_LOADED", 0.0
+    except Exception as e:
+        logger.warning(f"Failed to check model device: {e}")
+        return "UNKNOWN", 0.0
 
 
 def _do_warmup(model: str, base_url: str, timeout: int = 30, mock: bool = False) -> None:
@@ -74,6 +135,7 @@ def _do_warmup(model: str, base_url: str, timeout: int = 30, mock: bool = False)
 
     Raises:
         OllamaWarmupError: If warmup fails for any reason.
+        OllamaCPUFallbackError: If model is loaded on CPU instead of GPU.
     """
     if mock:
         logger.info(f"[MOCK] Skipping model warmup: {model}")
@@ -103,6 +165,16 @@ def _do_warmup(model: str, base_url: str, timeout: int = 30, mock: bool = False)
         elapsed = time.time() - start_time
         logger.error(f"Model warmup failed: {model} ({elapsed:.1f}s): {e}")
         raise OllamaWarmupError(model, str(e)) from e
+
+    # Check if model is running on GPU
+    device, gpu_percent = _check_model_device(model, base_url)
+    if device == "CPU":
+        logger.critical(f"Model {model} is running on CPU (0% GPU)")
+        raise OllamaCPUFallbackError(model, gpu_percent)
+    if device == "GPU/CPU":
+        logger.warning(f"Model {model} is partially on GPU ({gpu_percent:.0f}% GPU)")
+    else:
+        logger.info(f"Model {model} device: {device} ({gpu_percent:.0f}% GPU)")
 
 
 def call_ollama(
