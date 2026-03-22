@@ -88,6 +88,7 @@ def translate_summary(summary: str, params: dict[str, Any]) -> tuple[str | None,
             num_predict=config.num_predict,
             timeout=config.timeout,
             warmup_timeout=config.warmup_timeout,
+            keep_alive=config.keep_alive,
             temperature=config.temperature,
             mock=config.mock,
         )
@@ -137,6 +138,7 @@ def extract_knowledge(
             num_predict=config.num_predict,
             timeout=config.timeout,
             warmup_timeout=config.warmup_timeout,
+            keep_alive=config.keep_alive,
             temperature=config.temperature,
             mock=config.mock,
         )

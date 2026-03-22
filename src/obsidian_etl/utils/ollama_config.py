@@ -18,6 +18,7 @@ class OllamaConfig:
     base_url: str = "http://localhost:11434"
     timeout: int = 120
     warmup_timeout: int = 30  # Model warmup timeout
+    keep_alive: str = "30m"  # Keep model loaded (e.g., "30m", "1h", "-1" for forever)
     temperature: float = 0.2
     num_predict: int = -1  # -1 = unlimited
     mock: bool = False
@@ -28,6 +29,7 @@ HARDCODED_DEFAULTS = {
     "base_url": "http://localhost:11434",
     "timeout": 120,
     "warmup_timeout": 30,
+    "keep_alive": "30m",
     "temperature": 0.2,
     "num_predict": -1,
 }
