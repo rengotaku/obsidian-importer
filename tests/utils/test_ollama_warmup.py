@@ -139,20 +139,53 @@ class TestDoWarmup(unittest.TestCase):
         """
         from obsidian_etl.utils.ollama import _do_warmup
 
-        # Mock successful response
-        mock_response = MagicMock()
-        mock_response.read.return_value = b'{"message": {"content": "hi"}}'
-        mock_urlopen.return_value.__enter__.return_value = mock_response
+        # Mock responses for warmup (POST /api/chat) and device check (GET /api/ps)
+        mock_warmup_response = MagicMock()
+        mock_warmup_response.read.return_value = b'{"message": {"content": "hi"}}'
+
+        mock_ps_response = MagicMock()
+        mock_ps_response.read.return_value = (
+            b'{"models": [{"name": "gemma3:12b", "size": 1000, "size_vram": 1000}]}'
+        )
+
+        # Return different responses for different calls
+        mock_urlopen.return_value.__enter__.side_effect = [mock_warmup_response, mock_ps_response]
 
         _do_warmup("gemma3:12b", "http://localhost:11434")
 
-        # Verify urlopen was called
-        self.assertEqual(mock_urlopen.call_count, 1)
+        # Verify urlopen was called twice (warmup + device check)
+        self.assertEqual(mock_urlopen.call_count, 2)
 
-        # Verify request payload (minimal request with num_predict=1)
-        request_obj = mock_urlopen.call_args[0][0]
+        # Verify first request (warmup) payload
+        request_obj = mock_urlopen.call_args_list[0][0][0]
         self.assertEqual(request_obj.get_method(), "POST")
         self.assertIn("http://localhost:11434/api/chat", request_obj.full_url)
+
+    @patch("urllib.request.urlopen")
+    def test_warmup_raises_error_on_cpu_fallback(self, mock_urlopen: MagicMock) -> None:
+        """CPU フォールバック時に OllamaCPUFallbackError が発生すること。"""
+        from obsidian_etl.utils.ollama import OllamaCPUFallbackError, _do_warmup
+
+        # Mock responses: warmup succeeds, but device check shows CPU
+        mock_warmup_response = MagicMock()
+        mock_warmup_response.read.return_value = b'{"message": {"content": "hi"}}'
+
+        mock_ps_response = MagicMock()
+        # size_vram = 0 means 100% CPU
+        mock_ps_response.read.return_value = (
+            b'{"models": [{"name": "gemma3:12b", "size": 1000, "size_vram": 0}]}'
+        )
+
+        mock_urlopen.return_value.__enter__.side_effect = [
+            mock_warmup_response,
+            mock_ps_response,
+        ]
+
+        with self.assertRaises(OllamaCPUFallbackError) as ctx:
+            _do_warmup("gemma3:12b", "http://localhost:11434")
+
+        self.assertIn("CPU", str(ctx.exception))
+        self.assertEqual(ctx.exception.gpu_percent, 0.0)
 
 
 if __name__ == "__main__":
