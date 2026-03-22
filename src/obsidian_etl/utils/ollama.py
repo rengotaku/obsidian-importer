@@ -116,6 +116,7 @@ def call_ollama(
     temperature: float = 0.2,
     timeout: int = 120,
     warmup_timeout: int = 30,
+    keep_alive: str = "30m",
     mock: bool = False,
 ) -> str:
     """Call Ollama API.
@@ -130,6 +131,7 @@ def call_ollama(
         temperature: Sampling temperature.
         timeout: Request timeout in seconds.
         warmup_timeout: Model warmup timeout in seconds.
+        keep_alive: How long to keep model loaded (e.g., "30m", "1h", "-1" for forever).
         mock: If True, return mock response without any network calls.
 
     Returns:
@@ -158,6 +160,7 @@ def call_ollama(
             {"role": "user", "content": user_message},
         ],
         "stream": False,
+        "keep_alive": keep_alive,
         "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
     }
 
