@@ -21,6 +21,8 @@ class OllamaConfig:
     keep_alive: str = "30m"  # Keep model loaded (e.g., "30m", "1h", "-1" for forever)
     temperature: float = 0.2
     num_predict: int = -1  # -1 = unlimited
+    max_retries: int = 3  # Retry count for empty response errors
+    retry_delay: float = 1.0  # Delay between retries (seconds)
     mock: bool = False
 
 
@@ -32,6 +34,8 @@ HARDCODED_DEFAULTS = {
     "keep_alive": "30m",
     "temperature": 0.2,
     "num_predict": -1,
+    "max_retries": 3,
+    "retry_delay": 1.0,
 }
 
 

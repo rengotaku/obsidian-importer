@@ -188,6 +188,8 @@ def call_ollama(
     timeout: int = 120,
     warmup_timeout: int = 30,
     keep_alive: str = "30m",
+    max_retries: int = 3,
+    retry_delay: float = 1.0,
     mock: bool = False,
 ) -> str:
     """Call Ollama API.
@@ -203,6 +205,8 @@ def call_ollama(
         timeout: Request timeout in seconds.
         warmup_timeout: Model warmup timeout in seconds.
         keep_alive: How long to keep model loaded (e.g., "30m", "1h", "-1" for forever).
+        max_retries: Maximum retry attempts for empty response errors.
+        retry_delay: Delay between retries in seconds.
         mock: If True, return mock response without any network calls.
 
     Returns:
@@ -223,6 +227,56 @@ def call_ollama(
         _do_warmup(model, base_url, warmup_timeout)  # Raises OllamaWarmupError on failure
         _warmed_models.add(model)  # Only add if warmup succeeded
 
+    # Calculate context length for debugging
+    context_len = len(system_prompt) + len(user_message)
+
+    last_error: OllamaError | None = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            content = _call_ollama_once(
+                system_prompt=system_prompt,
+                user_message=user_message,
+                model=model,
+                base_url=base_url,
+                num_ctx=num_ctx,
+                num_predict=num_predict,
+                temperature=temperature,
+                timeout=timeout,
+                keep_alive=keep_alive,
+                context_len=context_len,
+            )
+            return content
+        except OllamaEmptyResponseError as e:
+            last_error = e
+            if attempt < max_retries:
+                logger.warning(f"Empty response, retrying ({attempt + 1}/{max_retries})...")
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"Empty response after {max_retries} retries")
+        except (OllamaTimeoutError, OllamaConnectionError):  # pylint: disable=try-except-raise
+            # Don't retry on timeout or connection errors - propagate immediately
+            raise
+
+    # All retries exhausted
+    if last_error:
+        raise last_error
+    raise OllamaEmptyResponseError("Empty response from LLM", context_len=context_len)
+
+
+def _call_ollama_once(
+    system_prompt: str,
+    user_message: str,
+    model: str,
+    base_url: str,
+    num_ctx: int,
+    num_predict: int,
+    temperature: float,
+    timeout: int,
+    keep_alive: str,
+    context_len: int,
+) -> str:
+    """Execute a single Ollama API call (internal helper)."""
     url = f"{base_url}/api/chat"
     payload = {
         "model": model,
@@ -234,9 +288,6 @@ def call_ollama(
         "keep_alive": keep_alive,
         "options": {"num_ctx": num_ctx, "num_predict": num_predict, "temperature": temperature},
     }
-
-    # Calculate context length for debugging
-    context_len = len(system_prompt) + len(user_message)
 
     try:
         data = json.dumps(payload).encode("utf-8")
