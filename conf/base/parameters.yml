@@ -23,6 +23,8 @@ ollama:
     keep_alive: "30m"  # Keep model loaded (default: 5m is too short for pipeline)
     temperature: 0.2
     num_predict: -1  # -1 = unlimited
+    max_retries: 3  # Retry count for empty response errors
+    retry_delay: 1.0  # Delay between retries (seconds)
 
   # Per-function overrides (all fields optional)
   functions:
