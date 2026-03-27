@@ -263,16 +263,7 @@ JSON形式で回答してください:
         response = call_ollama(
             system_prompt,
             user_message,
-            model=config.model,
-            base_url=config.base_url,
-            timeout=config.timeout,
-            warmup_timeout=config.warmup_timeout,
-            keep_alive=config.keep_alive,
-            max_retries=config.max_retries,
-            retry_delay=config.retry_delay,
-            temperature=config.temperature,
-            num_predict=config.num_predict,
-            mock=config.mock,
+            config,
         )
     except OllamaError as e:
         logger.warning(f"Failed to extract topic/genre (context_len={e.context_len}): {e.message}")
@@ -343,16 +334,7 @@ def _extract_topic_via_llm(content: str, params: dict[str, Any]) -> str | None:
         response = call_ollama(
             system_prompt,
             user_message,
-            model=config.model,
-            base_url=config.base_url,
-            timeout=config.timeout,
-            warmup_timeout=config.warmup_timeout,
-            keep_alive=config.keep_alive,
-            max_retries=config.max_retries,
-            retry_delay=config.retry_delay,
-            temperature=config.temperature,
-            num_predict=config.num_predict,
-            mock=config.mock,
+            config,
         )
     except OllamaError as e:
         logger.warning(f"Failed to extract topic (context_len={e.context_len}): {e.message}")
@@ -750,16 +732,7 @@ JSON配列形式で回答してください:
         response = call_ollama(
             system_prompt,
             user_message,
-            model=config.model,
-            base_url=config.base_url,
-            timeout=config.timeout,
-            warmup_timeout=config.warmup_timeout,
-            keep_alive=config.keep_alive,
-            max_retries=config.max_retries,
-            retry_delay=config.retry_delay,
-            temperature=config.temperature,
-            num_predict=config.num_predict,
-            mock=config.mock,
+            config,
         )
     except OllamaError as e:
         logger.warning(f"Failed to suggest genres (context_len={e.context_len}): {e.message}")

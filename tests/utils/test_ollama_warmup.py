@@ -11,6 +11,8 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, call, patch
 
+from obsidian_etl.utils.ollama_config import OllamaConfig
+
 
 class TestOllamaWarmup(unittest.TestCase):
     """Test warmup behavior in call_ollama."""
@@ -38,13 +40,10 @@ class TestOllamaWarmup(unittest.TestCase):
         mock_response.read.return_value = b'{"message": {"content": "test"}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
+        config = OllamaConfig(model="gemma3:12b")
+
         # First call to model
-        call_ollama(
-            system_prompt="test",
-            user_message="test",
-            model="gemma3:12b",
-            base_url="http://localhost:11434",
-        )
+        call_ollama("test", "test", config)
 
         # Warmup should be called (with default warmup_timeout=30)
         mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434", 30)
@@ -65,21 +64,13 @@ class TestOllamaWarmup(unittest.TestCase):
         mock_response.read.return_value = b'{"message": {"content": "test"}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
+        config = OllamaConfig(model="gemma3:12b")
+
         # First call
-        call_ollama(
-            system_prompt="test",
-            user_message="test",
-            model="gemma3:12b",
-            base_url="http://localhost:11434",
-        )
+        call_ollama("test", "test", config)
 
         # Second call
-        call_ollama(
-            system_prompt="test",
-            user_message="test",
-            model="gemma3:12b",
-            base_url="http://localhost:11434",
-        )
+        call_ollama("test", "test", config)
 
         # Warmup should be called only once (on first call, with default warmup_timeout=30)
         mock_warmup.assert_called_once_with("gemma3:12b", "http://localhost:11434", 30)
@@ -100,21 +91,14 @@ class TestOllamaWarmup(unittest.TestCase):
         mock_response.read.return_value = b'{"message": {"content": "test"}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
+        config_a = OllamaConfig(model="gemma3:12b")
+        config_b = OllamaConfig(model="llama3.2:3b")
+
         # Call with model A
-        call_ollama(
-            system_prompt="test",
-            user_message="test",
-            model="gemma3:12b",
-            base_url="http://localhost:11434",
-        )
+        call_ollama("test", "test", config_a)
 
         # Call with model B
-        call_ollama(
-            system_prompt="test",
-            user_message="test",
-            model="llama3.2:3b",
-            base_url="http://localhost:11434",
-        )
+        call_ollama("test", "test", config_b)
 
         # Warmup should be called once for each model (with default warmup_timeout=30)
         self.assertEqual(mock_warmup.call_count, 2)

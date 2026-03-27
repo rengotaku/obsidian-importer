@@ -33,6 +33,7 @@ from obsidian_etl.utils.knowledge_extractor import (
     SUMMARY_PROMPT_PATH,
 )
 from obsidian_etl.utils.ollama import call_ollama
+from obsidian_etl.utils.ollama_config import OllamaConfig
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -162,14 +163,17 @@ def generate_golden_responses(model: str = DEFAULT_MODEL) -> None:
         # 1. extract_knowledge
         user_message = _build_user_message(content, conv_name, created_at, "claude")
         try:
-            knowledge_response = call_ollama(
-                knowledge_prompt,
-                user_message,
+            knowledge_config = OllamaConfig(
                 model=model,
                 num_predict=16384,
                 timeout=300,
                 warmup_timeout=300,
                 temperature=0.2,
+            )
+            knowledge_response = call_ollama(
+                knowledge_prompt,
+                user_message,
+                knowledge_config,
             )
             golden_file = f"{file_id}_extract_knowledge.txt"
             (GOLDEN_DIR / golden_file).write_text(knowledge_response, encoding="utf-8")
@@ -185,14 +189,17 @@ def generate_golden_responses(model: str = DEFAULT_MODEL) -> None:
         # For golden response generation, we use the raw knowledge response as body.
         system_prompt_tg, user_message_tg = _build_topic_genre_prompts(knowledge_response)
         try:
-            topic_genre_response = call_ollama(
-                system_prompt_tg,
-                user_message_tg,
+            topic_genre_config = OllamaConfig(
                 model=model,
                 num_predict=512,
                 timeout=120,
                 warmup_timeout=300,
                 temperature=0.2,
+            )
+            topic_genre_response = call_ollama(
+                system_prompt_tg,
+                user_message_tg,
+                topic_genre_config,
             )
             golden_file_tg = f"{file_id}_extract_topic_and_genre.txt"
             (GOLDEN_DIR / golden_file_tg).write_text(topic_genre_response, encoding="utf-8")
