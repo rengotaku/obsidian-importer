@@ -1484,8 +1484,7 @@ class TestExtractKnowledgeUsesOllamaConfig(unittest.TestCase):
 
         # Setup mock call_ollama response
         mock_call_ollama.return_value = (
-            "```yaml\ntitle: Test\nsummary: Test summary\n```\nTest content",
-            None,
+            "# Test\n\n## 要約\nTest summary\n\n## タグ\ntest\n\n## 内容\nTest content"
         )
 
         # Prepare params with function-specific config
