@@ -83,16 +83,7 @@ def translate_summary(summary: str, params: dict[str, Any]) -> tuple[str | None,
         response = call_ollama(
             prompt,
             f"以下の英語サマリーを日本語に翻訳してください:\n\n{summary}",
-            model=config.model,
-            base_url=config.base_url,
-            num_predict=config.num_predict,
-            timeout=config.timeout,
-            warmup_timeout=config.warmup_timeout,
-            keep_alive=config.keep_alive,
-            max_retries=config.max_retries,
-            retry_delay=config.retry_delay,
-            temperature=config.temperature,
-            mock=config.mock,
+            config,
         )
     except OllamaError as e:
         logger.warning(f"Failed to translate summary: {e}")
@@ -135,16 +126,7 @@ def extract_knowledge(
         response = call_ollama(
             prompt,
             user_message,
-            model=config.model,
-            base_url=config.base_url,
-            num_predict=config.num_predict,
-            timeout=config.timeout,
-            warmup_timeout=config.warmup_timeout,
-            keep_alive=config.keep_alive,
-            max_retries=config.max_retries,
-            retry_delay=config.retry_delay,
-            temperature=config.temperature,
-            mock=config.mock,
+            config,
         )
     except OllamaError as e:
         logger.warning(f"Failed to extract knowledge: {e}")

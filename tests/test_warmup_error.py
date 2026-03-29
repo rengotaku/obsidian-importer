@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import unittest
 import urllib.error
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
+from obsidian_etl.utils.ollama_config import OllamaConfig
 
 
 class TestOllamaWarmupError(unittest.TestCase):
@@ -138,13 +140,10 @@ class TestCallOllamaPropagatesWarmupError(unittest.TestCase):
 
         mock_warmup.side_effect = OllamaWarmupError(model="gemma3:12b", reason="Connection refused")
 
+        config = OllamaConfig(model="gemma3:12b")
+
         with self.assertRaises(OllamaWarmupError):
-            call_ollama(
-                system_prompt="test",
-                user_message="test",
-                model="gemma3:12b",
-                base_url="http://localhost:11434",
-            )
+            call_ollama("test", "test", config)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     def test_warmed_models_not_updated_on_failure(self, mock_warmup):
@@ -159,13 +158,10 @@ class TestCallOllamaPropagatesWarmupError(unittest.TestCase):
 
         mock_warmup.side_effect = OllamaWarmupError(model="gemma3:12b", reason="timeout")
 
+        config = OllamaConfig(model="gemma3:12b")
+
         with self.assertRaises(OllamaWarmupError):
-            call_ollama(
-                system_prompt="test",
-                user_message="test",
-                model="gemma3:12b",
-                base_url="http://localhost:11434",
-            )
+            call_ollama("test", "test", config)
 
         self.assertNotIn("gemma3:12b", obsidian_etl.utils.ollama._warmed_models)
 

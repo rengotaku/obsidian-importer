@@ -12,6 +12,8 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
+from obsidian_etl.utils.ollama_config import OllamaConfig
+
 
 class TestOllamaRetry(unittest.TestCase):
     """Test retry behavior in call_ollama."""
@@ -46,13 +48,8 @@ class TestOllamaRetry(unittest.TestCase):
             mock_response_ok,
         ]
 
-        result = call_ollama(
-            system_prompt="test",
-            user_message="test",
-            model="gemma3:12b",
-            max_retries=3,
-            retry_delay=0.1,
-        )
+        config = OllamaConfig(model="gemma3:12b", max_retries=3, retry_delay=0.1)
+        result = call_ollama("test", "test", config)
 
         self.assertEqual(result, "success")
         self.assertEqual(mock_urlopen.call_count, 2)
@@ -74,14 +71,10 @@ class TestOllamaRetry(unittest.TestCase):
         mock_response.read.return_value = b'{"message": {"content": ""}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
+        config = OllamaConfig(model="gemma3:12b", max_retries=2, retry_delay=0.1)
+
         with self.assertRaises(OllamaEmptyResponseError):
-            call_ollama(
-                system_prompt="test",
-                user_message="test",
-                model="gemma3:12b",
-                max_retries=2,
-                retry_delay=0.1,
-            )
+            call_ollama("test", "test", config)
 
         # 1 initial + 2 retries = 3 total calls
         self.assertEqual(mock_urlopen.call_count, 3)
@@ -102,13 +95,10 @@ class TestOllamaRetry(unittest.TestCase):
 
         mock_urlopen.return_value.__enter__.side_effect = TimeoutError("timeout")
 
+        config = OllamaConfig(model="gemma3:12b", max_retries=3)
+
         with self.assertRaises(OllamaTimeoutError):
-            call_ollama(
-                system_prompt="test",
-                user_message="test",
-                model="gemma3:12b",
-                max_retries=3,
-            )
+            call_ollama("test", "test", config)
 
         # Only 1 call, no retries
         self.assertEqual(mock_urlopen.call_count, 1)
@@ -130,12 +120,8 @@ class TestOllamaRetry(unittest.TestCase):
         mock_response.read.return_value = b'{"message": {"content": "success"}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
-        result = call_ollama(
-            system_prompt="test",
-            user_message="test",
-            model="gemma3:12b",
-            max_retries=3,
-        )
+        config = OllamaConfig(model="gemma3:12b", max_retries=3)
+        result = call_ollama("test", "test", config)
 
         self.assertEqual(result, "success")
         self.assertEqual(mock_urlopen.call_count, 1)

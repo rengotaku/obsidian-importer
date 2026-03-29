@@ -1484,8 +1484,7 @@ class TestExtractKnowledgeUsesOllamaConfig(unittest.TestCase):
 
         # Setup mock call_ollama response
         mock_call_ollama.return_value = (
-            "```yaml\ntitle: Test\nsummary: Test summary\n```\nTest content",
-            None,
+            "# Test\n\n## 要約\nTest summary\n\n## タグ\ntest\n\n## 内容\nTest content"
         )
 
         # Prepare params with function-specific config
@@ -1547,8 +1546,7 @@ class TestExtractKnowledgeUsesOllamaConfig(unittest.TestCase):
 
         # Setup mock call_ollama response
         mock_call_ollama.return_value = (
-            "```yaml\ntitle: Test\nsummary: Test summary\n```\nTest content",
-            None,
+            "# Test\n\n## 要約\nTest summary\n\n## タグ\ntest\n\n## 内容\nTest content"
         )
 
         params = {
@@ -1569,13 +1567,13 @@ class TestExtractKnowledgeUsesOllamaConfig(unittest.TestCase):
             params=params,
         )
 
-        # Verify call_ollama was called with num_predict=16384
+        # Verify call_ollama was called with OllamaConfig containing correct values
         mock_call_ollama.assert_called_once()
-        call_kwargs = mock_call_ollama.call_args[1]
+        config = mock_call_ollama.call_args[0][2]
 
-        self.assertEqual(call_kwargs["num_predict"], 16384)
-        self.assertEqual(call_kwargs["timeout"], 300)
-        self.assertEqual(call_kwargs["model"], "gemma3:12b")
+        self.assertEqual(config.num_predict, 16384)
+        self.assertEqual(config.timeout, 300)
+        self.assertEqual(config.model, "gemma3:12b")
 
 
 class TestTranslateSummaryUsesOllamaConfig(unittest.TestCase):
@@ -1613,10 +1611,7 @@ class TestTranslateSummaryUsesOllamaConfig(unittest.TestCase):
         mock_get_config.return_value = mock_config
 
         # Setup mock call_ollama response
-        mock_call_ollama.return_value = (
-            "```yaml\nsummary: テスト要約\n```",
-            None,
-        )
+        mock_call_ollama.return_value = "## 要約\nテスト要約"
 
         # Prepare params with function-specific config
         params = {
@@ -1652,11 +1647,7 @@ class TestTranslateSummaryUsesOllamaConfig(unittest.TestCase):
 
         Phase 5 - Integration:
         Verify that translate_summary passes the configured num_predict value
-        (1024 for translate_summary) to call_ollama.
-
-        From contracts/parameters.yml:
-        - translate_summary.num_predict: 1024
-        - This should be passed to call_ollama as num_predict parameter
+        (1024 for translate_summary) to call_ollama via OllamaConfig.
         """
         from obsidian_etl.utils.knowledge_extractor import translate_summary
         from obsidian_etl.utils.ollama_config import OllamaConfig
@@ -1672,10 +1663,7 @@ class TestTranslateSummaryUsesOllamaConfig(unittest.TestCase):
         mock_get_config.return_value = mock_config
 
         # Setup mock call_ollama response
-        mock_call_ollama.return_value = (
-            "```yaml\nsummary: テスト要約\n```",
-            None,
-        )
+        mock_call_ollama.return_value = "## 要約\nテスト要約"
 
         params = {
             "ollama": {
@@ -1692,13 +1680,13 @@ class TestTranslateSummaryUsesOllamaConfig(unittest.TestCase):
             params=params,
         )
 
-        # Verify call_ollama was called with num_predict=1024
+        # Verify call_ollama was called with OllamaConfig containing correct values
         mock_call_ollama.assert_called_once()
-        call_kwargs = mock_call_ollama.call_args[1]
+        config = mock_call_ollama.call_args[0][2]
 
-        self.assertEqual(call_kwargs["num_predict"], 1024)
-        self.assertEqual(call_kwargs["model"], "gemma3:12b")
-        self.assertEqual(call_kwargs["timeout"], 120)
+        self.assertEqual(config.num_predict, 1024)
+        self.assertEqual(config.model, "gemma3:12b")
+        self.assertEqual(config.timeout, 120)
 
 
 # ============================================================

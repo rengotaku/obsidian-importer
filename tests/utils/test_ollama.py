@@ -13,6 +13,10 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
+from obsidian_etl.utils.ollama_config import OllamaConfig
+
+DEFAULT_CONFIG = OllamaConfig(model="gemma3:12b")
+
 
 class TestCallOllamaEmptyResponse(unittest.TestCase):
     """call_ollama: 空レスポンス時に OllamaEmptyResponseError をスロー。"""
@@ -43,11 +47,7 @@ class TestCallOllamaEmptyResponse(unittest.TestCase):
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
         with self.assertRaises(OllamaEmptyResponseError):
-            call_ollama(
-                system_prompt="system",
-                user_message="user",
-                model="gemma3:12b",
-            )
+            call_ollama("system", "user", DEFAULT_CONFIG)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -65,11 +65,7 @@ class TestCallOllamaEmptyResponse(unittest.TestCase):
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
         with self.assertRaises(OllamaEmptyResponseError):
-            call_ollama(
-                system_prompt="system",
-                user_message="user",
-                model="gemma3:12b",
-            )
+            call_ollama("system", "user", DEFAULT_CONFIG)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -89,11 +85,7 @@ class TestCallOllamaEmptyResponse(unittest.TestCase):
         expected_context_len = len(system_prompt) + len(user_message)
 
         with self.assertRaises(OllamaEmptyResponseError) as ctx:
-            call_ollama(
-                system_prompt=system_prompt,
-                user_message=user_message,
-                model="gemma3:12b",
-            )
+            call_ollama(system_prompt, user_message, DEFAULT_CONFIG)
 
         self.assertEqual(ctx.exception.context_len, expected_context_len)
 
@@ -125,12 +117,7 @@ class TestCallOllamaTimeout(unittest.TestCase):
         mock_urlopen.side_effect = TimeoutError("Request timed out")
 
         with self.assertRaises(OllamaTimeoutError):
-            call_ollama(
-                system_prompt="system",
-                user_message="user",
-                model="gemma3:12b",
-                timeout=120,
-            )
+            call_ollama("system", "user", DEFAULT_CONFIG)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -145,11 +132,7 @@ class TestCallOllamaTimeout(unittest.TestCase):
         expected_context_len = len(system_prompt) + len(user_message)
 
         with self.assertRaises(OllamaTimeoutError) as ctx:
-            call_ollama(
-                system_prompt=system_prompt,
-                user_message=user_message,
-                model="gemma3:12b",
-            )
+            call_ollama(system_prompt, user_message, DEFAULT_CONFIG)
 
         self.assertEqual(ctx.exception.context_len, expected_context_len)
 
@@ -179,11 +162,7 @@ class TestCallOllamaConnectionError(unittest.TestCase):
         mock_urlopen.side_effect = urllib.error.URLError("Connection refused")
 
         with self.assertRaises(OllamaConnectionError):
-            call_ollama(
-                system_prompt="system",
-                user_message="user",
-                model="gemma3:12b",
-            )
+            call_ollama("system", "user", DEFAULT_CONFIG)
 
     @patch("obsidian_etl.utils.ollama._do_warmup")
     @patch("obsidian_etl.utils.ollama.urllib.request.urlopen")
@@ -200,11 +179,7 @@ class TestCallOllamaConnectionError(unittest.TestCase):
         expected_context_len = len(system_prompt) + len(user_message)
 
         with self.assertRaises(OllamaConnectionError) as ctx:
-            call_ollama(
-                system_prompt=system_prompt,
-                user_message=user_message,
-                model="gemma3:12b",
-            )
+            call_ollama(system_prompt, user_message, DEFAULT_CONFIG)
 
         self.assertEqual(ctx.exception.context_len, expected_context_len)
 
@@ -236,11 +211,7 @@ class TestCallOllamaSuccessReturnsStr(unittest.TestCase):
         mock_response.read.return_value = b'{"message": {"content": "Hello, world!"}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
-        result = call_ollama(
-            system_prompt="system",
-            user_message="user",
-            model="gemma3:12b",
-        )
+        result = call_ollama("system", "user", DEFAULT_CONFIG)
 
         # Result should be a string, not a tuple
         self.assertIsInstance(result, str)
@@ -260,11 +231,7 @@ class TestCallOllamaSuccessReturnsStr(unittest.TestCase):
         mock_response.read.return_value = b'{"message": {"content": "response text"}}'
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
-        result = call_ollama(
-            system_prompt="system",
-            user_message="user",
-            model="gemma3:12b",
-        )
+        result = call_ollama("system", "user", DEFAULT_CONFIG)
 
         self.assertNotIsInstance(result, tuple)
 
@@ -286,11 +253,7 @@ class TestCallOllamaSuccessReturnsStr(unittest.TestCase):
         )
         mock_urlopen.return_value.__enter__.return_value = mock_response
 
-        result = call_ollama(
-            system_prompt="system",
-            user_message="user",
-            model="gemma3:12b",
-        )
+        result = call_ollama("system", "user", DEFAULT_CONFIG)
 
         self.assertEqual(result, content)
 
@@ -302,12 +265,8 @@ class TestCallOllamaMock(unittest.TestCase):
         """Mock mode should return response without network call."""
         from obsidian_etl.utils.ollama import call_ollama
 
-        response = call_ollama(
-            "test prompt",
-            "test message",
-            model="test-model",
-            mock=True,
-        )
+        config = OllamaConfig(model="test-model", mock=True)
+        response = call_ollama("test prompt", "test message", config)
         self.assertIsInstance(response, str)
         self.assertTrue(len(response) > 0)
 
@@ -315,14 +274,13 @@ class TestCallOllamaMock(unittest.TestCase):
         """Mock mode should skip warmup."""
         from obsidian_etl.utils.ollama import call_ollama
 
-        # This should not raise even with unreachable server
-        response = call_ollama(
-            "test prompt",
-            "test message",
+        config = OllamaConfig(
             model="nonexistent-model",
             base_url="http://unreachable:99999",
             mock=True,
         )
+        # This should not raise even with unreachable server
+        response = call_ollama("test prompt", "test message", config)
         self.assertIsInstance(response, str)
 
 

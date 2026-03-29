@@ -908,7 +908,7 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
         """extract_topic_and_genre が設定されたモデルを使用すること。
 
         Verify that the model from ollama.functions.extract_topic_and_genre is used
-        in the API call.
+        in the API call via OllamaConfig.
         """
         from obsidian_etl.pipelines.organize.nodes import _extract_topic_and_genre_via_llm
 
@@ -925,17 +925,16 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
             mock_call_ollama.return_value = '{"topic": "aws", "genre": "devops"}'
             _extract_topic_and_genre_via_llm(content, params)
 
-            # Verify call_ollama was called with the correct model
+            # Verify call_ollama was called with OllamaConfig containing correct model
             mock_call_ollama.assert_called_once()
-            call_kwargs = mock_call_ollama.call_args
-            # Check that model argument is "llama3.2:3b" (from functions.extract_topic_and_genre)
-            self.assertEqual(call_kwargs.kwargs.get("model"), "llama3.2:3b")
+            config = mock_call_ollama.call_args[0][2]
+            self.assertEqual(config.model, "llama3.2:3b")
 
     def test_extract_topic_and_genre_uses_correct_timeout(self):
         """extract_topic_and_genre が設定されたタイムアウトを使用すること。
 
         Verify that the timeout from ollama.functions.extract_topic_and_genre is used
-        in the API call.
+        in the API call via OllamaConfig.
         """
         from obsidian_etl.pipelines.organize.nodes import _extract_topic_and_genre_via_llm
 
@@ -949,23 +948,19 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
 
         # Mock call_ollama to capture the arguments
         with patch("obsidian_etl.pipelines.organize.nodes.call_ollama") as mock_call_ollama:
-            mock_call_ollama.return_value = (
-                '{"topic": "mobile development", "genre": "engineer"}',
-                None,
-            )
+            mock_call_ollama.return_value = '{"topic": "mobile development", "genre": "engineer"}'
             _extract_topic_and_genre_via_llm(content, params)
 
-            # Verify call_ollama was called with the correct timeout
+            # Verify call_ollama was called with OllamaConfig containing correct timeout
             mock_call_ollama.assert_called_once()
-            call_kwargs = mock_call_ollama.call_args
-            # Check that timeout argument is 30 (from functions.extract_topic_and_genre)
-            self.assertEqual(call_kwargs.kwargs.get("timeout"), 30)
+            config = mock_call_ollama.call_args[0][2]
+            self.assertEqual(config.timeout, 30)
 
     def test_extract_topic_and_genre_num_predict_applied(self):
         """extract_topic_and_genre が num_predict を Ollama API に渡すこと。
 
         Verify that num_predict from ollama.functions.extract_topic_and_genre is passed
-        to the Ollama API call.
+        to the Ollama API call via OllamaConfig.
         """
         from obsidian_etl.pipelines.organize.nodes import _extract_topic_and_genre_via_llm
 
@@ -982,11 +977,10 @@ class TestExtractTopicAndGenreUsesOllamaConfig(unittest.TestCase):
             mock_call_ollama.return_value = '{"topic": "docker", "genre": "devops"}'
             _extract_topic_and_genre_via_llm(content, params)
 
-            # Verify call_ollama was called with the correct num_predict
+            # Verify call_ollama was called with OllamaConfig containing correct num_predict
             mock_call_ollama.assert_called_once()
-            call_kwargs = mock_call_ollama.call_args
-            # Check that num_predict argument is 128 (from functions.extract_topic_and_genre)
-            self.assertEqual(call_kwargs.kwargs.get("num_predict"), 128)
+            config = mock_call_ollama.call_args[0][2]
+            self.assertEqual(config.num_predict, 128)
 
 
 # ============================================================
