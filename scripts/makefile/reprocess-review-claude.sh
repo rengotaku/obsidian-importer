@@ -88,9 +88,9 @@ for md in "${files[@]}"; do
         continue
     fi
 
-    # Call Claude Code CLI
-    user_message=$(printf '%s\n\n---\n\n%s' "$prompt_template" "$original_content")
-    response=$(echo "$user_message" | claude -p --output-format text 2>/dev/null) || {
+    # Call Claude Code CLI (unset CLAUDECODE to allow nested invocation)
+    # Pass prompt as -p argument, content via stdin
+    response=$(echo "$original_content" | env -u CLAUDECODE claude -p "$prompt_template" --output-format text 2>/dev/null) || {
         echo "  ERROR: Claude Code CLI failed"
         failed=$((failed + 1))
         continue
