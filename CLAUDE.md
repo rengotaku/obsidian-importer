@@ -102,6 +102,8 @@ make test-e2e-golden     # ゴールデンファイル品質テスト
 make test-golden-responses  # ゴールデンレスポンス再生成（要 Ollama）[MODEL=gemma3:12b]
 make run                 # パイプライン実行 [PIPELINE=import_claude|import_openai|import_github] [LIMIT=N]
 make kedro-viz           # DAG 可視化
+make reprocess-review          # review ファイルを削除して Ollama で再処理
+make reprocess-review-claude   # review ファイルを Claude Code で再処理
 ```
 
 > 最新のコマンド一覧は `make help-claude` で Markdown 形式出力可能
@@ -196,6 +198,27 @@ file_id: abc123
 | 5,000文字未満 | 20% |
 
 しきい値未達のファイルは `review/` に出力され、`review_reason` フィールドが追加される。
+
+### review ファイルの再処理
+
+`review/` に振り分けられたファイルの再処理方法は2つある。
+
+| コマンド | 動作 | LLM |
+|---------|------|-----|
+| `make reprocess-review` | review + 中間JSON を削除し、次回 `make run` で Ollama が再処理 | Ollama |
+| `make reprocess-review-claude` | review の元コンテンツを Claude Code CLI で要約し `notes/` に出力 | Claude Code |
+
+**`make reprocess-review`（Ollama 再処理）**:
+1. `review/*.md` と対応する `03_primary/transformed_knowledge/{file_id}.json` を削除
+2. `make run` で Ollama が未処理として再実行
+
+**`make reprocess-review-claude`（Claude Code フォールバック）**:
+1. `review/*.md` の一覧と推定トークン量を表示
+2. 確認プロンプト（Y/n）
+3. `claude -p` で各ファイルの元コンテンツを要約
+4. 成功 → `notes/` に出力、review + 中間JSON を削除
+5. 失敗 → `review/` に残す
+6. `make run` で organize パイプラインを実行して分類
 
 ---
 
