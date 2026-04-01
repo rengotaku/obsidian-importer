@@ -90,11 +90,16 @@ for md in "${files[@]}"; do
 
     # Call Claude Code CLI (unset CLAUDECODE to allow nested invocation)
     # Pass prompt as -p argument, content via stdin
-    response=$(echo "$original_content" | env -u CLAUDECODE claude -p "$prompt_template" --output-format text 2>/dev/null) || {
-        echo "  ERROR: Claude Code CLI failed"
+    # Temporarily disable errexit/pipefail to handle claude failures gracefully
+    set +eo pipefail
+    response=$(echo "$original_content" | env -u CLAUDECODE claude -p "$prompt_template" --output-format text 2>/dev/null)
+    claude_exit=$?
+    set -eo pipefail
+    if [ "$claude_exit" -ne 0 ]; then
+        echo "  ERROR: Claude Code CLI failed (exit=$claude_exit)"
         failed=$((failed + 1))
         continue
-    }
+    fi
 
     if [ -z "$response" ]; then
         echo "  ERROR: Empty response from Claude Code"
