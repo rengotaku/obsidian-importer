@@ -31,7 +31,10 @@ def create_pipeline(**kwargs: Any) -> Pipeline:
         [
             node(
                 func=parse_claude_zip,
-                inputs="raw_claude_conversations",
+                inputs={
+                    "partitioned_input": "raw_claude_conversations",
+                    "params": "params:import",
+                },
                 outputs="parsed_items",
                 name="parse_claude_zip",
             ),

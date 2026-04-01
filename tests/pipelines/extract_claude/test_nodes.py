@@ -109,7 +109,7 @@ class TestParseCaudeJsonChunking(unittest.TestCase):
     """parse_claude_json: 25000+ char conversation -> multiple chunks."""
 
     def test_parse_claude_json_chunking(self):
-        """25000文字以上の会話が複数チャンクに分割されること。"""
+        """25000文字以上の会話が chunk_enabled=True で複数チャンクに分割されること。"""
         # Create a conversation with messages exceeding 25000 chars
         long_text = "A" * 13000  # Each message ~13000 chars -> total ~26000
         conversations = [
@@ -147,7 +147,7 @@ class TestParseCaudeJsonChunking(unittest.TestCase):
             }
         ]
 
-        result = parse_claude_json(conversations)
+        result = parse_claude_json(conversations, params={"chunk_enabled": True})
 
         # Should produce multiple chunks
         self.assertGreater(len(result), 1)

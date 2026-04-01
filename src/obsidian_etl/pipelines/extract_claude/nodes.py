@@ -23,6 +23,7 @@ MIN_CONTENT_LENGTH = 10  # Minimum content length after processing
 def parse_claude_json(
     conversations: list[dict[str, Any]],
     existing_output: dict[str, Callable[..., Any]] | None = None,
+    params: dict[str, Any] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Parse Claude export JSON conversations to ParsedItem format.
 
@@ -30,6 +31,7 @@ def parse_claude_json(
         conversations: List of Claude conversation dicts from conversations.json.
         existing_output: DEPRECATED - not used. Parse always processes all conversations.
                         Transform nodes handle resume logic instead.
+        params: Import parameters from parameters.yml.
 
     Returns:
         Dict mapping partition_id (file_id or file_id_chunkN) to ParsedItem dict.
@@ -101,7 +103,8 @@ def parse_claude_json(
         file_id = generate_file_id(content, virtual_path)
 
         # Check if chunking needed
-        if should_chunk(normalized_messages):
+        chunk_enabled = (params or {}).get("chunk_enabled", False)
+        if chunk_enabled and should_chunk(normalized_messages):
             # Chunk and create multiple ParsedItems
             chunks = split_messages(normalized_messages)
             parent_item_id = file_id
@@ -210,6 +213,7 @@ def _fallback_conversation_name(messages: list[dict[str, Any]]) -> str:
 def parse_claude_zip(
     partitioned_input: dict[str, Callable[..., Any]],
     existing_output: dict[str, Callable[..., Any]] | None = None,
+    params: dict[str, Any] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Parse Claude export ZIP to ParsedItem format.
 
@@ -220,6 +224,7 @@ def parse_claude_zip(
         partitioned_input: Dict of filename -> Callable returning ZIP bytes.
         existing_output: DEPRECATED - not used. Parse always processes all conversations.
                         Transform nodes handle resume logic instead.
+        params: Import parameters from parameters.yml.
 
     Returns:
         Dict mapping partition_id (file_id or file_id_chunkN) to ParsedItem dict.
@@ -265,7 +270,7 @@ def parse_claude_zip(
             continue
 
         # Use existing parse_claude_json logic to process conversations
-        parsed_from_zip = parse_claude_json(conversations_data, existing_output=None)
+        parsed_from_zip = parse_claude_json(conversations_data, existing_output=None, params=params)
 
         # Merge into result
         result.update(parsed_from_zip)
