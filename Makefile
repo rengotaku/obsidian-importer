@@ -15,7 +15,7 @@ export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
 .PHONY: test-golden-responses test-integration test-clean
 .PHONY: coverage check lint ruff pylint mypy format format-check clean
 .PHONY: rag-index rag-search rag-ask rag-status vault-preview vault-copy
-.PHONY: reprocess-review
+.PHONY: reprocess-review reprocess-review-claude
 .PHONY: _check-ollama
 
 all: help
@@ -52,6 +52,9 @@ kedro-viz: ##@ DAG 可視化
 
 reprocess-review: ##@ review ファイルを削除して再処理対象に戻す
 	@bash scripts/makefile/reprocess-review.sh
+
+reprocess-review-claude: ##@ review ファイルを Claude Code で再処理
+	@bash scripts/makefile/reprocess-review-claude.sh
 
 # ── Test Fixtures ─────────────────────────────────────────
 
