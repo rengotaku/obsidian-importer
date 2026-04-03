@@ -228,6 +228,7 @@ class TestExtractKnowledgeEnglishSummaryTranslation(unittest.TestCase):
                 "title": "Python asyncio overview",
                 "summary": "The user asked about Python asyncio and how event loops work.",
                 "summary_content": "Discussion about asyncio.",
+                "tags": ["Python", "asyncio"],
             },
             None,
         )
@@ -851,7 +852,7 @@ class TestExtractKnowledgeEmptyContent(unittest.TestCase):
         self.assertEqual(len(result), 1)
         item = result["empty-content"]
         self.assertIn("review_reason", item)
-        self.assertIn("empty summary_content", item["review_reason"])
+        self.assertIn("summary_content", item["review_reason"])
         self.assertEqual(item["review_node"], "extract_knowledge")
 
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
@@ -881,7 +882,7 @@ class TestExtractKnowledgeEmptyContent(unittest.TestCase):
         self.assertEqual(len(result), 1)
         item = result["whitespace-content"]
         self.assertIn("review_reason", item)
-        self.assertIn("empty summary_content", item["review_reason"])
+        self.assertIn("summary_content", item["review_reason"])
 
     @patch("obsidian_etl.pipelines.transform.nodes.logger")
     @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
@@ -954,6 +955,178 @@ class TestExtractKnowledgeEmptyContent(unittest.TestCase):
         log_calls = [str(call) for call in mock_logger.info.call_args_list]
         log_messages = " ".join(log_calls)
         self.assertIn("skipped_empty=2", log_messages)
+
+
+# ============================================================
+# LLM field validation tests (#98)
+# ============================================================
+
+
+class TestExtractKnowledgeFieldValidation(unittest.TestCase):
+    """LLM が必須フィールドを返さなかった場合に review 行きになること。
+
+    Issue #98: title/summary/tags が空の場合のバリデーション
+    """
+
+    def setUp(self):
+        """Clean up streaming output files before each test."""
+        self._clean_streaming_dir()
+
+    def tearDown(self):
+        """Clean up streaming output files after each test."""
+        self._clean_streaming_dir()
+
+    def _clean_streaming_dir(self):
+        from obsidian_etl.pipelines.transform.nodes import STREAMING_OUTPUT_DIR
+
+        output_dir = Path.cwd() / STREAMING_OUTPUT_DIR
+        output_dir.mkdir(parents=True, exist_ok=True)
+        for pattern in ["no-*.json", "multi-*.json", "valid*.json"]:
+            for f in output_dir.glob(pattern):
+                f.unlink()
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_empty_title_marked_for_review(self, mock_llm_extract):
+        """title が空の場合、review 行きになること。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "",
+                "summary": "有効な要約。",
+                "summary_content": "有効な内容。",
+                "tags": ["タグ"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(item_id="no-title", file_id="notitle123456")
+        partitioned_input = _make_partitioned_input({"no-title": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        item = result["no-title"]
+        self.assertIn("review_reason", item)
+        self.assertIn("title", item["review_reason"])
+        self.assertEqual(item["review_node"], "extract_knowledge")
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_empty_title_fallback_to_conversation_name(self, mock_llm_extract):
+        """title が空の場合、generated_metadata.title に conversation_name が使われること。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "",
+                "summary": "有効な要約。",
+                "summary_content": "有効な内容。",
+                "tags": ["タグ"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(
+            item_id="no-title",
+            file_id="notitle123456",
+            conversation_name="元の会話名",
+        )
+        partitioned_input = _make_partitioned_input({"no-title": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        item = result["no-title"]
+        self.assertEqual(item["generated_metadata"]["title"], "元の会話名")
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_empty_summary_marked_for_review(self, mock_llm_extract):
+        """summary が空の場合、review 行きになること。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "有効なタイトル",
+                "summary": "",
+                "summary_content": "有効な内容。",
+                "tags": ["タグ"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(item_id="no-summary", file_id="nosummary12345")
+        partitioned_input = _make_partitioned_input({"no-summary": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        item = result["no-summary"]
+        self.assertIn("review_reason", item)
+        self.assertIn("summary", item["review_reason"])
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_empty_tags_marked_for_review(self, mock_llm_extract):
+        """tags が空リストの場合、review 行きになること。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "有効なタイトル",
+                "summary": "有効な要約。",
+                "summary_content": "有効な内容。",
+                "tags": [],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(item_id="no-tags", file_id="notags12345678")
+        partitioned_input = _make_partitioned_input({"no-tags": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        item = result["no-tags"]
+        self.assertIn("review_reason", item)
+        self.assertIn("tags", item["review_reason"])
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_multiple_empty_fields_reported(self, mock_llm_extract):
+        """複数フィールドが空の場合、すべてが review_reason に含まれること。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "",
+                "summary": "",
+                "summary_content": "有効な内容。",
+                "tags": [],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(item_id="multi-empty", file_id="multi12345678")
+        partitioned_input = _make_partitioned_input({"multi-empty": parsed_item})
+        params = _make_params()
+
+        result = extract_knowledge(partitioned_input, params)
+
+        item = result["multi-empty"]
+        self.assertIn("title", item["review_reason"])
+        self.assertIn("summary", item["review_reason"])
+        self.assertIn("tags", item["review_reason"])
+
+    @patch("obsidian_etl.pipelines.transform.nodes.knowledge_extractor.extract_knowledge")
+    def test_all_fields_valid_no_review(self, mock_llm_extract):
+        """全フィールドが有効な場合、review にならないこと。"""
+        mock_llm_extract.return_value = (
+            {
+                "title": "有効なタイトル",
+                "summary": "有効な要約。",
+                "summary_content": "有効な内容。",
+                "tags": ["タグ1", "タグ2"],
+            },
+            None,
+        )
+
+        parsed_item = _make_parsed_item(item_id="valid", file_id="valid123456789")
+        partitioned_input = _make_partitioned_input({"valid": parsed_item})
+        params = _make_params()
+        params["ollama"]["mock"] = True  # Skip compression ratio check
+
+        result = extract_knowledge(partitioned_input, params)
+
+        item = result["valid"]
+        self.assertNotIn("review_reason", item)
 
 
 # ============================================================

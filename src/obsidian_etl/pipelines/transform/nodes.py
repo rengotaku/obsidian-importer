@@ -170,19 +170,33 @@ def extract_knowledge(
             item["review_reason"] = f"LLM extraction warning: {error}"
             item["review_node"] = "extract_knowledge"
 
-        # Check for empty summary_content
+        # Validate required LLM fields
+        title = knowledge.get("title", "")
+        summary = knowledge.get("summary", "")
         summary_content = knowledge.get("summary_content", "")
-        if _is_empty_content(summary_content):
-            logger.warning(f"Empty summary_content for {partition_id}. Marked for review.")
+        tags = knowledge.get("tags", [])
+
+        missing_fields = []
+        if not title or not title.strip():
+            missing_fields.append("title")
+        if not summary or not summary.strip():
+            missing_fields.append("summary")
+        if not summary_content or not summary_content.strip():
+            missing_fields.append("summary_content")
+        if not tags:
+            missing_fields.append("tags")
+
+        if missing_fields:
+            review_reason = f"LLM returned empty fields: {', '.join(missing_fields)}"
+            logger.warning(f"{review_reason} for {partition_id}. Marked for review.")
             skipped_empty += 1
-            # Mark for review
-            item["review_reason"] = "LLM returned empty summary_content"
+            item["review_reason"] = review_reason
             item["review_node"] = "extract_knowledge"
             item["generated_metadata"] = {
-                "title": knowledge.get("title", item.get("conversation_name", partition_id)),
-                "summary": knowledge.get("summary", ""),
-                "summary_content": "",
-                "tags": knowledge.get("tags", []),
+                "title": title or item.get("conversation_name") or partition_id,
+                "summary": summary,
+                "summary_content": summary_content,
+                "tags": tags,
             }
             # Mark as mock-generated if in mock mode
             if params.get("ollama", {}).get("mock", False):
@@ -217,7 +231,6 @@ def extract_knowledge(
             # DO NOT continue - process the item normally
 
         # Check if summary is in English and translate if needed
-        summary = knowledge.get("summary", "")
         if knowledge_extractor.is_english_summary(summary):
             logger.debug(f"English summary detected for {partition_id}, translating...")
             translated, trans_error = knowledge_extractor.translate_summary(summary, params)
@@ -233,12 +246,12 @@ def extract_knowledge(
         if len(summary) > 500:
             logger.warning(f"Long summary ({len(summary)} chars) for {partition_id}")
 
-        # Add generated_metadata to item
+        # Add generated_metadata to item (variables validated above)
         item["generated_metadata"] = {
-            "title": knowledge.get("title", ""),
-            "summary": knowledge.get("summary", ""),
-            "summary_content": knowledge.get("summary_content", ""),
-            "tags": knowledge.get("tags", []),
+            "title": title,
+            "summary": summary,
+            "summary_content": summary_content,
+            "tags": tags,
         }
 
         # Mark as mock-generated if in mock mode

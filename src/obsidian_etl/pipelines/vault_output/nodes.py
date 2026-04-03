@@ -110,8 +110,13 @@ def resolve_vault_destination(
         frontmatter_str = parts[1]
         frontmatter = yaml.safe_load(frontmatter_str)
 
-        # Extract fields
-        title = frontmatter.get("title", "Untitled")
+        # Extract fields - title must not be empty (validated upstream)
+        title = frontmatter.get("title") or ""
+        if not title.strip():
+            raise ValueError(
+                f"File {key} has empty title in frontmatter. "
+                "This should have been caught by extract_knowledge validation."
+            )
         genre = frontmatter.get("genre", "other")
         topic = frontmatter.get("topic", "")
 
