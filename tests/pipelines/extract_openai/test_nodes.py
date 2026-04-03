@@ -777,7 +777,7 @@ class TestChatgptChunking(unittest.TestCase):
 
         zip_bytes = _make_zip_bytes([conv])
         partitioned = _make_partitioned_input({"test.zip": zip_bytes})
-        result = parse_chatgpt_zip(partitioned)
+        result = parse_chatgpt_zip(partitioned, params={"chunk_enabled": True})
 
         # Should produce multiple chunks
         self.assertGreater(len(result), 1)
@@ -809,7 +809,7 @@ class TestChatgptChunking(unittest.TestCase):
 
         zip_bytes = _make_zip_bytes([conv])
         partitioned = _make_partitioned_input({"test.zip": zip_bytes})
-        result = parse_chatgpt_zip(partitioned)
+        result = parse_chatgpt_zip(partitioned, params={"chunk_enabled": True})
 
         items = list(result.values())
         for item in items:
@@ -846,7 +846,7 @@ class TestChatgptChunking(unittest.TestCase):
 
         zip_bytes = _make_zip_bytes([conv])
         partitioned = _make_partitioned_input({"test.zip": zip_bytes})
-        result = parse_chatgpt_zip(partitioned)
+        result = parse_chatgpt_zip(partitioned, params={"chunk_enabled": True})
 
         items = list(result.values())
         chunk_indices = sorted(item["chunk_index"] for item in items)
@@ -879,7 +879,7 @@ class TestChatgptChunking(unittest.TestCase):
 
         zip_bytes = _make_zip_bytes([conv])
         partitioned = _make_partitioned_input({"test.zip": zip_bytes})
-        result = parse_chatgpt_zip(partitioned)
+        result = parse_chatgpt_zip(partitioned, params={"chunk_enabled": True})
 
         items = list(result.values())
         parent_ids = {item["parent_item_id"] for item in items}
@@ -912,7 +912,7 @@ class TestChatgptChunking(unittest.TestCase):
 
         zip_bytes = _make_zip_bytes([conv])
         partitioned = _make_partitioned_input({"test.zip": zip_bytes})
-        result = parse_chatgpt_zip(partitioned)
+        result = parse_chatgpt_zip(partitioned, params={"chunk_enabled": True})
 
         for item in result.values():
             self.assertEqual(item["source_provider"], "openai")

@@ -116,7 +116,8 @@ def parse_chatgpt_zip(
             file_id = generate_file_id(content, virtual_path)
 
             # Check if chunking needed
-            if should_chunk(messages):
+            chunk_enabled = (params or {}).get("chunk_enabled", False)
+            if chunk_enabled and should_chunk(messages):
                 # Chunk and create multiple ParsedItems
                 chunks = split_messages(messages)
                 parent_item_id = file_id
