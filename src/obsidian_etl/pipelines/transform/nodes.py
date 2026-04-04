@@ -25,6 +25,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from obsidian_etl.models.knowledge import LLMFieldValidationError, LLMKnowledge
 from obsidian_etl.utils import knowledge_extractor
 from obsidian_etl.utils.compression_validator import validate_compression
 from obsidian_etl.utils.log_context import iter_with_file_id
@@ -170,33 +171,19 @@ def extract_knowledge(
             item["review_reason"] = f"LLM extraction warning: {error}"
             item["review_node"] = "extract_knowledge"
 
-        # Validate required LLM fields
-        title = knowledge.get("title", "")
-        summary = knowledge.get("summary", "")
-        summary_content = knowledge.get("summary_content", "")
-        tags = knowledge.get("tags", [])
-
-        missing_fields = []
-        if not title or not title.strip():
-            missing_fields.append("title")
-        if not summary or not summary.strip():
-            missing_fields.append("summary")
-        if not summary_content or not summary_content.strip():
-            missing_fields.append("summary_content")
-        if not tags:
-            missing_fields.append("tags")
-
-        if missing_fields:
-            review_reason = f"LLM returned empty fields: {', '.join(missing_fields)}"
-            logger.warning(f"{review_reason} for {partition_id}. Marked for review.")
+        # Validate required LLM fields via LLMKnowledge dataclass
+        try:
+            llm_knowledge = LLMKnowledge.from_dict(knowledge)
+        except LLMFieldValidationError as e:
+            logger.warning(f"{e} for {partition_id}. Marked for review.")
             skipped_empty += 1
-            item["review_reason"] = review_reason
+            item["review_reason"] = str(e)
             item["review_node"] = "extract_knowledge"
             item["generated_metadata"] = {
-                "title": title or item.get("conversation_name") or partition_id,
-                "summary": summary,
-                "summary_content": summary_content,
-                "tags": tags,
+                "title": knowledge.get("title") or item.get("conversation_name") or partition_id,
+                "summary": knowledge.get("summary", ""),
+                "summary_content": knowledge.get("summary_content", ""),
+                "tags": knowledge.get("tags", []),
             }
             # Mark as mock-generated if in mock mode
             if params.get("ollama", {}).get("mock", False):
@@ -211,13 +198,12 @@ def extract_knowledge(
         is_mock = params.get("ollama", {}).get("mock", False)
         compression_result = validate_compression(
             original_content=item["content"],
-            output_content=summary_content,
-            body_content=summary_content,  # For extract_knowledge, body = summary_content
+            output_content=llm_knowledge.summary_content,
+            body_content=llm_knowledge.summary_content,
             node_name="extract_knowledge",
         )
 
         if not is_mock and not compression_result.is_valid:
-            # Add review_reason and review_node to item (don't exclude)
             review_reason = (
                 f"{compression_result.node_name}: "
                 f"body_ratio={compression_result.body_ratio:.1%} < "
@@ -231,28 +217,24 @@ def extract_knowledge(
             # DO NOT continue - process the item normally
 
         # Check if summary is in English and translate if needed
-        if knowledge_extractor.is_english_summary(summary):
+        if knowledge_extractor.is_english_summary(llm_knowledge.summary):
             logger.debug(f"English summary detected for {partition_id}, translating...")
-            translated, trans_error = knowledge_extractor.translate_summary(summary, params)
+            translated, trans_error = knowledge_extractor.translate_summary(
+                llm_knowledge.summary, params
+            )
             if trans_error:
                 logger.warning(
                     f"Translation failed for {partition_id}: {trans_error}. Using original."
                 )
-            else:
-                knowledge["summary"] = translated
-                summary = translated  # Update summary reference for length check
+            elif translated:
+                llm_knowledge = llm_knowledge.with_summary(translated)
 
         # Check summary length and warn if too long
-        if len(summary) > 500:
-            logger.warning(f"Long summary ({len(summary)} chars) for {partition_id}")
+        if len(llm_knowledge.summary) > 500:
+            logger.warning(f"Long summary ({len(llm_knowledge.summary)} chars) for {partition_id}")
 
-        # Add generated_metadata to item (variables validated above)
-        item["generated_metadata"] = {
-            "title": title,
-            "summary": summary,
-            "summary_content": summary_content,
-            "tags": tags,
-        }
+        # Add generated_metadata to item
+        item["generated_metadata"] = llm_knowledge.to_generated_metadata()
 
         # Mark as mock-generated if in mock mode
         if params.get("ollama", {}).get("mock", False):
