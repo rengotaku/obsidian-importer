@@ -142,6 +142,27 @@ class TestResolveVaultDestination(unittest.TestCase):
         # subfolder should be empty/None
         self.assertFalse(dest.get("subfolder"))
 
+    def test_resolve_vault_destination_raises_on_empty_title(self):
+        """title が空の場合、ValueError がスローされること (#98)。"""
+        organized_files = {
+            "note1": _make_organized_content(title="", genre="ai", topic="python"),
+        }
+
+        with self.assertRaises(ValueError, msg="empty title should raise ValueError"):
+            resolve_vault_destination(organized_files, self.params)
+
+    def test_resolve_vault_destination_raises_on_whitespace_title(self):
+        """title が空白のみの場合、ValueError がスローされること (#98)。"""
+        content = (
+            '---\ntitle: "   "\ngenre: ai\ntopic: python\n'
+            "created: 2026-01-15\ntags:\n  - test\nnormalized: true\n"
+            "file_id: abc123\n---\n\n## Content\n"
+        )
+        organized_files = {"note1": content}
+
+        with self.assertRaises(ValueError):
+            resolve_vault_destination(organized_files, self.params)
+
 
 class TestSanitizeTopic(unittest.TestCase):
     """sanitize_topic: special characters in topic are replaced."""
