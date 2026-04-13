@@ -72,12 +72,51 @@ kedro run --to-nodes=format_markdown
 
 ```
 data/01_raw/*.zip → data/02_intermediate/parsed/*.json
-                  → data/03_primary/transformed/*.json
+                  → data/03_primary/transformed_knowledge/*.json
+                  → data/03_primary/transformed_metadata/*.json
                   → data/04_feature/notes/*.md
                   → data/05_model_input/classified/*.json
                   → data/05_model_input/normalized/*.json
                   → data/07_model_output/organized/*.md
 ```
+
+### データ永続性
+
+全レイヤーの PartitionedDataset は `overwrite: false` で設定されており、パイプライン再実行時に既存ファイルは上書きされない。
+
+| レイヤー | パス | 永続性 | 命名規則 |
+|---------|------|--------|---------|
+| 01_raw | `data/01_raw/{provider}/*.zip` | 手動管理（削除しない） | 入力ファイル名 |
+| 02_intermediate | `data/02_intermediate/parsed/*.json` | 永続（`overwrite: false`） | `{file_id}.json` |
+| 03_primary | `data/03_primary/transformed_knowledge/*.json` | 永続（`overwrite: false` + streaming） | `{file_id}.json` |
+| 04_feature | `data/04_feature/notes/*.md`, `review/*.md` | 永続 | `{sanitized_title}.md` |
+| 05_model_input | `data/05_model_input/*/*.json` | 永続 | `{file_id}.json` |
+| 07_model_output | `data/07_model_output/organized/*.md` | 永続 | `{sanitized_title}.md` |
+
+`file_id` は `SHA256(content, source_path)` の先頭 12 hex chars。決定論的でデデュプ可能。
+
+### RAG 連携（knowledge-rag）
+
+RAG システム（[knowledge-rag](https://github.com/rengotaku/knowledge-rag)）へのデータ転送対象:
+
+```
+rsync 対象: data/03_primary/transformed_knowledge/
+```
+
+`transformed_knowledge/*.json` には以下が含まれており、RAG に必要な全データが 1 ファイルに集約されている:
+
+| フィールド | RAG での役割 |
+|-----------|-------------|
+| `content` | 原文（精密検索用チャンク化ソース） |
+| `messages` | 構造化された会話ログ（role/content ペア） |
+| `generated_metadata.summary` | 粗い検索のインデックス |
+| `generated_metadata.summary_content` | 要約本文（コンテキスト提供） |
+| `generated_metadata.title` | 検索結果の表示・識別 |
+| `generated_metadata.tags` | カテゴリフィルタ |
+| `file_id` | 一意識別子 |
+| `created_at` | 時系列フィルタ |
+
+`02_intermediate/parsed/` の別途転送は不要（`03_primary` に原文が含まれるため）。
 
 ### プロバイダー別処理
 

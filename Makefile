@@ -14,7 +14,7 @@ export KEDRO_LOGGING_CONFIG := $(BASE_DIR)/conf/base/logging.yml
 .PHONY: test test-fixtures test-e2e test-e2e-update-golden test-e2e-golden
 .PHONY: test-golden-responses test-integration test-clean
 .PHONY: coverage check lint ruff pylint mypy format format-check clean
-.PHONY: rag-index rag-search rag-ask rag-status vault-preview vault-copy
+.PHONY: rag-index rag-search rag-ask rag-status vault-preview vault-copy sync-to-rag
 .PHONY: reprocess-review reprocess-review-claude
 .PHONY: _check-ollama
 
@@ -148,6 +148,9 @@ rag-status: ##@ RAG インデックス状態表示
 	@cd $(BASE_DIR) && $(PYTHON) -m src.rag.cli status $(if $(FORMAT),--format $(FORMAT),)
 
 # ── Vault Output ──────────────────────────────────────────
+
+sync-to-rag: ##@ RAG サーバーへデータ同期 [RAG_HOST=xxx] [DRY_RUN=1]
+	@bash scripts/sync-to-rag.sh
 
 vault-preview: ##@ Vault 出力先プレビュー（dry-run）
 	@cd $(BASE_DIR) && kedro run --pipeline=organize_preview
